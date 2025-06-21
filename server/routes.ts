@@ -259,19 +259,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment route for one-time payments
+  // Enhanced payment processing with commission tracking
   app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
     try {
-      const { amount } = req.body;
+      const { amount, cartItems, metadata = {} } = req.body;
+      
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
+        metadata: {
+          cartItems: JSON.stringify(cartItems || []),
+          userId: (req.user as any)?.claims?.sub || '',
+          ...metadata
+        }
       });
+      
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
-      res
-        .status(500)
-        .json({ message: "Error creating payment intent: " + error.message });
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Stripe webhook for automated commission processing (simplified for development)
+  app.post('/api/stripe/webhook', async (req, res) => {
+    try {
+      // In production, verify webhook signature here
+      const paymentIntent = req.body.data?.object;
+      
+      if (req.body.type === 'payment_intent.succeeded' && paymentIntent) {
+        await processCommissionsAndCreateOrder(paymentIntent);
+      }
+      
+      res.json({received: true});
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Process commissions and create order after payment
+  async function processCommissionsAndCreateOrder(paymentIntent: any) {
+    try {
+      if (!paymentIntent.metadata.cartItems || !paymentIntent.metadata.userId) return;
+      
+      const cartItems = JSON.parse(paymentIntent.metadata.cartItems);
+      const userId = paymentIntent.metadata.userId;
+      const totalAmount = paymentIntent.amount / 100;
+
+      // Create order
+      const order = await storage.createOrder({
+        userId,
+        totalAmount: totalAmount.toString(),
+        status: 'confirmed',
+        stripePaymentIntentId: paymentIntent.id,
+        shippingAddress: {}
+      });
+
+      // Process each cart item for commissions
+      for (const item of cartItems) {
+        const product = await storage.getProductById(item.productId);
+        if (!product) continue;
+
+        const saleAmount = parseFloat(item.price) * item.quantity;
+        const commissionRate = 0.085; // 8.5% platform fee
+        const commissionAmount = saleAmount * commissionRate;
+        const platformFee = commissionAmount;
+        const roasterEarnings = saleAmount - platformFee;
+
+        // Create order item
+        const orderItem = await db.insert(orderItems).values({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          status: 'processing'
+        }).returning();
+
+        // Create commission record
+        await storage.createCommission({
+          roasterId: product.roasterId,
+          orderId: order.id,
+          orderItemId: orderItem[0].id,
+          saleAmount: saleAmount.toString(),
+          commissionRate: commissionRate.toString(),
+          commissionAmount: commissionAmount.toString(),
+          platformFee: platformFee.toString(),
+          roasterEarnings: roasterEarnings.toString(),
+          status: 'pending'
+        });
+
+        // Update seller analytics
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        await storage.updateSellerAnalytics(product.roasterId, today, {
+          totalSales: saleAmount.toString(),
+          totalOrders: "1",
+          totalCommissionEarned: roasterEarnings.toString(),
+          averageOrderValue: saleAmount.toString()
+        });
+      }
+
+      // Clear user's cart
+      await storage.clearCart(userId);
+      
+    } catch (error) {
+      console.error('Error processing commissions:', error);
+    }
+  }
+
+  // Automated payout processing for sellers
+  app.post('/api/admin/process-payouts', isAuthenticated, async (req, res) => {
+    try {
+      // Get all pending commissions grouped by roaster
+      const pendingCommissions = await db
+        .select()
+        .from(commissions)
+        .where(eq(commissions.status, 'pending'));
+
+      const payoutsByRoaster = new Map();
+      
+      for (const commission of pendingCommissions) {
+        if (!payoutsByRoaster.has(commission.roasterId)) {
+          payoutsByRoaster.set(commission.roasterId, []);
+        }
+        payoutsByRoaster.get(commission.roasterId).push(commission);
+      }
+
+      const payoutResults = [];
+
+      for (const [roasterId, roasterCommissions] of payoutsByRoaster) {
+        const roaster = await storage.getRoasterByUserId(roasterId.toString());
+        if (!roaster) continue;
+
+        const totalPayout = roasterCommissions.reduce((sum: number, c: any) => 
+          sum + parseFloat(c.roasterEarnings), 0);
+
+        if (totalPayout < 10) continue; // $10 minimum payout threshold
+
+        try {
+          // For now, simulate payout processing
+          // In production, integrate with Stripe Connect for real transfers
+          console.log(`Processing payout of $${totalPayout} for roaster ${roasterId}`);
+
+          // Mark commissions as paid
+          for (const commission of roasterCommissions) {
+            await storage.updateCommissionStatus(commission.id, 'paid', new Date());
+          }
+
+          payoutResults.push({
+            roasterId,
+            roasterName: roaster.businessName,
+            amount: totalPayout,
+            commissionCount: roasterCommissions.length,
+            status: 'success'
+          });
+        } catch (error: any) {
+          payoutResults.push({
+            roasterId,
+            amount: totalPayout,
+            error: error.message,
+            status: 'failed'
+          });
+        }
+      }
+
+      res.json({ 
+        message: `Processed ${payoutResults.length} payouts`,
+        payouts: payoutResults 
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: 'Error processing payouts: ' + error.message });
     }
   });
 

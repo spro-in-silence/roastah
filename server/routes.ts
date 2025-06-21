@@ -438,6 +438,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product state management routes
+  app.patch('/api/roaster/products/:id/state', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { state } = req.body;
+      const userId = req.user.claims.sub;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+
+      // Validate state transition
+      const validStates = ['draft', 'pending_review', 'published', 'archived', 'rejected'];
+      if (!validStates.includes(state)) {
+        return res.status(400).json({ message: "Invalid state" });
+      }
+
+      const product = await storage.updateProduct(id, { state });
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product state:", error);
+      res.status(500).json({ message: "Failed to update product state" });
+    }
+  });
+
+  // Product tag management routes
+  app.patch('/api/roaster/products/:id/tags', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+
+      // Extract valid tag fields
+      const validTags = ['isUnlisted', 'isPreorder', 'isPrivate', 'isOutOfStock', 'isScheduled'];
+      const tagUpdates: any = {};
+      
+      for (const [key, value] of Object.entries(req.body)) {
+        if (validTags.includes(key) && typeof value === 'boolean') {
+          tagUpdates[key] = value;
+        }
+      }
+
+      if (Object.keys(tagUpdates).length === 0) {
+        return res.status(400).json({ message: "No valid tag updates provided" });
+      }
+
+      const product = await storage.updateProduct(id, tagUpdates);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product tags:", error);
+      res.status(500).json({ message: "Failed to update product tags" });
+    }
+  });
+
   // Cart routes
   app.get('/api/cart', enhancedAuthCheck, async (req: any, res) => {
     try {

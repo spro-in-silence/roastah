@@ -257,8 +257,8 @@ export default function SellerProducts() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {/* Main State Badge */}
-                            <Badge className={getStateColor(product.state)}>
-                              {getStateLabel(product.state)}
+                            <Badge className={getStateColor(product.state as ProductState)}>
+                              {getStateLabel(product.state as ProductState)}
                             </Badge>
                             
                             {/* Tag Badges */}

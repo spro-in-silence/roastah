@@ -1,5 +1,7 @@
 // Product State Management Utilities
 
+import type { Product } from '@shared/schema';
+
 export type ProductState = 'draft' | 'pending_review' | 'published' | 'archived' | 'rejected';
 
 export interface ProductTags {
@@ -10,24 +12,8 @@ export interface ProductTags {
   isScheduled: boolean;
 }
 
-export interface ProductWithState {
-  id: number;
-  state: ProductState;
-  isUnlisted: boolean;
-  isPreorder: boolean;
-  isPrivate: boolean;
-  isOutOfStock: boolean;
-  isScheduled: boolean;
-  publishedAt?: Date;
-  scheduledPublishAt?: Date;
-  preorderShippingDate?: Date;
-  archivedAt?: Date;
-  rejectedAt?: Date;
-  rejectionReason?: string;
-  reviewedBy?: string;
-  reviewedAt?: Date;
-  reviewNotes?: string;
-  stockQuantity: number;
+export interface ProductWithState extends Product {
+  // All Product fields are already included via extension
 }
 
 export const getStateColor = (state: ProductState): string => {

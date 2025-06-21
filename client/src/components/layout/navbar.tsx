@@ -117,8 +117,8 @@ export default function Navbar() {
                   {/* Real-time Notifications */}
                   <RealtimeNotifications showAsDropdown={true} />
 
-                  {/* Cart Toggle - always show when in buyer mode or on cart/checkout pages */}
-                  {(!isRoaster || location === '/cart' || location === '/checkout') && (
+                  {/* Cart Toggle - only show for non-approved roasters or on cart/checkout pages */}
+                  {(!user?.isRoasterApproved || location === '/cart' || location === '/checkout') && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -189,8 +189,8 @@ export default function Navbar() {
             </div>
 
             <div className="p-4 space-y-2">
-              {/* Buyer-specific Navigation - Only show when not in seller mode */}
-              {!isRoaster && (
+              {/* Buyer-specific Navigation - Only show for non-roasters */}
+              {!user?.isRoasterApproved && (
                 <>
                   <Link href="/products" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
@@ -213,7 +213,7 @@ export default function Navbar() {
               )}
 
               {/* Become a Roastah - Only show for non-roasters */}
-              {!isRoaster && (
+              {!user?.isRoasterApproved && (
                 <Link href="/become-roastah" onClick={closeMenu}>
                   <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
                     location === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
@@ -292,8 +292,8 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              {/* Mode Switch - Only for approved roasters */}
-              {user?.role === 'roaster' && user?.isRoasterApproved && (
+              {/* Mode Switch - Only for non-approved roasters who are pending approval */}
+              {user?.role === 'roaster' && !user?.isRoasterApproved && (
                 <>
                   <div className="border-t my-4"></div>
                   

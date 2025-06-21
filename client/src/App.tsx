@@ -1,10 +1,11 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@/contexts/UserContext";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
@@ -26,7 +27,7 @@ import TrackingDemo from "@/pages/tracking-demo";
 import Leaderboard from "@/pages/leaderboard";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -35,6 +36,8 @@ function Router() {
       </div>
     );
   }
+
+  const isApprovedRoaster = user?.isRoasterApproved;
 
   return (
     <Switch>
@@ -45,7 +48,30 @@ function Router() {
           <Route path="/products/:id" component={ProductDetail} />
           <Route component={Landing} />
         </>
+      ) : isApprovedRoaster ? (
+        // Approved roasters only get seller routes
+        <>
+          <Route path="/" component={SellerDashboard} />
+          <Route path="/seller/dashboard" component={SellerDashboard} />
+          <Route path="/seller/products" component={SellerProducts} />
+          <Route path="/seller/products/new" component={SellerProductsNew} />
+          <Route path="/seller/orders" component={SellerOrders} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/production-demo" component={ProductionDemo} />
+          <Route path="/medusa-admin" component={MedusaAdmin} />
+          <Route path="/security" component={SecurityDashboard} />
+          <Route path="/test-payment" component={TestPayment} />
+          <Route path="/tracking-demo" component={TrackingDemo} />
+          {/* Redirect buyer routes to seller dashboard */}
+          <Route path="/products"><Redirect to="/seller/dashboard" /></Route>
+          <Route path="/products/:id"><Redirect to="/seller/dashboard" /></Route>
+          <Route path="/cart"><Redirect to="/seller/dashboard" /></Route>
+          <Route path="/checkout"><Redirect to="/seller/dashboard" /></Route>
+          <Route path="/become-roastah"><Redirect to="/seller/dashboard" /></Route>
+        </>
       ) : (
+        // Non-approved users get buyer routes
         <>
           <Route path="/" component={Home} />
           <Route path="/products" component={Products} />

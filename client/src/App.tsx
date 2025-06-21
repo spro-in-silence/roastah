@@ -56,6 +56,7 @@ function Router() {
           <Route path="/seller/dashboard" component={SellerDashboard} />
           <Route path="/seller/products" component={SellerProducts} />
           <Route path="/seller/products/new" component={SellerProductsNew} />
+          <Route path="/seller/products/:id/edit" component={SellerProductsEdit} />
           <Route path="/seller/orders" component={SellerOrders} />
           <Route path="/profile" component={Profile} />
           <Route path="/leaderboard" component={Leaderboard} />

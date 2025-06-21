@@ -350,6 +350,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/roaster/products/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const productId = parseInt(req.params.id);
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+      
+      const product = await storage.getProductById(productId);
+      
+      if (!product || product.roasterId !== roaster.id) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
+  app.put('/api/roaster/products/:id', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const productId = parseInt(req.params.id);
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+      
+      const existingProduct = await storage.getProductById(productId);
+      
+      if (!existingProduct || existingProduct.roasterId !== roaster.id) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      const validatedData = insertProductSchema.partial().parse({
+        ...req.body,
+        roasterId: roaster.id,
+      });
+      
+      const product = await storage.updateProduct(productId, validatedData);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
   app.put('/api/roaster/products/:id', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);

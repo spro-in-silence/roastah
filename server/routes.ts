@@ -1462,6 +1462,46 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // USPS Address Validation
+  app.post('/api/validate-address', isAuthenticated, async (req: any, res) => {
+    try {
+      const { address, city, state, zipCode } = req.body;
+      
+      // Mock USPS validation - in production, integrate with actual USPS API
+      const validationResult = {
+        isValid: true,
+        standardizedAddress: {
+          address: address.trim(),
+          city: city.trim().toUpperCase(),
+          state: state.toUpperCase(),
+          zipCode: zipCode.trim()
+        },
+        deliveryPoint: true,
+        suggestions: []
+      };
+      
+      // Basic validation checks
+      if (!address || !city || !state || !zipCode) {
+        return res.status(400).json({
+          isValid: false,
+          error: "All address fields are required"
+        });
+      }
+      
+      if (zipCode.length < 5) {
+        return res.status(400).json({
+          isValid: false,
+          error: "Invalid ZIP code format"
+        });
+      }
+      
+      res.json(validationResult);
+    } catch (error) {
+      console.error("Address validation error:", error);
+      res.status(500).json({ message: "Failed to validate address" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server

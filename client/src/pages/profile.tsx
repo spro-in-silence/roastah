@@ -183,40 +183,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Become a Roastah CTA (Buyer Only) */}
-            {!isRoaster && (
-              <div className="coffee-gradient rounded-xl p-6 mb-8 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold mb-2">Become a Roastah</h2>
-                    <p className="text-white/90">
-                      Share your passion for coffee and start selling your roasts to coffee enthusiasts worldwide.
-                    </p>
-                  </div>
-                  <Link href="/become-roastah">
-                    <Button className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold">
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Roaster Status (Roaster Only) */}
-            {isRoaster && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-green-800">Roastah Account Active</h2>
-                    <p className="text-green-700">You're all set to sell your coffee on Roastah</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Profile Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-3 lg:grid-cols-4">
@@ -449,6 +415,40 @@ export default function Profile() {
                 </TabsContent>
               )}
             </Tabs>
+
+            {/* Become a Roastah CTA (Buyer Only) - Moved below tabs */}
+            {!isRoaster && (
+              <div className="coffee-gradient rounded-xl p-6 mt-8 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold mb-2">Become a Roastah</h2>
+                    <p className="text-white/90">
+                      Share your passion for coffee and start selling your roasts to coffee enthusiasts worldwide.
+                    </p>
+                  </div>
+                  <Link href="/become-roastah">
+                    <Button className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold">
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Roaster Status (Roaster Only) - Moved below tabs */}
+            {isRoaster && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mt-8">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-green-800">Roastah Account Active</h2>
+                    <p className="text-green-700">You're all set to sell your coffee on Roastah</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

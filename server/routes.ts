@@ -1200,6 +1200,18 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       const userId = req.user.claims.sub;
       const roasterId = parseInt(req.params.id);
       
+      console.log(`Adding favorite - User: ${userId}, Roaster: ${roasterId}`);
+      
+      if (!roasterId || isNaN(roasterId)) {
+        return res.status(400).json({ message: "Invalid roaster ID" });
+      }
+      
+      // Check if roaster exists
+      const roasterExists = await storage.getRoasterById(roasterId);
+      if (!roasterExists) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+      
       // Check if already favorited
       const isAlreadyFavorite = await storage.isFavoriteRoaster(userId, roasterId);
       if (isAlreadyFavorite) {
@@ -1207,10 +1219,12 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       }
       
       const favorite = await storage.addFavoriteRoaster(userId, roasterId);
+      console.log(`Favorite added successfully:`, favorite);
       res.json(favorite);
     } catch (error) {
       console.error("Error adding favorite roaster:", error);
-      res.status(500).json({ message: "Failed to add favorite roaster" });
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to add favorite roaster", error: error.message });
     }
   });
 

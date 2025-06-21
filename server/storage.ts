@@ -864,11 +864,18 @@ export class DatabaseStorage implements IStorage {
 
   // Favorite roasters operations
   async addFavoriteRoaster(userId: string, roasterId: number): Promise<FavoriteRoaster> {
-    const [favorite] = await db
-      .insert(favoriteRoasters)
-      .values({ userId, roasterId })
-      .returning();
-    return favorite;
+    try {
+      console.log(`Storage: Adding favorite - userId: ${userId}, roasterId: ${roasterId}`);
+      const [favorite] = await db
+        .insert(favoriteRoasters)
+        .values({ userId, roasterId })
+        .returning();
+      console.log(`Storage: Favorite added successfully:`, favorite);
+      return favorite;
+    } catch (error) {
+      console.error(`Storage: Error adding favorite:`, error);
+      throw error;
+    }
   }
 
   async removeFavoriteRoaster(userId: string, roasterId: number): Promise<void> {

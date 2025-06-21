@@ -306,6 +306,14 @@ export const realtimeConnections = pgTable("realtime_connections", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Favorite sellers table
+export const favoriteRoasters = pgTable("favorite_roasters", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  roasterId: integer("roaster_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Additional relations
 export const reviewRelations = relations(reviews, ({ one }) => ({
   user: one(users, {
@@ -358,6 +366,17 @@ export const realtimeConnectionRelations = relations(realtimeConnections, ({ one
   }),
 }));
 
+export const favoriteRoasterRelations = relations(favoriteRoasters, ({ one }) => ({
+  user: one(users, {
+    fields: [favoriteRoasters.userId],
+    references: [users.id],
+  }),
+  roaster: one(roasters, {
+    fields: [favoriteRoasters.roasterId],
+    references: [roasters.id],
+  }),
+}));
+
 // Additional schemas and types
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
@@ -384,6 +403,11 @@ export const insertRealtimeConnectionSchema = createInsertSchema(realtimeConnect
   createdAt: true,
 });
 
+export const insertFavoriteRoasterSchema = createInsertSchema(favoriteRoasters).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type WishlistItem = typeof wishlist.$inferSelect;
@@ -394,6 +418,8 @@ export type OrderTracking = typeof orderTracking.$inferSelect;
 export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
 export type RealtimeConnection = typeof realtimeConnections.$inferSelect;
 export type InsertRealtimeConnection = z.infer<typeof insertRealtimeConnectionSchema>;
+export type FavoriteRoaster = typeof favoriteRoasters.$inferSelect;
+export type InsertFavoriteRoaster = z.infer<typeof insertFavoriteRoasterSchema>;
 
 // Commission tracking table
 export const commissions = pgTable("commissions", {

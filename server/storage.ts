@@ -15,6 +15,7 @@ import {
   campaigns,
   bulkUploads,
   disputes,
+  favoriteRoasters,
   type User,
   type UpsertUser,
   type Roaster,
@@ -46,6 +47,8 @@ import {
   type InsertBulkUpload,
   type Dispute,
   type InsertDispute,
+  type FavoriteRoaster,
+  type InsertFavoriteRoaster,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -148,6 +151,12 @@ export interface IStorage {
   getLeaderboard(dateRange?: string, limit?: number): Promise<any[]>;
   updateRoasterMetrics(roasterId: number): Promise<void>;
   calculateLeaderboardScore(roasterId: number): Promise<number>;
+  
+  // Favorite roasters operations
+  addFavoriteRoaster(userId: string, roasterId: number): Promise<FavoriteRoaster>;
+  removeFavoriteRoaster(userId: string, roasterId: number): Promise<void>;
+  getFavoriteRoastersByUser(userId: string): Promise<any[]>;
+  isFavoriteRoaster(userId: string, roasterId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -851,6 +860,71 @@ export class DatabaseStorage implements IStorage {
     const totalScore = ratingScore + reviewScore;
     
     return Math.round(totalScore * 100) / 100;
+  }
+
+  // Favorite roasters operations
+  async addFavoriteRoaster(userId: string, roasterId: number): Promise<FavoriteRoaster> {
+    const [favorite] = await db
+      .insert(favoriteRoasters)
+      .values({ userId, roasterId })
+      .returning();
+    return favorite;
+  }
+
+  async removeFavoriteRoaster(userId: string, roasterId: number): Promise<void> {
+    await db
+      .delete(favoriteRoasters)
+      .where(
+        and(
+          eq(favoriteRoasters.userId, userId),
+          eq(favoriteRoasters.roasterId, roasterId)
+        )
+      );
+  }
+
+  async getFavoriteRoastersByUser(userId: string): Promise<any[]> {
+    const favorites = await db
+      .select({
+        id: favoriteRoasters.id,
+        roasterId: favoriteRoasters.roasterId,
+        createdAt: favoriteRoasters.createdAt,
+        roaster: {
+          id: roasters.id,
+          businessName: roasters.businessName,
+          description: roasters.description,
+          logo: roasters.logo,
+          location: roasters.location,
+          website: roasters.website,
+          userId: roasters.userId,
+          user: {
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+          }
+        }
+      })
+      .from(favoriteRoasters)
+      .leftJoin(roasters, eq(roasters.id, favoriteRoasters.roasterId))
+      .leftJoin(users, eq(users.id, roasters.userId))
+      .where(eq(favoriteRoasters.userId, userId))
+      .orderBy(desc(favoriteRoasters.createdAt));
+
+    return favorites;
+  }
+
+  async isFavoriteRoaster(userId: string, roasterId: number): Promise<boolean> {
+    const [favorite] = await db
+      .select({ id: favoriteRoasters.id })
+      .from(favoriteRoasters)
+      .where(
+        and(
+          eq(favoriteRoasters.userId, userId),
+          eq(favoriteRoasters.roasterId, roasterId)
+        )
+      )
+      .limit(1);
+
+    return !!favorite;
   }
 }
 

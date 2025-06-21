@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +107,15 @@ export default function Navbar() {
                     >
                       <ShoppingBag className="h-5 w-5 inline mr-1" />
                       Orders
+                    </Link>
+                    <Link
+                      href="/medusa-admin"
+                      className={`transition-colors ${
+                        location === '/medusa-admin' ? 'text-roastah-teal' : 'text-gray-700 hover:text-roastah-teal'
+                      }`}
+                    >
+                      <Database className="h-5 w-5 inline mr-1" />
+                      E-commerce
                     </Link>
                   </div>
                 )}

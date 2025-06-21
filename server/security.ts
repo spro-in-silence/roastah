@@ -178,9 +178,9 @@ export function setupSecurity(app: Express) {
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Vite in dev
-        connectSrc: ["'self'", "https://api.stripe.com", "wss:", "ws:"],
-        frameSrc: ["'self'", "https://js.stripe.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"], // Needed for Vite in dev and Stripe
+        connectSrc: ["'self'", "https://api.stripe.com", "https://q.stripe.com", "wss:", "ws:"],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
       },
     },
     crossOriginEmbedderPolicy: false, // Needed for Stripe

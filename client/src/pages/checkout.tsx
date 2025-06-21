@@ -19,10 +19,16 @@ import { Address, CartItem } from "@/lib/types";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+let stripePromise: Promise<any> | null = null;
+
+if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY).catch((error) => {
+    console.error('Failed to load Stripe.js:', error);
+    return null;
+  });
+} else {
+  console.warn('VITE_STRIPE_PUBLIC_KEY is not configured');
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const addressSchema = z.object({
   firstName: z.string().min(1, "First name is required"),

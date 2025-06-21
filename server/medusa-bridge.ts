@@ -52,7 +52,7 @@ export class MedusaBridge {
           varietal: product.varietal,
           tasting_notes: product.tastingNotes
         },
-        images: product.images.map(url => ({ url }))
+        images: product.images ? product.images.map(url => ({ url })) : []
       };
 
       medusaProducts.push(medusaProduct);

@@ -18,6 +18,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Initialize MedusaJS bridge
+  const medusaBridge = new MedusaBridge(app);
+  medusaBridge.setupRoutes();
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

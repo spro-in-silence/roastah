@@ -85,8 +85,8 @@ export default function Navbar() {
                   {/* Real-time Notifications */}
                   <RealtimeNotifications showAsDropdown={true} />
 
-                  {/* Cart Toggle - always show when in buyer mode */}
-                  {!isRoaster && (
+                  {/* Cart Toggle - always show when in buyer mode or on cart/checkout pages */}
+                  {(!isRoaster || location === '/cart' || location === '/checkout') && (
                     <Button 
                       variant="ghost" 
                       size="sm" 

@@ -66,7 +66,12 @@
 
 /* Custom utilities */
 .coffee-gradient {
-  background: linear-gradient(135deg, var(--roastah-yellow) 0%, var(--roastah-teal) 100%);
+  background: linear-gradient(
+    to bottom right, /* Specifies the direction: from top left to bottom right */
+    #cae4a3,        /* Start color: green coffee bean */
+    #fdd1f4,        /* Transition color: yellowing stage */
+    #d2691e         /* End color: cinnamon brown */
+  );
 }
 
 .text-roastah-yellow {

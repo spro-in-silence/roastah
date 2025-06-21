@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { MedusaBridge } from "./medusa-bridge";
 import { insertProductSchema, insertRoasterSchema, insertCartItemSchema } from "@shared/schema";
 import { z } from "zod";
 

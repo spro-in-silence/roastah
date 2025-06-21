@@ -833,19 +833,17 @@ export class DatabaseStorage implements IStorage {
       .select({
         averageRating: roasters.averageRating,
         totalReviews: roasters.totalReviews,
-        totalSales: roasters.totalSales,
-        completionRate: roasters.completionRate,
       })
       .from(roasters)
       .where(eq(roasters.id, roasterId));
 
     if (!roaster) return 0;
 
+    // Public metrics only scoring algorithm
+    // 70% weight for average rating, 30% weight for number of reviews
     return (
-      (Number(roaster.averageRating || 0) / 5.0 * 40) +
-      (Math.min(Number(roaster.totalReviews || 0) / 50.0, 1.0) * 30) +
-      (Math.min(Number(roaster.totalSales || 0) / 20.0, 1.0) * 20) +
-      (Number(roaster.completionRate || 100) / 100.0 * 10)
+      (Number(roaster.averageRating || 0) / 5.0 * 70) +
+      (Math.min(Number(roaster.totalReviews || 0) / 100.0, 1.0) * 30)
     );
   }
 }

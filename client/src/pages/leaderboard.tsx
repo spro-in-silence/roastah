@@ -238,8 +238,8 @@ export default function Leaderboard() {
                           </p>
                         )}
 
-                        {/* Metrics Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
+                        {/* Public Metrics */}
+                        <div className="flex items-center justify-center mt-4 pt-4 border-t">
                           <div className="text-center">
                             <div className="flex items-center justify-center mb-1">
                               <Star className="h-4 w-4 text-yellow-500 mr-1" />
@@ -248,29 +248,8 @@ export default function Leaderboard() {
                               </span>
                             </div>
                             <p className="text-xs text-gray-500">
-                              {roaster.totalReviews} reviews
+                              {roaster.totalReviews} customer reviews
                             </p>
-                          </div>
-
-                          <div className="text-center">
-                            <div className="text-lg font-semibold text-gray-900">
-                              {roaster.totalSales}
-                            </div>
-                            <p className="text-xs text-gray-500">Sales</p>
-                          </div>
-
-                          <div className="text-center">
-                            <div className="text-lg font-semibold text-gray-900">
-                              {formatCurrency(roaster.totalRevenue)}
-                            </div>
-                            <p className="text-xs text-gray-500">Revenue</p>
-                          </div>
-
-                          <div className="text-center">
-                            <div className="text-lg font-semibold text-gray-900">
-                              {parseFloat(roaster.completionRate).toFixed(0)}%
-                            </div>
-                            <p className="text-xs text-gray-500">Completion</p>
                           </div>
                         </div>
                       </div>

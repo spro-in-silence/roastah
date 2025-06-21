@@ -83,21 +83,22 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
       size="sm"
       onClick={handleToggleFavorite}
       disabled={isLoading || isPending}
-      className={`flex items-center gap-2 transition-all duration-200 ${
-        isFavorite 
-          ? "bg-yellow-500 hover:bg-yellow-600 border-yellow-500 text-white" 
-          : "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
-      } ${className}`}
+      className={`flex items-center gap-2 transition-all duration-200 ${className}`}
+      style={{
+        backgroundColor: isFavorite ? "#eab308" : "transparent",
+        borderColor: isFavorite ? "#eab308" : "#0d9488",
+        color: isFavorite ? "white" : "#0d9488"
+      }}
     >
       <Heart
-        className={`h-4 w-4 transition-all duration-200 ${
-          isFavorite 
-            ? "fill-current text-white" 
-            : "text-teal-600"
-        } ${isPending ? "animate-pulse" : ""}`}
+        className={`h-4 w-4 transition-all duration-200 ${isPending ? "animate-pulse" : ""}`}
+        style={{
+          fill: isFavorite ? "white" : "none",
+          color: isFavorite ? "white" : "#0d9488"
+        }}
       />
       {showText && (
-        <span className={isFavorite ? "text-white" : "text-teal-600"}>
+        <span style={{ color: isFavorite ? "white" : "#0d9488" }}>
           {isFavorite ? "Favorited" : "Add to Favorites"}
         </span>
       )}

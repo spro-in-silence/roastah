@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { Search, Filter, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import ProductCard from "@/components/product-card";
@@ -12,24 +15,26 @@ import { Product } from "@/lib/types";
 
 export default function Products() {
   const [location] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     roastLevel: [] as string[],
     origin: [] as string[],
     priceRange: "",
   });
   const [sortBy, setSortBy] = useState("featured");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Parse URL search params
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const roastLevelParam = urlParams.get('roastLevel');
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
   // Get unique origins and roast levels for filter options
-  const availableOrigins = [...new Set(products.map((p: Product) => p.origin))].filter(Boolean);
-  const availableRoastLevels = [...new Set(products.map((p: Product) => p.roastLevel))].filter(Boolean);
+  const availableOrigins = products ? [...new Set(products.map((p: Product) => p.origin))].filter(Boolean) : [];
+  const availableRoastLevels = products ? [...new Set(products.map((p: Product) => p.roastLevel))].filter(Boolean) : [];
 
   const handleRoastLevelChange = (roastLevel: string, checked: boolean) => {
     setFilters(prev => ({
@@ -49,8 +54,19 @@ export default function Products() {
     }));
   };
 
-  // Filter products based on current filters
-  let filteredProducts = products;
+  // Filter and search products
+  let filteredProducts = products || [];
+
+  // Search filter
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    filteredProducts = filteredProducts.filter((product: Product) =>
+      product.name.toLowerCase().includes(query) ||
+      product.origin.toLowerCase().includes(query) ||
+      product.tastingNotes.toLowerCase().includes(query) ||
+      product.roastLevel.toLowerCase().includes(query)
+    );
+  }
 
   if (roastLevelParam) {
     filteredProducts = filteredProducts.filter((product: Product) =>
@@ -72,6 +88,19 @@ export default function Products() {
         product.origin?.toLowerCase().includes(origin.toLowerCase())
       )
     );
+  }
+
+  if (filters.priceRange) {
+    const [minPrice, maxPrice] = filters.priceRange === "under-15" 
+      ? [0, 15]
+      : filters.priceRange === "15-20"
+      ? [15, 20]
+      : [20, 1000];
+    
+    filteredProducts = filteredProducts.filter((product: Product) => {
+      const price = parseFloat(product.price);
+      return price >= minPrice && (maxPrice === 1000 || price <= maxPrice);
+    });
   }
 
   // Sort products
@@ -160,21 +189,59 @@ export default function Products() {
 
           {/* Product Grid */}
           <div className="flex-1">
+            {/* Search Bar */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Input
+                  type="text"
+                  placeholder="Search coffee by name, origin, tasting notes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-3 w-full border-gray-300 rounded-lg focus:ring-roastah-teal focus:border-roastah-teal"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {roastLevelParam ? `${roastLevelParam.charAt(0).toUpperCase() + roastLevelParam.slice(1)} Roast Coffee` : 'All Coffee'}
-              </h1>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="featured">Sort by: Featured</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {roastLevelParam ? `${roastLevelParam.charAt(0).toUpperCase() + roastLevelParam.slice(1)} Roast Coffee` : 'All Coffee'}
+                </h1>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="lg:hidden"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                </span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="featured">Sort by: Featured</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {isLoading ? (

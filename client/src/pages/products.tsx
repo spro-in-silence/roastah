@@ -24,8 +24,12 @@ export default function Products() {
   const roastLevelParam = urlParams.get('roastLevel');
 
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["/api/products", filters],
+    queryKey: ["/api/products"],
   });
+
+  // Get unique origins and roast levels for filter options
+  const availableOrigins = [...new Set(products.map((p: Product) => p.origin))].filter(Boolean);
+  const availableRoastLevels = [...new Set(products.map((p: Product) => p.roastLevel))].filter(Boolean);
 
   const handleRoastLevelChange = (roastLevel: string, checked: boolean) => {
     setFilters(prev => ({

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -17,21 +20,27 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { isAuthenticated } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [quantity, setQuantity] = useState(1);
+  const [grindSize, setGrindSize] = useState("whole_bean");
+  const [showOptions, setShowOptions] = useState(false);
 
   const addToCartMutation = useMutation({
-    mutationFn: async (productId: number) => {
+    mutationFn: async ({ productId, quantity, grindSize }: { productId: number; quantity: number; grindSize: string }) => {
       await apiRequest("POST", "/api/cart", {
         productId,
-        quantity: 1,
-        grindSize: "whole_bean",
+        quantity,
+        grindSize,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
       toast({
         title: "Added to Cart",
-        description: `${product.name} has been added to your cart.`,
+        description: `${quantity} × ${product.name} (${grindSize.replace('_', ' ')}) added to cart.`,
       });
+      setShowOptions(false);
+      setQuantity(1);
+      setGrindSize("whole_bean");
     },
     onError: (error) => {
       toast({
@@ -42,13 +51,21 @@ export default function ProductCard({ product }: ProductCardProps) {
     },
   });
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
       window.location.href = '/api/login';
       return;
     }
-    addToCartMutation.mutate(product.id);
+    addToCartMutation.mutate({ productId: product.id, quantity: 1, grindSize: "whole_bean" });
+  };
+
+  const handleCustomAdd = () => {
+    if (!isAuthenticated) {
+      window.location.href = '/api/login';
+      return;
+    }
+    addToCartMutation.mutate({ productId: product.id, quantity, grindSize });
   };
 
   const roastLevelColors = {
@@ -104,14 +121,82 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
         </div>
 
-        <Button
-          onClick={handleAddToCart}
-          disabled={product.stockQuantity === 0 || addToCartMutation.isPending}
-          className="w-full bg-roastah-teal text-white hover:bg-roastah-dark-teal disabled:opacity-50"
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleQuickAdd}
+            disabled={product.stockQuantity === 0 || addToCartMutation.isPending}
+            className="flex-1 bg-roastah-teal text-white hover:bg-roastah-dark-teal disabled:opacity-50"
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {product.stockQuantity === 0 ? 'Out of Stock' : 'Quick Add'}
+          </Button>
+          
+          <Popover open={showOptions} onOpenChange={setShowOptions}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={product.stockQuantity === 0}
+                className="px-3 border-roastah-teal text-roastah-teal hover:bg-roastah-teal hover:text-white"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <h4 className="font-medium">Customize Order</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Quantity</label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-12 text-center">{quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                      disabled={quantity >= product.stockQuantity}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Grind Size</label>
+                  <Select value={grindSize} onValueChange={setGrindSize}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="whole_bean">Whole Bean</SelectItem>
+                      <SelectItem value="coarse">Coarse Grind</SelectItem>
+                      <SelectItem value="medium_coarse">Medium-Coarse</SelectItem>
+                      <SelectItem value="medium">Medium Grind</SelectItem>
+                      <SelectItem value="medium_fine">Medium-Fine</SelectItem>
+                      <SelectItem value="fine">Fine Grind</SelectItem>
+                      <SelectItem value="extra_fine">Extra Fine</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={handleCustomAdd}
+                  disabled={addToCartMutation.isPending}
+                  className="w-full bg-roastah-teal text-white hover:bg-roastah-dark-teal"
+                >
+                  Add {quantity} to Cart
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardContent>
     </Card>
   );

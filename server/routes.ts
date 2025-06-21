@@ -1194,13 +1194,13 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
-  // Favorites routes
+  // Favorites routes - Toggle functionality
   app.post('/api/favorites/roasters/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const roasterId = parseInt(req.params.id);
       
-      console.log(`Adding favorite - User: ${userId}, Roaster: ${roasterId}`);
+      console.log(`Toggle favorite - User: ${userId}, Roaster: ${roasterId}`);
       
       if (!roasterId || isNaN(roasterId)) {
         return res.status(400).json({ message: "Invalid roaster ID" });
@@ -1212,19 +1212,42 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
         return res.status(404).json({ message: "Roaster not found" });
       }
       
-      // Check if already favorited
+      // Check if already favorited - if so, remove it (toggle)
       const isAlreadyFavorite = await storage.isFavoriteRoaster(userId, roasterId);
+      
       if (isAlreadyFavorite) {
-        return res.status(409).json({ message: "Roaster already in favorites" });
+        // Remove from favorites
+        await storage.removeFavoriteRoaster(userId, roasterId);
+        console.log(`Favorite removed successfully for roaster ${roasterId}`);
+        res.json({ action: 'removed', isFavorite: false });
+      } else {
+        // Add to favorites
+        const favorite = await storage.addFavoriteRoaster(userId, roasterId);
+        console.log(`Favorite added successfully:`, favorite);
+        res.json({ action: 'added', isFavorite: true, favorite });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite roaster:", error);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to toggle favorite roaster", error: error.message });
+    }
+  });
+
+  // Check if roaster is favorited
+  app.get('/api/favorites/roasters/:id/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roasterId = parseInt(req.params.id);
+      
+      if (!roasterId || isNaN(roasterId)) {
+        return res.status(400).json({ message: "Invalid roaster ID" });
       }
       
-      const favorite = await storage.addFavoriteRoaster(userId, roasterId);
-      console.log(`Favorite added successfully:`, favorite);
-      res.json(favorite);
+      const isFavorite = await storage.isFavoriteRoaster(userId, roasterId);
+      res.json({ isFavorite });
     } catch (error) {
-      console.error("Error adding favorite roaster:", error);
-      console.error("Error stack:", error.stack);
-      res.status(500).json({ message: "Failed to add favorite roaster", error: error.message });
+      console.error("Error checking favorite roaster:", error);
+      res.status(500).json({ message: "Failed to check favorite roaster" });
     }
   });
 

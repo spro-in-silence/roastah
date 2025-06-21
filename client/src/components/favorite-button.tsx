@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Heart } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -26,59 +25,34 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
 
   const isFavorite = favoriteStatus?.isFavorite ?? false;
 
-  // Add to favorites mutation
-  const addFavoriteMutation = useMutation({
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
     mutationFn: () => apiRequest("POST", `/api/favorites/roasters/${roasterId}`),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      const newFavoriteStatus = data.isFavorite;
+      
       // Update cache for check query
       updateCachedData(
         queryClient,
         ['/api/favorites/roasters', roasterId, 'check'],
-        { isFavorite: true }
+        { isFavorite: newFavoriteStatus }
       );
       
       // Invalidate favorites list
       queryClient.invalidateQueries({ queryKey: ['/api/favorites/roasters'] });
       
       toast({
-        title: "Added to Favorites",
-        description: "This roaster has been added to your favorites.",
+        title: newFavoriteStatus ? "Added to Favorites" : "Removed from Favorites",
+        description: newFavoriteStatus 
+          ? "This roaster has been added to your favorites." 
+          : "This roaster has been removed from your favorites.",
       });
     },
     onError: (error: any) => {
-      console.error("Error adding favorite:", error);
+      console.error("Error toggling favorite:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to add to favorites",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Remove from favorites mutation
-  const removeFavoriteMutation = useMutation({
-    mutationFn: () => apiRequest("DELETE", `/api/favorites/roasters/${roasterId}`),
-    onSuccess: () => {
-      // Update cache for check query
-      updateCachedData(
-        queryClient,
-        ['/api/favorites/roasters', roasterId, 'check'],
-        { isFavorite: false }
-      );
-      
-      // Invalidate favorites list
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites/roasters'] });
-      
-      toast({
-        title: "Removed from Favorites",
-        description: "This roaster has been removed from your favorites.",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Error removing favorite:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove from favorites",
+        description: error.message || "Failed to update favorites",
         variant: "destructive",
       });
     },
@@ -94,14 +68,10 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
       return;
     }
 
-    if (isFavorite) {
-      removeFavoriteMutation.mutate();
-    } else {
-      addFavoriteMutation.mutate();
-    }
+    toggleFavoriteMutation.mutate();
   };
 
-  const isPending = addFavoriteMutation.isPending || removeFavoriteMutation.isPending;
+  const isPending = toggleFavoriteMutation.isPending;
 
   if (!isAuthenticated) {
     return null;
@@ -109,19 +79,25 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
 
   return (
     <Button
-      variant={isFavorite ? "default" : "outline"}
+      variant="outline"
       size="sm"
       onClick={handleToggleFavorite}
       disabled={isLoading || isPending}
-      className={`flex items-center gap-2 ${className}`}
+      className={`flex items-center gap-2 transition-all duration-200 ${
+        isFavorite 
+          ? "bg-yellow-500 hover:bg-yellow-600 border-yellow-500 text-white" 
+          : "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+      } ${className}`}
     >
       <Heart
-        className={`h-4 w-4 ${
-          isFavorite ? "fill-current text-white" : "text-current"
+        className={`h-4 w-4 transition-all duration-200 ${
+          isFavorite 
+            ? "fill-current text-white" 
+            : "text-teal-600"
         } ${isPending ? "animate-pulse" : ""}`}
       />
       {showText && (
-        <span>
+        <span className={isFavorite ? "text-white" : "text-teal-600"}>
           {isFavorite ? "Favorited" : "Add to Favorites"}
         </span>
       )}

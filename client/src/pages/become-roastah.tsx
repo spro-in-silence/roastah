@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Store, Users, TrendingUp } from "lucide-react";
+import { Store, Users, TrendingUp, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,10 +135,13 @@ export default function BecomeRoastah() {
       <Navbar />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Header Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Become a Roastah</h1>
-          <p className="text-xl text-roastah-warm-gray">
+          <div className="flex items-center justify-center mb-4">
+            <Coffee className="h-8 w-8 text-orange-500 mr-3" />
+            <h1 className="text-4xl font-bold text-gray-900">Become a Roastah</h1>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Join our community of passionate coffee roasters and share your craft with the world
           </p>
         </div>

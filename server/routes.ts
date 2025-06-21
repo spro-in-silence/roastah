@@ -405,18 +405,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/roaster/products/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/roaster/products/:id', authLimiter, enhancedAuthCheck, requireRole('roaster'), async (req: any, res: any) => {
     try {
-      const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
+      const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
       }
       
+      const existingProduct = await storage.getProductById(productId);
+      
+      if (!existingProduct || existingProduct.roasterId !== roaster.id) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
       const validatedData = insertProductSchema.partial().parse(req.body);
-      const product = await storage.updateProduct(id, validatedData);
+      const product = await storage.updateProduct(productId, validatedData);
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);

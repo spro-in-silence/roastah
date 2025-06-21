@@ -32,15 +32,30 @@ export default function WishlistButton({
     mutationFn: async () => {
       if (isInWishlist) {
         await apiRequest("DELETE", `/api/wishlist/${productId}`);
+        return { action: 'removed', productId };
       } else {
-        await apiRequest("POST", "/api/wishlist", { productId });
+        const result = await apiRequest("POST", "/api/wishlist", { productId });
+        return { action: 'added', productId, data: result };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // Update cache immediately for instant UI response
+      queryClient.setQueryData(["/api/wishlist"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return oldData;
+        }
+        
+        if (result.action === 'removed') {
+          return oldData.filter((item: any) => item.productId !== productId);
+        } else {
+          return [...oldData, result.data];
+        }
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/wishlist"] });
       toast({
-        title: isInWishlist ? "Removed from Wishlist" : "Added to Wishlist",
-        description: isInWishlist 
+        title: result.action === 'removed' ? "Removed from Wishlist" : "Added to Wishlist",
+        description: result.action === 'removed'
           ? "Item removed from your wishlist" 
           : "Item saved to your wishlist",
       });

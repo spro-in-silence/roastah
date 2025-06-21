@@ -75,9 +75,22 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
 
   const voteHelpfulMutation = useMutation({
     mutationFn: async (reviewId: number) => {
-      await apiRequest("POST", `/api/reviews/${reviewId}/helpful`);
+      const result = await apiRequest("POST", `/api/reviews/${reviewId}/helpful`);
+      return { reviewId, result };
     },
-    onSuccess: () => {
+    onSuccess: ({ reviewId }) => {
+      // Update cache immediately for instant UI response
+      queryClient.setQueryData([`/api/products/${productId}/reviews`], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return oldData;
+        }
+        return oldData.map((review: any) => 
+          review.id === reviewId 
+            ? { ...review, helpfulVotes: review.helpfulVotes + 1 }
+            : review
+        );
+      });
+      
       queryClient.invalidateQueries({ queryKey: [`/api/products/${productId}/reviews`] });
     },
   });

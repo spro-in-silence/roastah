@@ -21,8 +21,19 @@ export default function Cart() {
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
       await apiRequest("PUT", `/api/cart/${id}`, { quantity });
+      return { id, quantity };
     },
-    onSuccess: () => {
+    onSuccess: ({ id, quantity }) => {
+      // Update cache immediately for instant UI response
+      queryClient.setQueryData(["/api/cart"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return oldData;
+        }
+        return oldData.map((item: any) => 
+          item.id === id ? { ...item, quantity } : item
+        );
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
     onError: () => {
@@ -37,8 +48,17 @@ export default function Cart() {
   const removeItemMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/cart/${id}`);
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (removedId) => {
+      // Update cache immediately by removing the item
+      queryClient.setQueryData(["/api/cart"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return oldData;
+        }
+        return oldData.filter((item: any) => item.id !== removedId);
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
       toast({
         title: "Item Removed",

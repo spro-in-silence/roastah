@@ -72,8 +72,17 @@ export default function SellerProducts() {
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: number) => {
       await apiRequest("DELETE", `/api/roaster/products/${productId}`);
+      return productId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedProductId) => {
+      // Update cache immediately by removing the deleted product
+      queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return oldData;
+        }
+        return oldData.filter((product: any) => product.id !== deletedProductId);
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
       toast({
         title: "Product Deleted",

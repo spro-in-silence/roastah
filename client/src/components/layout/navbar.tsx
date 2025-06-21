@@ -210,6 +210,15 @@ export default function Navbar() {
                     </div>
                   </Link>
 
+                  <Link href="/gift-cards" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location === '/gift-cards' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <Gift className="h-5 w-5" />
+                      <span className="font-medium">Gift Cards</span>
+                    </div>
+                  </Link>
+
                   <Link href="/leaderboard" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
                       location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'

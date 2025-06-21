@@ -27,6 +27,7 @@ import TestPayment from "@/pages/test-payment";
 import TrackingDemo from "@/pages/tracking-demo";
 import Leaderboard from "@/pages/leaderboard";
 import Favorites from "@/pages/favorites";
+import GiftCards from "@/pages/gift-cards";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -83,6 +84,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/profile" component={Profile} />
           <Route path="/favorites" component={Favorites} />
+          <Route path="/gift-cards" component={GiftCards} />
           <Route path="/become-roastah" component={BecomeRoastah} />
           <Route path="/seller/dashboard" component={SellerDashboard} />
           <Route path="/seller/products" component={SellerProducts} />

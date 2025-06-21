@@ -1376,6 +1376,92 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Gift card routes
+  app.post('/api/gift-cards', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const giftCardData = {
+        ...req.body,
+        purchaserId: userId,
+        deliveryDate: new Date(req.body.deliveryDate),
+      };
+
+      const giftCard = await storage.createGiftCard(giftCardData);
+      res.json(giftCard);
+    } catch (error) {
+      console.error("Error creating gift card:", error);
+      res.status(500).json({ message: "Failed to create gift card" });
+    }
+  });
+
+  app.get('/api/gift-cards', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const giftCards = await storage.getGiftCardsByPurchaser(userId);
+      res.json(giftCards);
+    } catch (error) {
+      console.error("Error fetching gift cards:", error);
+      res.status(500).json({ message: "Failed to fetch gift cards" });
+    }
+  });
+
+  app.get('/api/gift-cards/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const giftCardId = parseInt(req.params.id);
+      const giftCard = await storage.getGiftCardById(giftCardId);
+      
+      if (!giftCard) {
+        return res.status(404).json({ message: "Gift card not found" });
+      }
+      
+      res.json(giftCard);
+    } catch (error) {
+      console.error("Error fetching gift card:", error);
+      res.status(500).json({ message: "Failed to fetch gift card" });
+    }
+  });
+
+  app.post('/api/gift-cards/redeem', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { code, amount } = req.body;
+      
+      const giftCard = await storage.getGiftCardByCode(code);
+      
+      if (!giftCard) {
+        return res.status(404).json({ message: "Gift card not found" });
+      }
+      
+      if (giftCard.status === 'redeemed') {
+        return res.status(400).json({ message: "Gift card has already been fully redeemed" });
+      }
+      
+      if (giftCard.status === 'expired') {
+        return res.status(400).json({ message: "Gift card has expired" });
+      }
+      
+      if (giftCard.expiresAt && new Date() > new Date(giftCard.expiresAt)) {
+        await storage.updateGiftCardStatus(giftCard.id, 'expired');
+        return res.status(400).json({ message: "Gift card has expired" });
+      }
+      
+      const remainingBalance = parseFloat(giftCard.remainingBalance || giftCard.amount);
+      
+      if (amount > remainingBalance) {
+        return res.status(400).json({ 
+          message: "Insufficient balance", 
+          remainingBalance 
+        });
+      }
+      
+      const updatedGiftCard = await storage.redeemGiftCard(code, userId, amount);
+      res.json(updatedGiftCard);
+    } catch (error) {
+      console.error("Error redeeming gift card:", error);
+      res.status(500).json({ message: "Failed to redeem gift card" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server

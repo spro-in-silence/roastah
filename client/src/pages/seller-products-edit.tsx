@@ -101,12 +101,31 @@ export default function SellerProductEdit() {
     mutationFn: async (data: any) => {
       return apiRequest("PATCH", `/api/roaster/products/${productId}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (updatedProduct) => {
+      // Update the specific product cache immediately
+      queryClient.setQueryData([`/api/roaster/products/${productId}`], updatedProduct);
+      
+      // Update the product list cache to reflect changes
+      queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
+        if (oldData && Array.isArray(oldData) && productId) {
+          const numProductId = parseInt(productId);
+          return oldData.map((product: any) => 
+            product.id === numProductId 
+              ? updatedProduct
+              : product
+          );
+        }
+        return oldData;
+      });
+      
       toast({
         title: "Product Updated",
         description: "Your product has been updated successfully.",
       });
+      
+      // Invalidate all related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/roaster/products/${productId}`] });
     },
     onError: (error: Error) => {
       toast({
@@ -155,7 +174,7 @@ export default function SellerProductEdit() {
       return apiRequest("PATCH", `/api/roaster/products/${productId}/tags`, { [tag]: value });
     },
     onSuccess: (data, { tag, value }) => {
-      // Update the cache immediately for instant UI reflection
+      // Update the specific product cache immediately
       queryClient.setQueryData([`/api/roaster/products/${productId}`], (oldData: any) => {
         if (oldData) {
           return { ...oldData, [tag]: value };
@@ -163,7 +182,20 @@ export default function SellerProductEdit() {
         return oldData;
       });
       
-      // Invalidate related queries
+      // Update the product list cache to reflect changes
+      queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
+        if (oldData && Array.isArray(oldData) && productId) {
+          const numProductId = parseInt(productId);
+          return oldData.map((product: any) => 
+            product.id === numProductId 
+              ? { ...product, [tag]: value }
+              : product
+          );
+        }
+        return oldData;
+      });
+      
+      // Invalidate related queries for consistency
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
       queryClient.invalidateQueries({ queryKey: [`/api/roaster/products/${productId}`] });
     },

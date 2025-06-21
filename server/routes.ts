@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error) {
       console.error("Error fetching user:", error);
-      logSecurityEvent(req.user?.claims?.sub, 'user_fetch_error', { error: error.message }, req);
+      logSecurityEvent(req.user?.claims?.sub, 'user_fetch_error', { error: String(error) }, req);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Roaster routes
-  app.post('/api/roaster/apply', authLimiter, enhancedAuthCheck, validateRoasterApplication, handleValidationErrors, async (req: any, res) => {
+  app.post('/api/roaster/apply', authLimiter, enhancedAuthCheck, validateRoasterApplication, handleValidationErrors, async (req: any, res: any) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertRoasterSchema.parse({
@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/roaster/products', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res) => {
+  app.post('/api/roaster/products', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res: any) => {
     try {
       const userId = req.user.claims.sub;
       const roaster = await storage.getRoasterByUserId(userId);
@@ -541,6 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orderItem = await db.insert(orderItems).values({
           orderId: order.id,
           productId: item.productId,
+          roasterId: product.roasterId,
           quantity: item.quantity,
           price: item.price,
           status: 'processing'

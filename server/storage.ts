@@ -371,7 +371,7 @@ export class DatabaseStorage implements IStorage {
   async updateReviewHelpful(id: number): Promise<void> {
     await db
       .update(reviews)
-      .set({ helpfulVotes: reviews.helpfulVotes + 1 })
+      .set({ helpfulVotes: sql`${reviews.helpfulVotes} + 1` })
       .where(eq(reviews.id, id));
   }
 
@@ -483,21 +483,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSellerAnalyticsByRoaster(roasterId: number, startDate?: Date, endDate?: Date): Promise<SellerAnalytics[]> {
-    let query = db
+    let baseQuery = db
       .select()
       .from(sellerAnalytics)
       .where(eq(sellerAnalytics.roasterId, roasterId));
 
     if (startDate && endDate) {
-      query = query.where(
-        and(
-          sql`${sellerAnalytics.date} >= ${startDate.toISOString().split('T')[0]}`,
-          sql`${sellerAnalytics.date} <= ${endDate.toISOString().split('T')[0]}`
+      return await baseQuery
+        .where(
+          and(
+            eq(sellerAnalytics.roasterId, roasterId),
+            sql`${sellerAnalytics.date} >= ${startDate.toISOString().split('T')[0]}`,
+            sql`${sellerAnalytics.date} <= ${endDate.toISOString().split('T')[0]}`
+          )
         )
-      );
+        .orderBy(sql`${sellerAnalytics.date} desc`);
     }
 
-    return await query.orderBy(sql`${sellerAnalytics.date} desc`);
+    return await baseQuery.orderBy(sql`${sellerAnalytics.date} desc`);
   }
 
   async updateSellerAnalytics(roasterId: number, date: Date, updates: Partial<InsertSellerAnalytics>): Promise<void> {

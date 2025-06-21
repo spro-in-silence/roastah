@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database } from "lucide-react";
+import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +124,9 @@ export default function Navbar() {
 
                 {/* User Menu */}
                 <div className="flex items-center space-x-4">
+                  {/* Real-time Notifications */}
+                  <RealtimeNotifications showAsDropdown={true} />
+                  
                   <Link
                     href="/profile"
                     className="flex items-center space-x-2 text-gray-700 hover:text-roastah-teal transition-colors"

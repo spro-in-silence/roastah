@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Package, Eye, Truck } from "lucide-react";
+import { Search, Package, Eye, Truck, Bell } from "lucide-react";
+import { OrderTracking } from "@/components/order-tracking";
+import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +23,8 @@ export default function SellerOrders() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [showTracking, setShowTracking] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {

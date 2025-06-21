@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Save, Eye, Clock, Archive, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Save, Eye, Clock, Archive, Trash2, Send, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -123,11 +123,22 @@ export default function SellerProductEdit() {
       return apiRequest("PATCH", `/api/roaster/products/${productId}/state`, { state: newState });
     },
     onSuccess: (data, newState) => {
+      // Update the cache immediately for instant UI reflection
+      queryClient.setQueryData([`/api/roaster/products/${productId}`], (oldData: any) => {
+        if (oldData) {
+          return { ...oldData, state: newState };
+        }
+        return oldData;
+      });
+      
       toast({
         title: "State Updated",
         description: `Product state changed to ${getStateLabel(newState)}.`,
       });
+      
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/roaster/products/${productId}`] });
     },
     onError: (error: Error) => {
       toast({
@@ -143,8 +154,18 @@ export default function SellerProductEdit() {
     mutationFn: async ({ tag, value }: { tag: string; value: boolean }) => {
       return apiRequest("PATCH", `/api/roaster/products/${productId}/tags`, { [tag]: value });
     },
-    onSuccess: () => {
+    onSuccess: (data, { tag, value }) => {
+      // Update the cache immediately for instant UI reflection
+      queryClient.setQueryData([`/api/roaster/products/${productId}`], (oldData: any) => {
+        if (oldData) {
+          return { ...oldData, [tag]: value };
+        }
+        return oldData;
+      });
+      
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/roaster/products/${productId}`] });
     },
     onError: (error: Error) => {
       toast({
@@ -434,83 +455,83 @@ export default function SellerProductEdit() {
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <span className="text-sm font-medium">Available Actions:</span>
-                    {availableTransitions.map((state) => (
-                      <Button
-                        key={state}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStateTransition(state)}
-                        disabled={stateTransitionMutation.isPending}
-                        className="w-full justify-start"
-                      >
-                        {state === 'pending_review' && <Send className="h-4 w-4 mr-2" />}
-                        {state === 'published' && <Eye className="h-4 w-4 mr-2" />}
-                        {state === 'archived' && <Archive className="h-4 w-4 mr-2" />}
-                        {state === 'draft' && <Clock className="h-4 w-4 mr-2" />}
-                        {getStateLabel(state)}
-                      </Button>
-                    ))}
+                    <label className="text-sm font-medium">Change State:</label>
+                    <Select onValueChange={handleStateTransition} disabled={stateTransitionMutation.isPending}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select new state..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTransitions.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            <div className="flex items-center">
+                              {state === 'pending_review' && <Send className="h-4 w-4 mr-2" />}
+                              {state === 'published' && <Eye className="h-4 w-4 mr-2" />}
+                              {state === 'archived' && <Archive className="h-4 w-4 mr-2" />}
+                              {state === 'draft' && <Clock className="h-4 w-4 mr-2" />}
+                              {state === 'rejected' && <XCircle className="h-4 w-4 mr-2" />}
+                              {getStateLabel(state)}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </>
               )}
             </CardContent>
           </Card>
 
-          {/* Product Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Tags</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Unlisted</label>
-                  <Switch
-                    checked={product.isUnlisted || false}
-                    onCheckedChange={(checked) => handleTagToggle('isUnlisted', checked)}
-                    disabled={!canEdit}
-                  />
+          {/* Product Tags - Only show when editing is allowed */}
+          {canEdit && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Tags</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Unlisted</label>
+                    <Switch
+                      checked={product.isUnlisted || false}
+                      onCheckedChange={(checked) => handleTagToggle('isUnlisted', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Private</label>
+                    <Switch
+                      checked={product.isPrivate || false}
+                      onCheckedChange={(checked) => handleTagToggle('isPrivate', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Pre-order</label>
+                    <Switch
+                      checked={product.isPreorder || false}
+                      onCheckedChange={(checked) => handleTagToggle('isPreorder', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Out of Stock</label>
+                    <Switch
+                      checked={product.isOutOfStock || false}
+                      onCheckedChange={(checked) => handleTagToggle('isOutOfStock', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Scheduled</label>
+                    <Switch
+                      checked={product.isScheduled || false}
+                      onCheckedChange={(checked) => handleTagToggle('isScheduled', checked)}
+                    />
+                  </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Private</label>
-                  <Switch
-                    checked={product.isPrivate || false}
-                    onCheckedChange={(checked) => handleTagToggle('isPrivate', checked)}
-                    disabled={!canEdit}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Pre-order</label>
-                  <Switch
-                    checked={product.isPreorder || false}
-                    onCheckedChange={(checked) => handleTagToggle('isPreorder', checked)}
-                    disabled={!canEdit}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Out of Stock</label>
-                  <Switch
-                    checked={product.isOutOfStock || false}
-                    onCheckedChange={(checked) => handleTagToggle('isOutOfStock', checked)}
-                    disabled={!canEdit}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Scheduled</label>
-                  <Switch
-                    checked={product.isScheduled || false}
-                    onCheckedChange={(checked) => handleTagToggle('isScheduled', checked)}
-                    disabled={!canEdit}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Danger Zone */}
           {canDeleteProduct(product.state as ProductState) && (

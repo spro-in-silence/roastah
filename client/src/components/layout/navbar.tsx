@@ -44,12 +44,21 @@ export default function Navbar() {
     }
   }, [contextIsRoaster]);
 
-  // Handle mode switching with persistence
+  // Handle mode switching with persistence and navigation
   const handleModeSwitch = () => {
     const newMode = !isRoaster;
     setIsRoaster(newMode);
     localStorage.setItem('userMode', newMode ? 'seller' : 'buyer');
     closeMenu();
+    
+    // Navigate to appropriate page based on new mode
+    if (newMode) {
+      // Switching to seller mode - go to seller dashboard
+      window.location.href = '/seller/dashboard';
+    } else {
+      // Switching to buyer mode - go to products page
+      window.location.href = '/products';
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {

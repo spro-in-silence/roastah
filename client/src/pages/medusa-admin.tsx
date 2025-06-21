@@ -12,19 +12,21 @@ export default function MedusaAdmin() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch MedusaJS-formatted products
-  const { data: medusaProducts = [], isLoading: productsLoading } = useQuery({
+  const { data: medusaProductsResponse, isLoading: productsLoading } = useQuery({
     queryKey: ["/api/medusa/products"],
   });
+  
+  const medusaProducts = (medusaProductsResponse as any)?.products || [];
 
   // Sync products to MedusaJS
   const syncProductsMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/medusa/sync-products");
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Sync Complete",
-        description: `Successfully synced ${data.count} products to MedusaJS`,
+        description: `Successfully synced ${data.count || 0} products to MedusaJS`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/medusa/products"] });
     },
@@ -58,7 +60,7 @@ export default function MedusaAdmin() {
             disabled={syncProductsMutation.isPending}
             className="bg-teal-600 hover:bg-teal-700"
           >
-            <Sync className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             {syncProductsMutation.isPending ? "Syncing..." : "Sync Products"}
           </Button>
         </div>

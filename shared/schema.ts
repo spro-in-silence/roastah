@@ -243,6 +243,32 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   data: jsonb("data"),
   isRead: boolean("is_read").default(false),
+  priority: varchar("priority").default("normal"), // low, normal, high, urgent
+  orderId: integer("order_id"),
+  orderItemId: integer("order_item_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Order tracking table for real-time updates
+export const orderTracking = pgTable("order_tracking", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  status: varchar("status").notNull(),
+  location: varchar("location"),
+  description: text("description").notNull(),
+  estimatedDelivery: timestamp("estimated_delivery"),
+  actualTime: timestamp("actual_time").defaultNow(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Real-time connections table for WebSocket management
+export const realtimeConnections = pgTable("realtime_connections", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  connectionId: varchar("connection_id").notNull(),
+  deviceInfo: jsonb("device_info"),
+  lastSeen: timestamp("last_seen").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -274,6 +300,28 @@ export const notificationRelations = relations(notifications, ({ one }) => ({
     fields: [notifications.userId],
     references: [users.id],
   }),
+  order: one(orders, {
+    fields: [notifications.orderId],
+    references: [orders.id],
+  }),
+  orderItem: one(orderItems, {
+    fields: [notifications.orderItemId],
+    references: [orderItems.id],
+  }),
+}));
+
+export const orderTrackingRelations = relations(orderTracking, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderTracking.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const realtimeConnectionRelations = relations(realtimeConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [realtimeConnections.userId],
+    references: [users.id],
+  }),
 }));
 
 // Additional schemas and types
@@ -290,12 +338,28 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertOrderTrackingSchema = createInsertSchema(orderTracking).omit({
+  id: true,
+  actualTime: true,
+  createdAt: true,
+});
+
+export const insertRealtimeConnectionSchema = createInsertSchema(realtimeConnections).omit({
+  id: true,
+  lastSeen: true,
+  createdAt: true,
+});
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type WishlistItem = typeof wishlist.$inferSelect;
 export type InsertWishlistItem = z.infer<typeof insertWishlistSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type OrderTracking = typeof orderTracking.$inferSelect;
+export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
+export type RealtimeConnection = typeof realtimeConnections.$inferSelect;
+export type InsertRealtimeConnection = z.infer<typeof insertRealtimeConnectionSchema>;
 
 // Commission tracking table
 export const commissions = pgTable("commissions", {

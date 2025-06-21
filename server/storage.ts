@@ -8,6 +8,8 @@ import {
   reviews,
   wishlist,
   notifications,
+  orderTracking,
+  realtimeConnections,
   commissions,
   sellerAnalytics,
   campaigns,
@@ -30,6 +32,10 @@ import {
   type InsertWishlistItem,
   type Notification,
   type InsertNotification,
+  type OrderTracking,
+  type InsertOrderTracking,
+  type RealtimeConnection,
+  type InsertRealtimeConnection,
   type Commission,
   type InsertCommission,
   type SellerAnalytics,
@@ -122,6 +128,21 @@ export interface IStorage {
   getDisputesByRoaster(roasterId: number): Promise<Dispute[]>;
   getDisputesByCustomer(customerId: string): Promise<Dispute[]>;
   updateDisputeStatus(id: number, status: string, resolution?: string): Promise<void>;
+  
+  // Real-time tracking operations
+  createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking>;
+  getOrderTracking(orderId: number): Promise<OrderTracking[]>;
+  updateOrderTracking(id: number, updates: Partial<InsertOrderTracking>): Promise<OrderTracking>;
+  
+  // Real-time connection operations
+  createRealtimeConnection(connection: InsertRealtimeConnection): Promise<RealtimeConnection>;
+  getRealtimeConnectionsByUser(userId: string): Promise<RealtimeConnection[]>;
+  updateRealtimeConnection(id: number, updates: Partial<InsertRealtimeConnection>): Promise<void>;
+  removeRealtimeConnection(connectionId: string): Promise<void>;
+  
+  // Enhanced order operations for real-time features
+  getRoasterById(id: number): Promise<Roaster | undefined>;
+  getOrderItemsByOrder(orderId: number): Promise<OrderItem[]>;
 }
 
 export class DatabaseStorage implements IStorage {

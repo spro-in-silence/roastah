@@ -207,3 +207,87 @@ export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
+
+// Reviews table
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  productId: integer("product_id").notNull(),
+  rating: integer("rating").notNull(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  verifiedPurchase: boolean("verified_purchase").default(false),
+  helpfulVotes: integer("helpful_votes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Wishlist table
+export const wishlist = pgTable("wishlist", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  productId: integer("product_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  type: varchar("type").notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  data: jsonb("data"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Additional relations
+export const reviewRelations = relations(reviews, ({ one }) => ({
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [reviews.productId],
+    references: [products.id],
+  }),
+}));
+
+export const wishlistRelations = relations(wishlist, ({ one }) => ({
+  user: one(users, {
+    fields: [wishlist.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [wishlist.productId],
+    references: [products.id],
+  }),
+}));
+
+export const notificationRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// Additional schemas and types
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertWishlistSchema = createInsertSchema(wishlist).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type WishlistItem = typeof wishlist.$inferSelect;
+export type InsertWishlistItem = z.infer<typeof insertWishlistSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

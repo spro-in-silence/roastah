@@ -1,19 +1,20 @@
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CartItem } from "@/lib/types";
 
 export default function Navbar() {
   const [location] = useLocation();
-  const { user, isAuthenticated, isRoaster } = useUser();
+  const { user, isAuthenticated, isRoaster: contextIsRoaster } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRoaster, setIsRoaster] = useState(contextIsRoaster);
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
@@ -21,6 +22,11 @@ export default function Navbar() {
   });
 
   const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+
+  // Sync local state with context
+  useEffect(() => {
+    setIsRoaster(contextIsRoaster);
+  }, [contextIsRoaster]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +253,7 @@ export default function Navbar() {
               </Link>
 
               {/* Mode Switch - Only for approved roasters */}
-              {hasRoaster && roaster?.isApproved && (
+              {user?.role === 'roaster' && user?.isRoasterApproved && (
                 <>
                   <div className="border-t my-4"></div>
                   

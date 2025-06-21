@@ -5,6 +5,14 @@ import {
   cartItems,
   orders,
   orderItems,
+  reviews,
+  wishlist,
+  notifications,
+  commissions,
+  sellerAnalytics,
+  campaigns,
+  bulkUploads,
+  disputes,
   type User,
   type UpsertUser,
   type Roaster,
@@ -16,9 +24,25 @@ import {
   type Order,
   type InsertOrder,
   type OrderItem,
+  type Review,
+  type InsertReview,
+  type WishlistItem,
+  type InsertWishlistItem,
+  type Notification,
+  type InsertNotification,
+  type Commission,
+  type InsertCommission,
+  type SellerAnalytics,
+  type InsertSellerAnalytics,
+  type Campaign,
+  type InsertCampaign,
+  type BulkUpload,
+  type InsertBulkUpload,
+  type Dispute,
+  type InsertDispute,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -410,6 +434,175 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(notifications)
       .where(eq(notifications.id, id));
+  }
+
+  // Commission operations
+  async createCommission(commission: InsertCommission): Promise<Commission> {
+    const [newCommission] = await db
+      .insert(commissions)
+      .values(commission)
+      .returning();
+    return newCommission;
+  }
+
+  async getCommissionsByRoaster(roasterId: number): Promise<Commission[]> {
+    return await db
+      .select()
+      .from(commissions)
+      .where(eq(commissions.roasterId, roasterId))
+      .orderBy(sql`${commissions.createdAt} desc`);
+  }
+
+  async updateCommissionStatus(id: number, status: string, paidAt?: Date): Promise<void> {
+    await db
+      .update(commissions)
+      .set({ status, paidAt })
+      .where(eq(commissions.id, id));
+  }
+
+  // Seller analytics operations
+  async createSellerAnalytics(analytics: InsertSellerAnalytics): Promise<SellerAnalytics> {
+    const [newAnalytics] = await db
+      .insert(sellerAnalytics)
+      .values(analytics)
+      .returning();
+    return newAnalytics;
+  }
+
+  async getSellerAnalyticsByRoaster(roasterId: number, startDate?: Date, endDate?: Date): Promise<SellerAnalytics[]> {
+    let query = db
+      .select()
+      .from(sellerAnalytics)
+      .where(eq(sellerAnalytics.roasterId, roasterId));
+
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          sql`${sellerAnalytics.date} >= ${startDate.toISOString().split('T')[0]}`,
+          sql`${sellerAnalytics.date} <= ${endDate.toISOString().split('T')[0]}`
+        )
+      );
+    }
+
+    return await query.orderBy(sql`${sellerAnalytics.date} desc`);
+  }
+
+  async updateSellerAnalytics(roasterId: number, date: Date, updates: Partial<InsertSellerAnalytics>): Promise<void> {
+    await db
+      .update(sellerAnalytics)
+      .set(updates)
+      .where(
+        and(
+          eq(sellerAnalytics.roasterId, roasterId),
+          sql`${sellerAnalytics.date} = ${date.toISOString().split('T')[0]}`
+        )
+      );
+  }
+
+  // Campaign operations
+  async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
+    const [newCampaign] = await db
+      .insert(campaigns)
+      .values(campaign)
+      .returning();
+    return newCampaign;
+  }
+
+  async getCampaignsByRoaster(roasterId: number): Promise<Campaign[]> {
+    return await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.roasterId, roasterId))
+      .orderBy(sql`${campaigns.createdAt} desc`);
+  }
+
+  async updateCampaign(id: number, updates: Partial<InsertCampaign>): Promise<Campaign> {
+    const [updatedCampaign] = await db
+      .update(campaigns)
+      .set(updates)
+      .where(eq(campaigns.id, id))
+      .returning();
+    return updatedCampaign;
+  }
+
+  async deleteCampaign(id: number): Promise<void> {
+    await db.delete(campaigns).where(eq(campaigns.id, id));
+  }
+
+  async incrementCampaignUsage(id: number): Promise<void> {
+    await db
+      .update(campaigns)
+      .set({ usedCount: sql`${campaigns.usedCount} + 1` })
+      .where(eq(campaigns.id, id));
+  }
+
+  // Bulk upload operations
+  async createBulkUpload(upload: InsertBulkUpload): Promise<BulkUpload> {
+    const [newUpload] = await db
+      .insert(bulkUploads)
+      .values(upload)
+      .returning();
+    return newUpload;
+  }
+
+  async getBulkUploadsByRoaster(roasterId: number): Promise<BulkUpload[]> {
+    return await db
+      .select()
+      .from(bulkUploads)
+      .where(eq(bulkUploads.roasterId, roasterId))
+      .orderBy(sql`${bulkUploads.createdAt} desc`);
+  }
+
+  async updateBulkUploadStatus(id: number, status: string, updates?: Partial<InsertBulkUpload>): Promise<void> {
+    const updateData = { status, ...updates };
+    if (status === 'completed' || status === 'failed') {
+      updateData.completedAt = new Date();
+    }
+    
+    await db
+      .update(bulkUploads)
+      .set(updateData)
+      .where(eq(bulkUploads.id, id));
+  }
+
+  // Dispute operations
+  async createDispute(dispute: InsertDispute): Promise<Dispute> {
+    const [newDispute] = await db
+      .insert(disputes)
+      .values(dispute)
+      .returning();
+    return newDispute;
+  }
+
+  async getDisputesByRoaster(roasterId: number): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.roasterId, roasterId))
+      .orderBy(sql`${disputes.createdAt} desc`);
+  }
+
+  async getDisputesByCustomer(customerId: string): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.customerId, customerId))
+      .orderBy(sql`${disputes.createdAt} desc`);
+  }
+
+  async updateDisputeStatus(id: number, status: string, resolution?: string): Promise<void> {
+    const updateData: any = { status };
+    if (resolution) {
+      updateData.resolution = resolution;
+    }
+    if (status === 'resolved' || status === 'closed') {
+      updateData.resolvedAt = new Date();
+    }
+    
+    await db
+      .update(disputes)
+      .set(updateData)
+      .where(eq(disputes.id, id));
   }
 }
 

@@ -351,6 +351,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advanced Seller Tools - Analytics
+  app.get('/api/analytics/:roasterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const roasterId = parseInt(req.params.roasterId);
+      const { startDate, endDate } = req.query;
+      
+      const start = startDate ? new Date(startDate) : undefined;
+      const end = endDate ? new Date(endDate) : undefined;
+      
+      const analytics = await storage.getSellerAnalyticsByRoaster(roasterId, start, end);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Commission tracking
+  app.get('/api/commissions/:roasterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const roasterId = parseInt(req.params.roasterId);
+      const commissions = await storage.getCommissionsByRoaster(roasterId);
+      res.json(commissions);
+    } catch (error) {
+      console.error("Error fetching commissions:", error);
+      res.status(500).json({ message: "Failed to fetch commissions" });
+    }
+  });
+
+  app.post('/api/commissions', isAuthenticated, async (req, res) => {
+    try {
+      const commission = await storage.createCommission(req.body);
+      res.json(commission);
+    } catch (error) {
+      console.error("Error creating commission:", error);
+      res.status(500).json({ message: "Failed to create commission" });
+    }
+  });
+
+  // Campaign management
+  app.get('/api/campaigns/:roasterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const roasterId = parseInt(req.params.roasterId);
+      const campaigns = await storage.getCampaignsByRoaster(roasterId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post('/api/campaigns', isAuthenticated, async (req, res) => {
+    try {
+      const campaign = await storage.createCampaign(req.body);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  app.put('/api/campaigns/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const campaign = await storage.updateCampaign(id, req.body);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating campaign:", error);
+      res.status(500).json({ message: "Failed to update campaign" });
+    }
+  });
+
+  // Bulk upload management
+  app.get('/api/bulk-uploads/:roasterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const roasterId = parseInt(req.params.roasterId);
+      const uploads = await storage.getBulkUploadsByRoaster(roasterId);
+      res.json(uploads);
+    } catch (error) {
+      console.error("Error fetching bulk uploads:", error);
+      res.status(500).json({ message: "Failed to fetch bulk uploads" });
+    }
+  });
+
+  app.post('/api/bulk-upload', isAuthenticated, async (req: any, res) => {
+    try {
+      // This would typically handle file upload and CSV parsing
+      // For now, return a placeholder response
+      const upload = await storage.createBulkUpload({
+        roasterId: parseInt(req.body.roasterId),
+        fileName: req.body.fileName || 'products.csv',
+        status: 'processing',
+        totalRows: 0,
+        processedRows: 0,
+        successfulRows: 0,
+      });
+      
+      res.json(upload);
+    } catch (error) {
+      console.error("Error creating bulk upload:", error);
+      res.status(500).json({ message: "Failed to create bulk upload" });
+    }
+  });
+
+  // Dispute management
+  app.get('/api/disputes/roaster/:roasterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const roasterId = parseInt(req.params.roasterId);
+      const disputes = await storage.getDisputesByRoaster(roasterId);
+      res.json(disputes);
+    } catch (error) {
+      console.error("Error fetching disputes:", error);
+      res.status(500).json({ message: "Failed to fetch disputes" });
+    }
+  });
+
+  app.get('/api/disputes/customer/:customerId', isAuthenticated, async (req: any, res) => {
+    try {
+      const customerId = req.params.customerId;
+      const disputes = await storage.getDisputesByCustomer(customerId);
+      res.json(disputes);
+    } catch (error) {
+      console.error("Error fetching customer disputes:", error);
+      res.status(500).json({ message: "Failed to fetch customer disputes" });
+    }
+  });
+
+  app.post('/api/disputes', isAuthenticated, async (req, res) => {
+    try {
+      const dispute = await storage.createDispute(req.body);
+      res.json(dispute);
+    } catch (error) {
+      console.error("Error creating dispute:", error);
+      res.status(500).json({ message: "Failed to create dispute" });
+    }
+  });
+
+  app.put('/api/disputes/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, resolution } = req.body;
+      await storage.updateDisputeStatus(id, status, resolution);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating dispute:", error);
+      res.status(500).json({ message: "Failed to update dispute" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

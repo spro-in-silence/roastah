@@ -276,6 +276,7 @@ export default function SellerProducts() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => setLocation(`/seller/products/${product.id}/edit`)}
                               className="text-roastah-teal hover:text-roastah-dark-teal"
                             >
                               <Edit className="h-4 w-4" />

@@ -15,6 +15,17 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Product } from "@/lib/types";
+import { 
+  getStateColor, 
+  getStateLabel, 
+  getTagColor, 
+  getTagLabel, 
+  getActiveTags, 
+  canEditProduct, 
+  canDeleteProduct,
+  type ProductState,
+  type ProductWithState
+} from "@/lib/product-state";
 
 export default function SellerProducts() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();

@@ -86,7 +86,30 @@ export const products = pgTable("products", {
   varietal: varchar("varietal"),
   tastingNotes: text("tasting_notes"),
   images: text("images").array(),
-  status: varchar("status").notNull().default("published"), // published, draft, archived
+  
+  // Clean State Model
+  state: varchar("state").notNull().default("draft"), // draft, pending_review, published, archived, rejected
+  
+  // Tags/Flags
+  isUnlisted: boolean("is_unlisted").default(false),
+  isPreorder: boolean("is_preorder").default(false),
+  isPrivate: boolean("is_private").default(false),
+  isOutOfStock: boolean("is_out_of_stock").default(false),
+  isScheduled: boolean("is_scheduled").default(false),
+  
+  // Scheduling and dates
+  publishedAt: timestamp("published_at"),
+  scheduledPublishAt: timestamp("scheduled_publish_at"),
+  preorderShippingDate: timestamp("preorder_shipping_date"),
+  archivedAt: timestamp("archived_at"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Admin review
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

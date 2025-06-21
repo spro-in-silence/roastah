@@ -59,6 +59,14 @@ export const roasters = pgTable("roasters", {
   roastingExperience: varchar("roasting_experience"),
   philosophy: text("philosophy"),
   isActive: boolean("is_active").default(true),
+  // Leaderboard metrics
+  totalReviews: integer("total_reviews").default(0),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }).default("0.00"),
+  totalSales: integer("total_sales").default(0),
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0.00"),
+  responseTime: decimal("response_time", { precision: 5, scale: 2 }).default("24.00"), // hours
+  completionRate: decimal("completion_rate", { precision: 5, scale: 2 }).default("100.00"), // percentage
+  leaderboardScore: decimal("leaderboard_score", { precision: 8, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

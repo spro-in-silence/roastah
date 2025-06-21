@@ -143,6 +143,11 @@ export interface IStorage {
   // Enhanced order operations for real-time features
   getRoasterById(id: number): Promise<Roaster | undefined>;
   getOrderItemsByOrder(orderId: number): Promise<OrderItem[]>;
+  
+  // Leaderboard operations
+  getLeaderboard(dateRange?: string, limit?: number): Promise<any[]>;
+  updateRoasterMetrics(roasterId: number): Promise<void>;
+  calculateLeaderboardScore(roasterId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -710,6 +715,138 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
+  }
+
+  // Leaderboard operations
+  async getLeaderboard(dateRange?: string, limit: number = 10): Promise<any[]> {
+    const now = new Date();
+    let startDate: Date;
+
+    // Calculate date range
+    switch (dateRange) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        break;
+      case 'quarter':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        break;
+      case '6m':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        break;
+      case '3year':
+        startDate = new Date(now.getFullYear() - 3, now.getMonth(), now.getDate());
+        break;
+      case '5year':
+        startDate = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+        break;
+      default: // 'all'
+        startDate = new Date(2020, 0, 1);
+    }
+
+    // Get leaderboard with comprehensive metrics
+    const result = await db
+      .select({
+        id: roasters.id,
+        userId: roasters.userId,
+        businessName: roasters.businessName,
+        description: roasters.description,
+        city: roasters.city,
+        state: roasters.state,
+        createdAt: roasters.createdAt,
+        averageRating: roasters.averageRating,
+        totalReviews: roasters.totalReviews,
+        totalSales: roasters.totalSales,
+        totalRevenue: roasters.totalRevenue,
+        responseTime: roasters.responseTime,
+        completionRate: roasters.completionRate,
+        leaderboardScore: roasters.leaderboardScore,
+        profileImageUrl: users.profileImageUrl,
+      })
+      .from(roasters)
+      .leftJoin(users, eq(roasters.userId, users.id))
+      .where(eq(roasters.isActive, true))
+      .orderBy(desc(roasters.leaderboardScore), desc(roasters.averageRating), desc(roasters.totalReviews))
+      .limit(limit);
+
+    // Add ranking
+    return result.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
+  }
+
+  async updateRoasterMetrics(roasterId: number): Promise<void> {
+    // Calculate average rating and review count
+    const reviewStats = await db
+      .select({
+        avgRating: sql<number>`COALESCE(AVG(${reviews.rating}::numeric), 0)`,
+        reviewCount: sql<number>`COUNT(${reviews.id})`,
+      })
+      .from(reviews)
+      .leftJoin(products, eq(reviews.productId, products.id))
+      .where(eq(products.roasterId, roasterId));
+
+    // Calculate sales metrics
+    const salesStats = await db
+      .select({
+        totalOrders: sql<number>`COUNT(DISTINCT ${orders.id})`,
+        totalRevenue: sql<number>`COALESCE(SUM(${orderItems.price} * ${orderItems.quantity}), 0)`,
+      })
+      .from(orderItems)
+      .leftJoin(products, eq(orderItems.productId, products.id))
+      .leftJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(eq(products.roasterId, roasterId));
+
+    const { avgRating, reviewCount } = reviewStats[0] || { avgRating: 0, reviewCount: 0 };
+    const { totalOrders, totalRevenue } = salesStats[0] || { totalOrders: 0, totalRevenue: 0 };
+
+    // Calculate leaderboard score
+    const score = (
+      (Number(avgRating) / 5.0 * 40) +
+      (Math.min(Number(reviewCount) / 50.0, 1.0) * 30) +
+      (Math.min(Number(totalOrders) / 20.0, 1.0) * 20) +
+      (100 / 100.0 * 10) // Default completion rate
+    );
+
+    // Update roaster metrics
+    await db
+      .update(roasters)
+      .set({
+        averageRating: avgRating.toString(),
+        totalReviews: Number(reviewCount),
+        totalSales: Number(totalOrders),
+        totalRevenue: totalRevenue.toString(),
+        leaderboardScore: score.toString(),
+        updatedAt: new Date(),
+      })
+      .where(eq(roasters.id, roasterId));
+  }
+
+  async calculateLeaderboardScore(roasterId: number): Promise<number> {
+    const [roaster] = await db
+      .select({
+        averageRating: roasters.averageRating,
+        totalReviews: roasters.totalReviews,
+        totalSales: roasters.totalSales,
+        completionRate: roasters.completionRate,
+      })
+      .from(roasters)
+      .where(eq(roasters.id, roasterId));
+
+    if (!roaster) return 0;
+
+    return (
+      (Number(roaster.averageRating || 0) / 5.0 * 40) +
+      (Math.min(Number(roaster.totalReviews || 0) / 50.0, 1.0) * 30) +
+      (Math.min(Number(roaster.totalSales || 0) / 20.0, 1.0) * 20) +
+      (Number(roaster.completionRate || 100) / 100.0 * 10)
+    );
   }
 }
 

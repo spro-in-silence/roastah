@@ -1,8 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import multer from "multer";
+import * as fs from "fs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { db } from "./db";
+import { eq, and, gte, desc, asc } from "drizzle-orm";
+import { 
+  roasters, products, cartItems, orders, orderItems, reviews, 
+  wishlist, notifications, commissions, sellerAnalytics, campaigns,
+  bulkUploads, disputes
+} from "@shared/schema";
 import { MedusaBridge } from "./medusa-bridge";
 import { insertProductSchema, insertRoasterSchema, insertCartItemSchema } from "@shared/schema";
 import { z } from "zod";
@@ -431,6 +440,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(500).json({ message: 'Error processing payouts: ' + error.message });
     }
+  });
+
+  // File upload configuration
+  const upload = multer({
+    dest: 'uploads/',
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only CSV files are allowed'));
+      }
+    }
+  });
+
+  // Bulk product upload with CSV processing
+  app.post('/api/roaster/bulk-upload', isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      if (!roaster) {
+        return res.status(403).json({ message: 'Roaster profile required' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      // Create bulk upload record
+      const bulkUpload = await storage.createBulkUpload({
+        roasterId: roaster.id,
+        fileName: req.file.originalname,
+        status: 'processing'
+      });
+
+      // Process CSV file asynchronously
+      processCsvFile(req.file.path, bulkUpload.id, roaster.id);
+
+      res.json({
+        uploadId: bulkUpload.id,
+        message: 'File upload started. Processing in background.'
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: 'Upload failed: ' + error.message });
+    }
+  });
+
+  // CSV file processing function
+  async function processCsvFile(filePath: string, uploadId: number, roasterId: number) {
+    const results: any[] = [];
+    const errors: string[] = [];
+    let totalRows = 0;
+    let processedRows = 0;
+    let successfulRows = 0;
+
+    try {
+      // Read and parse CSV file
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      totalRows = lines.length - 1; // Exclude header
+
+      await storage.updateBulkUploadStatus(uploadId, 'processing', {
+        totalRows
+      });
+
+      // Process each row (skip header)
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',').map(cell => cell.trim().replace(/"/g, ''));
+        
+        if (row.length < 5) {
+          errors.push(`Row ${i}: Insufficient columns`);
+          processedRows++;
+          continue;
+        }
+
+        try {
+          // Expected CSV format: name,description,price,roastLevel,origin,process,stockQuantity,tastingNotes
+          const [name, description, price, roastLevel, origin, process, stockQuantity, tastingNotes] = row;
+
+          if (!name || !description || !price) {
+            errors.push(`Row ${i}: Missing required fields (name, description, price)`);
+            processedRows++;
+            continue;
+          }
+
+          const priceNum = parseFloat(price);
+          const stockNum = parseInt(stockQuantity) || 0;
+
+          if (isNaN(priceNum) || priceNum <= 0) {
+            errors.push(`Row ${i}: Invalid price format`);
+            processedRows++;
+            continue;
+          }
+
+          // Create product
+          await storage.createProduct({
+            roasterId,
+            name,
+            description,
+            price: priceNum.toString(),
+            roastLevel: roastLevel || 'medium',
+            origin: origin || '',
+            process: process || '',
+            stockQuantity: stockNum,
+            tastingNotes: tastingNotes || '',
+            isActive: true,
+            images: []
+          });
+
+          successfulRows++;
+        } catch (productError: any) {
+          errors.push(`Row ${i}: ${productError.message}`);
+        }
+
+        processedRows++;
+
+        // Update progress periodically
+        if (processedRows % 10 === 0) {
+          await storage.updateBulkUploadStatus(uploadId, 'processing', {
+            processedRows,
+            successfulRows,
+            errors: errors.slice(-50) // Keep last 50 errors
+          });
+        }
+      }
+
+      // Mark as completed
+      await storage.updateBulkUploadStatus(uploadId, 'completed', {
+        processedRows,
+        successfulRows,
+        errors,
+        completedAt: new Date()
+      });
+
+    } catch (error: any) {
+      await storage.updateBulkUploadStatus(uploadId, 'failed', {
+        processedRows,
+        successfulRows,
+        errors: [...errors, `Processing error: ${error.message}`]
+      });
+    } finally {
+      // Clean up uploaded file
+      try {
+        fs.unlinkSync(filePath);
+      } catch (cleanupError) {
+        console.error('Failed to clean up file:', cleanupError);
+      }
+    }
+  }
+
+  // Get bulk upload status
+  app.get('/api/roaster/bulk-uploads', isAuthenticated, async (req: any, res) => {
+    try {
+      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      if (!roaster) {
+        return res.status(403).json({ message: 'Roaster profile required' });
+      }
+
+      const uploads = await storage.getBulkUploadsByRoaster(roaster.id);
+      res.json(uploads);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to fetch uploads: ' + error.message });
+    }
+  });
+
+  // Download CSV template
+  app.get('/api/csv-template', (req, res) => {
+    const csvTemplate = `name,description,price,roastLevel,origin,process,stockQuantity,tastingNotes
+Ethiopian Yirgacheffe,Bright and floral single origin,24.99,light,Ethiopia,washed,50,citrus and floral notes
+Colombian Supremo,Rich and balanced,22.99,medium,Colombia,washed,75,chocolate and caramel
+French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=bulk-upload-template.csv');
+    res.send(csvTemplate);
   });
 
   // Review routes

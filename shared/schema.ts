@@ -9,6 +9,7 @@ import {
   decimal,
   integer,
   boolean,
+  date,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -291,3 +292,168 @@ export type WishlistItem = typeof wishlist.$inferSelect;
 export type InsertWishlistItem = z.infer<typeof insertWishlistSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Commission tracking table
+export const commissions = pgTable("commissions", {
+  id: serial("id").primaryKey(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  orderItemId: integer("order_item_id").notNull().references(() => orderItems.id),
+  saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).notNull().default("0.0850"), // 8.5%
+  commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(),
+  roasterEarnings: decimal("roaster_earnings", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status").notNull().default("pending"), // pending, paid, disputed
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Seller analytics table
+export const sellerAnalytics = pgTable("seller_analytics", {
+  id: serial("id").primaryKey(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  date: date("date").notNull(),
+  totalSales: decimal("total_sales", { precision: 10, scale: 2 }).default("0"),
+  totalOrders: integer("total_orders").default(0),
+  totalCustomers: integer("total_customers").default(0),
+  avgOrderValue: decimal("avg_order_value", { precision: 10, scale: 2 }).default("0"),
+  topProduct: varchar("top_product"),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 4 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Promotional campaigns table
+export const campaigns = pgTable("campaigns", {
+  id: serial("id").primaryKey(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  type: varchar("type").notNull(), // discount, bogo, free_shipping
+  discountType: varchar("discount_type"), // percentage, fixed_amount
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  applicableProducts: jsonb("applicable_products"), // array of product IDs
+  usageLimit: integer("usage_limit"),
+  usedCount: integer("used_count").default(0),
+  isActive: boolean("is_active").default(true),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Bulk upload sessions table
+export const bulkUploads = pgTable("bulk_uploads", {
+  id: serial("id").primaryKey(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  fileName: varchar("file_name").notNull(),
+  status: varchar("status").notNull().default("processing"), // processing, completed, failed
+  totalRows: integer("total_rows").default(0),
+  processedRows: integer("processed_rows").default(0),
+  successfulRows: integer("successful_rows").default(0),
+  errors: jsonb("errors"), // array of error messages
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Disputes table
+export const disputes = pgTable("disputes", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  customerId: varchar("customer_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // refund, quality, shipping
+  description: text("description").notNull(),
+  status: varchar("status").notNull().default("open"), // open, investigating, resolved, closed
+  resolution: text("resolution"),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+// Additional relations
+export const commissionRelations = relations(commissions, ({ one }) => ({
+  roaster: one(roasters, {
+    fields: [commissions.roasterId],
+    references: [roasters.id],
+  }),
+  order: one(orders, {
+    fields: [commissions.orderId],
+    references: [orders.id],
+  }),
+  orderItem: one(orderItems, {
+    fields: [commissions.orderItemId],
+    references: [orderItems.id],
+  }),
+}));
+
+export const sellerAnalyticsRelations = relations(sellerAnalytics, ({ one }) => ({
+  roaster: one(roasters, {
+    fields: [sellerAnalytics.roasterId],
+    references: [roasters.id],
+  }),
+}));
+
+export const campaignRelations = relations(campaigns, ({ one }) => ({
+  roaster: one(roasters, {
+    fields: [campaigns.roasterId],
+    references: [roasters.id],
+  }),
+}));
+
+export const bulkUploadRelations = relations(bulkUploads, ({ one }) => ({
+  roaster: one(roasters, {
+    fields: [bulkUploads.roasterId],
+    references: [roasters.id],
+  }),
+}));
+
+export const disputeRelations = relations(disputes, ({ one }) => ({
+  order: one(orders, {
+    fields: [disputes.orderId],
+    references: [orders.id],
+  }),
+  roaster: one(roasters, {
+    fields: [disputes.roasterId],
+    references: [roasters.id],
+  }),
+  customer: one(users, {
+    fields: [disputes.customerId],
+    references: [users.id],
+  }),
+}));
+
+// Additional schemas and types
+export const insertCommissionSchema = createInsertSchema(commissions).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertSellerAnalyticsSchema = createInsertSchema(sellerAnalytics).omit({
+  id: true,
+  createdAt: true,
+} as const);
+export const insertCampaignSchema = createInsertSchema(campaigns).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertBulkUploadSchema = createInsertSchema(bulkUploads).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+export const insertDisputeSchema = createInsertSchema(disputes).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
+});
+
+export type Commission = typeof commissions.$inferSelect;
+export type InsertCommission = z.infer<typeof insertCommissionSchema>;
+export type SellerAnalytics = typeof sellerAnalytics.$inferSelect;
+export type InsertSellerAnalytics = z.infer<typeof insertSellerAnalyticsSchema>;
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+export type BulkUpload = typeof bulkUploads.$inferSelect;
+export type InsertBulkUpload = z.infer<typeof insertBulkUploadSchema>;
+export type Dispute = typeof disputes.$inferSelect;
+export type InsertDispute = z.infer<typeof insertDisputeSchema>;

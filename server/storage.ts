@@ -69,6 +69,34 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
   deleteNotification(id: number): Promise<void>;
+  
+  // Commission operations
+  createCommission(commission: InsertCommission): Promise<Commission>;
+  getCommissionsByRoaster(roasterId: number): Promise<Commission[]>;
+  updateCommissionStatus(id: number, status: string, paidAt?: Date): Promise<void>;
+  
+  // Seller analytics operations
+  createSellerAnalytics(analytics: InsertSellerAnalytics): Promise<SellerAnalytics>;
+  getSellerAnalyticsByRoaster(roasterId: number, startDate?: Date, endDate?: Date): Promise<SellerAnalytics[]>;
+  updateSellerAnalytics(roasterId: number, date: Date, updates: Partial<InsertSellerAnalytics>): Promise<void>;
+  
+  // Campaign operations
+  createCampaign(campaign: InsertCampaign): Promise<Campaign>;
+  getCampaignsByRoaster(roasterId: number): Promise<Campaign[]>;
+  updateCampaign(id: number, updates: Partial<InsertCampaign>): Promise<Campaign>;
+  deleteCampaign(id: number): Promise<void>;
+  incrementCampaignUsage(id: number): Promise<void>;
+  
+  // Bulk upload operations
+  createBulkUpload(upload: InsertBulkUpload): Promise<BulkUpload>;
+  getBulkUploadsByRoaster(roasterId: number): Promise<BulkUpload[]>;
+  updateBulkUploadStatus(id: number, status: string, updates?: Partial<InsertBulkUpload>): Promise<void>;
+  
+  // Dispute operations
+  createDispute(dispute: InsertDispute): Promise<Dispute>;
+  getDisputesByRoaster(roasterId: number): Promise<Dispute[]>;
+  getDisputesByCustomer(customerId: string): Promise<Dispute[]>;
+  updateDisputeStatus(id: number, status: string, resolution?: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

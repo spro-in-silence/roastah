@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp } from "lucide-react";
+import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import SellerAnalyticsDashboard from "@/components/seller-analytics-dashboard";
+import BulkProductUpload from "@/components/bulk-product-upload";
 
 export default function SellerDashboard() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();

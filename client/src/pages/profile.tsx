@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { useUser } from "@/contexts/UserContext";
@@ -33,11 +34,66 @@ const addressSchema = z.object({
   zipCode: z.string().min(5, "Valid ZIP code is required"),
 });
 
+const US_STATES = [
+  { value: "AL", label: "Alabama" },
+  { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" },
+  { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" },
+  { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" },
+  { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" },
+  { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" },
+  { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" },
+  { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" },
+  { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" },
+  { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" },
+  { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" },
+  { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" },
+  { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" },
+  { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" },
+  { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" },
+  { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" },
+  { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" },
+  { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" },
+  { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" },
+  { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" },
+  { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" },
+  { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" },
+  { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" },
+  { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" },
+  { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" },
+  { value: "WY", label: "Wyoming" },
+  { value: "DC", label: "District of Columbia" }
+];
+
 export default function Profile() {
   const { user, isAuthenticated, isLoading, isRoaster } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("personal");
+  const [selectedState, setSelectedState] = useState("");
 
   const {
     register: registerPersonal,
@@ -52,6 +108,7 @@ export default function Profile() {
     register: registerAddress,
     handleSubmit: handleSubmitAddress,
     formState: { errors: addressErrors },
+    setValue: setAddressValue,
   } = useForm({
     resolver: zodResolver(addressSchema),
   });
@@ -122,11 +179,34 @@ export default function Profile() {
     updatePersonalInfoMutation.mutate(data);
   };
 
-  const onSubmitAddress = (data: any) => {
-    toast({
-      title: "Address Saved",
-      description: "Your address has been saved successfully.",
-    });
+  const validateUSPSAddress = async (address: any) => {
+    try {
+      const response = await apiRequest("POST", "/api/validate-address", address);
+      return response;
+    } catch (error) {
+      console.error("USPS validation error:", error);
+      throw error;
+    }
+  };
+
+  const onSubmitAddress = async (data: any) => {
+    try {
+      const addressData = { ...data, state: selectedState };
+      
+      // Validate address with USPS
+      await validateUSPSAddress(addressData);
+      
+      toast({
+        title: "Address Validated",
+        description: "Address validated and saved successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Address Validation Failed",
+        description: "Please check your address and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -308,18 +388,13 @@ export default function Profile() {
               <TabsContent value="addresses" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Saved Addresses</CardTitle>
-                      <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
-                        Add Address
-                      </Button>
-                    </div>
+                    <CardTitle>Address Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleSubmitAddress(onSubmitAddress)} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                          <Label htmlFor="address">Address</Label>
+                          <Label htmlFor="address">Street Address</Label>
                           <Input
                             id="address"
                             {...registerAddress("address")}
@@ -344,12 +419,24 @@ export default function Profile() {
                         </div>
                         <div>
                           <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            {...registerAddress("state")}
-                            placeholder="WA"
-                            className={addressErrors.state ? "border-red-500" : ""}
-                          />
+                          <Select
+                            onValueChange={(value) => {
+                              setSelectedState(value);
+                              setAddressValue("state", value);
+                            }}
+                            value={selectedState}
+                          >
+                            <SelectTrigger className={addressErrors.state ? "border-red-500" : ""}>
+                              <SelectValue placeholder="Select a state" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-48 overflow-y-auto">
+                              {US_STATES.map((state) => (
+                                <SelectItem key={state.value} value={state.value}>
+                                  {state.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           {addressErrors.state && (
                             <p className="text-red-500 text-sm mt-1">{addressErrors.state.message}</p>
                           )}

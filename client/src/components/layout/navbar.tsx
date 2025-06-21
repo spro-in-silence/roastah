@@ -69,6 +69,15 @@ export default function Navbar() {
                     >
                       Browse
                     </Link>
+                    <Link
+                      href="/leaderboard"
+                      className={`flex items-center gap-1 transition-colors ${
+                        location === '/leaderboard' ? 'text-roastah-teal' : 'text-gray-700 hover:text-roastah-teal'
+                      }`}
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Leaderboard
+                    </Link>
                     <Link href="/cart" className="relative">
                       <ShoppingCart className="h-5 w-5 text-gray-700 hover:text-roastah-teal transition-colors" />
                       {cartItemCount > 0 && (
@@ -83,6 +92,15 @@ export default function Navbar() {
                 {/* Roaster Navigation */}
                 {isRoaster && (
                   <div className="flex items-center space-x-6">
+                    <Link
+                      href="/leaderboard"
+                      className={`flex items-center gap-1 transition-colors ${
+                        location === '/leaderboard' ? 'text-roastah-teal' : 'text-gray-700 hover:text-roastah-teal'
+                      }`}
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Leaderboard
+                    </Link>
                     <Link
                       href="/seller/dashboard"
                       className={`transition-colors ${

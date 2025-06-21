@@ -193,27 +193,27 @@ export default function Navbar() {
                     </div>
                   </Link>
 
-                  <Link href="/seller-dashboard" onClick={closeMenu}>
+                  <Link href="/seller/dashboard" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller-dashboard') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.startsWith('/seller/dashboard') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <BarChart3 className="h-5 w-5" />
                       <span className="font-medium">Seller Dashboard</span>
                     </div>
                   </Link>
 
-                  <Link href="/seller-products" onClick={closeMenu}>
+                  <Link href="/seller/products" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller-products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.startsWith('/seller/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Package className="h-5 w-5" />
                       <span className="font-medium">My Products</span>
                     </div>
                   </Link>
 
-                  <Link href="/seller-orders" onClick={closeMenu}>
+                  <Link href="/seller/orders" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller-orders') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.startsWith('/seller/orders') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <ShoppingBag className="h-5 w-5" />
                       <span className="font-medium">Orders</span>
@@ -234,9 +234,9 @@ export default function Navbar() {
               )}
 
               {/* Common Navigation */}
-              <Link href="/security-dashboard" onClick={closeMenu}>
+              <Link href="/security" onClick={closeMenu}>
                 <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location === '/security-dashboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                  location === '/security' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                 }`}>
                   <Shield className="h-5 w-5" />
                   <span className="font-medium">Security Dashboard</span>

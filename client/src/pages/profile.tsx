@@ -418,16 +418,21 @@ export default function Profile() {
 
             {/* Become a Roastah CTA (Buyer Only) - Moved below tabs */}
             {!isRoaster && (
-              <div className="coffee-gradient rounded-xl p-6 mt-8 text-white">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mt-8">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold mb-2">Become a Roastah</h2>
-                    <p className="text-white/90">
-                      Share your passion for coffee and start selling your roasts to coffee enthusiasts worldwide.
-                    </p>
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                      <Coffee className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-green-800">Become a Roastah</h2>
+                      <p className="text-green-700">
+                        Share your passion for coffee and start selling your roasts to coffee enthusiasts worldwide.
+                      </p>
+                    </div>
                   </div>
                   <Link href="/become-roastah">
-                    <Button className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold">
+                    <Button className="bg-green-600 text-white hover:bg-green-700 font-semibold">
                       Get Started
                     </Button>
                   </Link>

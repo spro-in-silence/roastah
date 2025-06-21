@@ -69,7 +69,7 @@
   background: linear-gradient(
     to bottom right, /* Specifies the direction: from top left to bottom right */
     #cae4a3,        /* Start color: green coffee bean */
-    #fdd1f4,        /* Transition color: yellowing stage */
+    #f8d14f,        /* Transition color: yellowing stage */
     #d2691e         /* End color: cinnamon brown */
   );
 }

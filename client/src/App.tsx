@@ -37,7 +37,7 @@ function Router() {
     );
   }
 
-  const isApprovedRoaster = user?.isRoasterApproved;
+  const isApprovedRoaster = (user as any)?.isRoasterApproved;
 
   return (
     <Switch>

@@ -80,8 +80,8 @@ export default function Navbar() {
 
                   {/* Cart - only show for buyers */}
                   {!isRoaster && (
-                    <Link href="/cart" className="relative">
-                      <Button variant="ghost" size="sm" className="p-2">
+                    <Link href="/cart">
+                      <Button variant="ghost" size="sm" className="relative p-2">
                         <ShoppingCart className="h-5 w-5" />
                         {cartItemCount > 0 && (
                           <Badge className="absolute -top-1 -right-1 bg-roastah-yellow text-gray-900 text-xs h-5 w-5 flex items-center justify-center p-0">

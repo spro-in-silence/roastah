@@ -8,6 +8,17 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { db } from "./db";
 import { eq, and, gte, desc, asc } from "drizzle-orm";
 import { 
+  authLimiter, paymentLimiter, uploadLimiter, 
+  validateProductCreation, validateRoasterApplication, 
+  validateCartOperation, validatePaymentIntent, 
+  validateIdParam, handleValidationErrors,
+  enhancedAuthCheck, requireRole 
+} from "./security";
+import { 
+  generateMFASetup, verifyMFAToken, verifyBackupCode, 
+  requireMFA, requireStepUpAuth, hasMFAEnabled, logSecurityEvent 
+} from "./mfa";
+import { 
   roasters, products, cartItems, orders, orderItems, reviews, 
   wishlist, notifications, commissions, sellerAnalytics, campaigns,
   bulkUploads, disputes
@@ -32,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   medusaBridge.setupRoutes();
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', enhancedAuthCheck, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -43,10 +54,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roaster = await storage.getRoasterByUserId(userId);
       }
       
-      res.json({ ...user, roaster });
+      // Include MFA status in response
+      const response = { 
+        ...user, 
+        roaster,
+        mfaRequired: !!(roaster || user?.role === 'admin'),
+        hasMFA: await hasMFAEnabled(userId)
+      };
+      
+      res.json(response);
     } catch (error) {
       console.error("Error fetching user:", error);
+      logSecurityEvent(req.user?.claims?.sub, 'user_fetch_error', { error: error.message }, req);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // MFA Security Endpoints
+  app.post('/api/auth/mfa/setup', authLimiter, enhancedAuthCheck, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.email) {
+        return res.status(400).json({ error: 'Email required for MFA setup' });
+      }
+
+      if (user.mfaEnabled) {
+        return res.status(400).json({ error: 'MFA already enabled' });
+      }
+
+      const mfaSetup = await generateMFASetup(userId, user.email);
+      
+      // Store the secret temporarily (not enabled until verified)
+      await storage.updateUserMFA(userId, { 
+        mfaSecret: mfaSetup.secret,
+        backupCodes: mfaSetup.backupCodes 
+      });
+
+      logSecurityEvent(userId, 'mfa_setup_initiated', {}, req);
+      
+      res.json({
+        qrCodeUrl: mfaSetup.qrCodeUrl,
+        backupCodes: mfaSetup.backupCodes,
+        secret: mfaSetup.secret // For manual entry
+      });
+    } catch (error) {
+      console.error('MFA setup error:', error);
+      res.status(500).json({ error: 'Failed to setup MFA' });
+    }
+  });
+
+  app.post('/api/auth/mfa/verify-setup', authLimiter, enhancedAuthCheck, async (req: any, res) => {
+    try {
+      const { token } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user?.mfaSecret) {
+        return res.status(400).json({ error: 'MFA setup not initiated' });
+      }
+
+      if (!verifyMFAToken(user.mfaSecret, token)) {
+        logSecurityEvent(userId, 'mfa_setup_failed', { token: token.substring(0, 2) + '****' }, req);
+        return res.status(400).json({ error: 'Invalid verification code' });
+      }
+
+      // Enable MFA
+      await storage.updateUserMFA(userId, { mfaEnabled: true });
+      
+      logSecurityEvent(userId, 'mfa_enabled', {}, req);
+      res.json({ success: true, message: 'MFA enabled successfully' });
+    } catch (error) {
+      console.error('MFA verification error:', error);
+      res.status(500).json({ error: 'Failed to verify MFA' });
+    }
+  });
+
+  app.post('/api/auth/mfa/verify', authLimiter, enhancedAuthCheck, async (req: any, res) => {
+    try {
+      const { token, backupCode } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user?.mfaEnabled || !user?.mfaSecret) {
+        return res.status(400).json({ error: 'MFA not enabled' });
+      }
+
+      let verified = false;
+
+      // Try MFA token first
+      if (token) {
+        verified = verifyMFAToken(user.mfaSecret, token);
+      }
+
+      // Try backup code if token fails
+      if (!verified && backupCode) {
+        verified = await verifyBackupCode(userId, backupCode);
+      }
+
+      if (!verified) {
+        logSecurityEvent(userId, 'mfa_verification_failed', { 
+          hasToken: !!token, 
+          hasBackupCode: !!backupCode 
+        }, req);
+        return res.status(400).json({ error: 'Invalid verification code' });
+      }
+
+      // Set MFA verified in session
+      req.session.mfaVerified = true;
+      req.session.mfaVerifiedAt = Date.now();
+
+      logSecurityEvent(userId, 'mfa_verified', {}, req);
+      res.json({ success: true, message: 'MFA verified successfully' });
+    } catch (error) {
+      console.error('MFA verification error:', error);
+      res.status(500).json({ error: 'Failed to verify MFA' });
+    }
+  });
+
+  app.post('/api/auth/mfa/disable', authLimiter, enhancedAuthCheck, requireStepUpAuth, async (req: any, res) => {
+    try {
+      const { token, backupCode } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user?.mfaEnabled) {
+        return res.status(400).json({ error: 'MFA not enabled' });
+      }
+
+      let verified = false;
+
+      // Require MFA verification to disable
+      if (token && user.mfaSecret) {
+        verified = verifyMFAToken(user.mfaSecret, token);
+      }
+
+      if (!verified && backupCode) {
+        verified = await verifyBackupCode(userId, backupCode);
+      }
+
+      if (!verified) {
+        logSecurityEvent(userId, 'mfa_disable_failed', {}, req);
+        return res.status(400).json({ error: 'MFA verification required to disable' });
+      }
+
+      // Disable MFA
+      await storage.updateUserMFA(userId, { 
+        mfaEnabled: false,
+        mfaSecret: undefined,
+        backupCodes: undefined
+      });
+
+      // Clear MFA session
+      req.session.mfaVerified = false;
+      delete req.session.mfaVerifiedAt;
+
+      logSecurityEvent(userId, 'mfa_disabled', {}, req);
+      res.json({ success: true, message: 'MFA disabled successfully' });
+    } catch (error) {
+      console.error('MFA disable error:', error);
+      res.status(500).json({ error: 'Failed to disable MFA' });
+    }
+  });
+
+  app.post('/api/auth/step-up', authLimiter, enhancedAuthCheck, async (req: any, res) => {
+    try {
+      const { token, backupCode } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (user?.mfaEnabled) {
+        let verified = false;
+
+        if (token && user.mfaSecret) {
+          verified = verifyMFAToken(user.mfaSecret, token);
+        }
+
+        if (!verified && backupCode) {
+          verified = await verifyBackupCode(userId, backupCode);
+        }
+
+        if (!verified) {
+          logSecurityEvent(userId, 'step_up_failed', {}, req);
+          return res.status(400).json({ error: 'Invalid verification code' });
+        }
+      }
+
+      // Set step-up verification
+      req.session.stepUpVerifiedAt = Date.now();
+
+      logSecurityEvent(userId, 'step_up_verified', {}, req);
+      res.json({ success: true, message: 'Step-up authentication successful' });
+    } catch (error) {
+      console.error('Step-up auth error:', error);
+      res.status(500).json({ error: 'Failed to verify step-up authentication' });
     }
   });
 
@@ -86,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Roaster routes
-  app.post('/api/roaster/apply', isAuthenticated, async (req: any, res) => {
+  app.post('/api/roaster/apply', authLimiter, enhancedAuthCheck, validateRoasterApplication, handleValidationErrors, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertRoasterSchema.parse({
@@ -122,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/roaster/products', isAuthenticated, async (req: any, res) => {
+  app.post('/api/roaster/products', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const roaster = await storage.getRoasterByUserId(userId);
@@ -181,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart routes
-  app.get('/api/cart', isAuthenticated, async (req: any, res) => {
+  app.get('/api/cart', enhancedAuthCheck, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const cartItems = await storage.getCartByUserId(userId);

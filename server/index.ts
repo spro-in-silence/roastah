@@ -4,6 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupSecurity } from "./security";
 
 const app = express();
+
+// Setup security middleware first
+setupSecurity(app);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

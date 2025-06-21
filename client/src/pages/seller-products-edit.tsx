@@ -16,6 +16,21 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertProductSchema } from "@shared/schema";
+import { z } from "zod";
+
+const editProductSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  price: z.number().min(0, "Price must be non-negative"),
+  stockQuantity: z.number().int().min(0, "Stock quantity must be non-negative"),
+  origin: z.string().optional(),
+  roastLevel: z.string().optional(),
+  process: z.string().optional(),
+  altitude: z.string().optional(),
+  varietal: z.string().optional(),
+  tastingNotes: z.string().optional(),
+  images: z.array(z.string()).default([]),
+});
 import { 
   ProductState, 
   ProductWithState,
@@ -41,16 +56,16 @@ export default function SellerProductEdit() {
 
   // Fetch product data
   const { data: product, isLoading: productLoading } = useQuery<ProductWithState>({
-    queryKey: ["/api/roaster/products", productId],
+    queryKey: [`/api/roaster/products/${productId}`],
     enabled: !!productId,
   });
 
-  const form = useForm({
-    resolver: zodResolver(insertProductSchema),
+  const form = useForm<z.infer<typeof editProductSchema>>({
+    resolver: zodResolver(editProductSchema),
     defaultValues: {
       name: "",
       description: "",
-      price: "",
+      price: 0,
       stockQuantity: 0,
       origin: "",
       roastLevel: "",
@@ -68,7 +83,7 @@ export default function SellerProductEdit() {
       form.reset({
         name: product.name || "",
         description: product.description || "",
-        price: product.price || "",
+        price: parseFloat(product.price?.toString() || "0"),
         stockQuantity: product.stockQuantity || 0,
         origin: product.origin || "",
         roastLevel: product.roastLevel || "",
@@ -76,7 +91,7 @@ export default function SellerProductEdit() {
         altitude: product.altitude || "",
         varietal: product.varietal || "",
         tastingNotes: product.tastingNotes || "",
-        images: product.images || [],
+        images: Array.isArray(product.images) ? product.images as string[] : [],
       });
     }
   }, [product, form]);

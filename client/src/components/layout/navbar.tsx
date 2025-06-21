@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,6 +198,15 @@ export default function Navbar() {
                     }`}>
                       <Coffee className="h-5 w-5" />
                       <span className="font-medium">Browse Products</span>
+                    </div>
+                  </Link>
+
+                  <Link href="/favorites" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location === '/favorites' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <Heart className="h-5 w-5" />
+                      <span className="font-medium">My Favorites</span>
                     </div>
                   </Link>
 

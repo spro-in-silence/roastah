@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Trophy, Star, TrendingUp, MapPin, Calendar, Award, Coffee, Target } from 'lucide-react';
 import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
+import { FavoriteButton } from '@/components/favorite-button';
 
 interface LeaderboardEntry {
   id: number;
@@ -227,9 +228,12 @@ export default function Leaderboard() {
                             </div>
                           </div>
 
-                          {/* Score Badge */}
-                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(score)}`}>
-                            {score.toFixed(1)} pts
+                          {/* Actions */}
+                          <div className="flex items-center gap-3">
+                            <FavoriteButton roasterId={roaster.id} />
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(score)}`}>
+                              {score.toFixed(1)} pts
+                            </div>
                           </div>
                         </div>
 

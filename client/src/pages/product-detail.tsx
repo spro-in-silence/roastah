@@ -13,6 +13,7 @@ import Footer from "@/components/layout/footer";
 import ProductReviews from "@/components/product-reviews";
 import ProductRecommendations from "@/components/product-recommendations";
 import WishlistButton from "@/components/wishlist-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";

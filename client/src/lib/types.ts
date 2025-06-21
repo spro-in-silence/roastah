@@ -36,3 +36,22 @@ export interface Address {
   state: string;
   zipCode: string;
 }
+
+export interface User {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  role?: string;
+  mfaEnabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  message?: string;
+  clientSecret?: string;
+}

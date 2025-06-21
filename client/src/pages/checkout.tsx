@@ -15,7 +15,7 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Address, CartItem } from "@/lib/types";
+import { Address, CartItem, User } from "@/lib/types";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -56,11 +56,11 @@ function CheckoutForm() {
     resolver: zodResolver(addressSchema),
   });
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
   });
 
-  const subtotal = cartItems.reduce((sum: number, item: CartItem & { product: any }) => {
+  const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
     return sum + (parseFloat(item.product?.price || "0") * item.quantity);
   }, 0);
 
@@ -238,7 +238,7 @@ function CheckoutForm() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4 mb-6">
-                    {cartItems.map((item: CartItem & { product: any }) => (
+                    {(cartItems as CartItem[]).map((item: CartItem) => (
                       <div key={item.id} className="flex items-center space-x-3">
                         <img
                           src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=60&h=60"}
@@ -303,15 +303,15 @@ export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
   const { toast } = useToast();
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
   });
 
   useEffect(() => {
-    if (cartItems.length === 0) return;
+    if ((cartItems as CartItem[]).length === 0) return;
     
     // Calculate total from cart items
-    const subtotal = cartItems.reduce((sum: number, item: CartItem & { product: any }) => {
+    const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
       return sum + (parseFloat(item.product?.price || "0") * item.quantity);
     }, 0);
     
@@ -322,7 +322,7 @@ export default function Checkout() {
     // Create PaymentIntent with cart items
     apiRequest("POST", "/api/create-payment-intent", { 
       amount: total,
-      cartItems: cartItems.map(item => ({
+      cartItems: (cartItems as CartItem[]).map((item: CartItem) => ({
         productId: item.productId,
         quantity: item.quantity,
         price: item.product?.price
@@ -348,7 +348,7 @@ export default function Checkout() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
-            {cartItems.length === 0 ? (
+            {(cartItems as CartItem[]).length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8">
                 <p className="text-gray-600 mb-4">Your cart is empty</p>
                 <Button onClick={() => window.location.href = '/products'}>

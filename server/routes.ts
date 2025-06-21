@@ -394,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/cart', isAuthenticated, async (req: any, res) => {
+  app.post('/api/cart', enhancedAuthCheck, validateCartOperation, handleValidationErrors, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertCartItemSchema.parse({
@@ -471,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced payment processing with commission tracking
-  app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
+  app.post("/api/create-payment-intent", paymentLimiter, enhancedAuthCheck, validatePaymentIntent, handleValidationErrors, async (req, res) => {
     try {
       const { amount, cartItems, metadata = {} } = req.body;
       

@@ -111,10 +111,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(filters?: { roastLevel?: string; origin?: string; minPrice?: number; maxPrice?: number }): Promise<Product[]> {
-    let query = db.select().from(products).where(eq(products.isActive, true));
+    const conditions = [eq(products.isActive, true)];
     
     if (filters) {
-      const conditions = [];
       if (filters.roastLevel) {
         conditions.push(eq(products.roastLevel, filters.roastLevel));
       }
@@ -127,13 +126,9 @@ export class DatabaseStorage implements IStorage {
       if (filters.maxPrice) {
         conditions.push(sql`${products.price} <= ${filters.maxPrice}`);
       }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
     }
     
-    return await query;
+    return await db.select().from(products).where(and(...conditions));
   }
 
   async getProductById(id: number): Promise<Product | undefined> {
@@ -185,7 +180,7 @@ export class DatabaseStorage implements IStorage {
       // Update quantity
       const [updated] = await db
         .update(cartItems)
-        .set({ quantity: existing.quantity + cartItem.quantity })
+        .set({ quantity: existing.quantity + (cartItem.quantity || 1) })
         .where(eq(cartItems.id, existing.id))
         .returning();
       return updated;

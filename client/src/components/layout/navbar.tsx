@@ -6,18 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { CartItem } from "@/lib/types";
 
 export default function Navbar() {
   const [location] = useLocation();
   const { user, isAuthenticated, isRoaster } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
     enabled: isAuthenticated,
   });
 
-  const cartItemCount = cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+  const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

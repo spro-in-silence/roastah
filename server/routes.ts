@@ -394,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/cart', enhancedAuthCheck, validateCartOperation, handleValidationErrors, async (req: any, res) => {
+  app.post('/api/cart', enhancedAuthCheck, validateCartOperation, handleValidationErrors, async (req: any, res: any) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertCartItemSchema.parse({

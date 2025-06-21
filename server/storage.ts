@@ -483,13 +483,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSellerAnalyticsByRoaster(roasterId: number, startDate?: Date, endDate?: Date): Promise<SellerAnalytics[]> {
-    let baseQuery = db
-      .select()
-      .from(sellerAnalytics)
-      .where(eq(sellerAnalytics.roasterId, roasterId));
-
     if (startDate && endDate) {
-      return await baseQuery
+      return await db
+        .select()
+        .from(sellerAnalytics)
         .where(
           and(
             eq(sellerAnalytics.roasterId, roasterId),
@@ -500,7 +497,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${sellerAnalytics.date} desc`);
     }
 
-    return await baseQuery.orderBy(sql`${sellerAnalytics.date} desc`);
+    return await db
+      .select()
+      .from(sellerAnalytics)
+      .where(eq(sellerAnalytics.roasterId, roasterId))
+      .orderBy(sql`${sellerAnalytics.date} desc`);
   }
 
   async updateSellerAnalytics(roasterId: number, date: Date, updates: Partial<InsertSellerAnalytics>): Promise<void> {
@@ -570,7 +571,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBulkUploadStatus(id: number, status: string, updates?: Partial<InsertBulkUpload>): Promise<void> {
-    const updateData = { status, ...updates };
+    const updateData: any = { status, ...updates };
     if (status === 'completed' || status === 'failed') {
       updateData.completedAt = new Date();
     }

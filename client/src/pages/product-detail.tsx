@@ -1,7 +1,7 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Star, Heart, Truck, Shield, Minus, Plus } from "lucide-react";
+import { Star, Heart, Truck, Shield, Minus, Plus, Share2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import ProductReviews from "@/components/product-reviews";
+import ProductRecommendations from "@/components/product-recommendations";
+import WishlistButton from "@/components/wishlist-button";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
@@ -261,8 +264,9 @@ export default function ProductDetail() {
               >
                 {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
-              <Button variant="outline" size="icon">
-                <Heart className="h-4 w-4" />
+              <WishlistButton productId={product.id} size="lg" />
+              <Button variant="outline" size="icon" className="hover:bg-gray-50">
+                <Share2 className="h-4 w-4" />
               </Button>
             </div>
 
@@ -278,6 +282,18 @@ export default function ProductDetail() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Reviews and Recommendations Section */}
+        <div className="max-w-7xl mx-auto px-4 py-16 space-y-16">
+          {/* Product Reviews */}
+          <ProductReviews productId={product.id} />
+          
+          {/* Product Recommendations */}
+          <ProductRecommendations 
+            currentProduct={product} 
+            title="Similar Coffee You Might Like"
+          />
         </div>
       </div>
 

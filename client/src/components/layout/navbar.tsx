@@ -85,7 +85,7 @@ export default function Navbar() {
                   {/* Real-time Notifications */}
                   <RealtimeNotifications showAsDropdown={true} />
 
-                  {/* Cart Toggle - only show for buyers */}
+                  {/* Cart Toggle - always show when in buyer mode */}
                   {!isRoaster && (
                     <Button 
                       variant="ghost" 

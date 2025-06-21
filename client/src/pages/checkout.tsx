@@ -17,7 +17,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Address, CartItem } from "@/lib/types";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+// Make sure to call `loadStripe` outside of a component's render to avoid
+// recreating the `Stripe` object on every render.
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const addressSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -290,23 +295,68 @@ function CheckoutForm() {
 
 export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
+  const { toast } = useToast();
+
+  const { data: cartItems = [] } = useQuery({
+    queryKey: ["/api/cart"],
+  });
 
   useEffect(() => {
-    // Create PaymentIntent as soon as the page loads
-    apiRequest("POST", "/api/create-payment-intent", { amount: 70.71 })
-      .then((res) => res.json())
+    if (cartItems.length === 0) return;
+    
+    // Calculate total from cart items
+    const subtotal = cartItems.reduce((sum: number, item: CartItem & { product: any }) => {
+      return sum + (parseFloat(item.product?.price || "0") * item.quantity);
+    }, 0);
+    
+    const shipping = subtotal >= 35 ? 0 : 5.99;
+    const tax = subtotal * 0.08;
+    const total = subtotal + shipping + tax;
+
+    // Create PaymentIntent with cart items
+    apiRequest("POST", "/api/create-payment-intent", { 
+      amount: total,
+      cartItems: cartItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.product?.price
+      }))
+    })
       .then((data) => {
         setClientSecret(data.clientSecret);
       })
       .catch((error) => {
         console.error("Error creating payment intent:", error);
+        toast({
+          title: "Payment Setup Error",
+          description: "Failed to initialize payment. Please try again.",
+          variant: "destructive",
+        });
       });
-  }, []);
+  }, [cartItems, toast]);
 
   if (!clientSecret) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-roastah-teal border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
+            {cartItems.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-8">
+                <p className="text-gray-600 mb-4">Your cart is empty</p>
+                <Button onClick={() => window.location.href = '/products'}>
+                  Continue Shopping
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin w-8 h-8 border-4 border-roastah-teal border-t-transparent rounded-full" />
+                <span className="ml-3">Setting up payment...</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

@@ -21,6 +21,7 @@ import SellerOrders from "@/pages/seller-orders";
 import ProductionDemo from "@/pages/production-demo";
 import MedusaAdmin from "@/pages/medusa-admin";
 import SecurityDashboard from "@/pages/security-dashboard";
+import TestPayment from "@/pages/test-payment";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,6 +46,7 @@ function Router() {
           <Route path="/production-demo" component={ProductionDemo} />
           <Route path="/medusa-admin" component={MedusaAdmin} />
           <Route path="/security" component={SecurityDashboard} />
+          <Route path="/test-payment" component={TestPayment} />
         </>
       )}
       <Route component={NotFound} />

@@ -119,15 +119,18 @@ export const validatePaymentIntent = [
     .isFloat({ min: 0.50, max: 50000 })
     .withMessage('Payment amount must be between $0.50 and $50,000'),
   
-  body('items')
-    .isArray({ min: 1, max: 50 })
-    .withMessage('Must include 1-50 items'),
+  body('cartItems')
+    .optional()
+    .isArray({ max: 50 })
+    .withMessage('Cart items must be an array with max 50 items'),
   
-  body('items.*.productId')
+  body('cartItems.*.productId')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Valid product ID required for each item'),
   
-  body('items.*.quantity')
+  body('cartItems.*.quantity')
+    .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Valid quantity required for each item'),
 ];

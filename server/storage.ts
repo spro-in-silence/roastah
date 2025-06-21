@@ -888,20 +888,16 @@ export class DatabaseStorage implements IStorage {
         id: favoriteRoasters.id,
         roasterId: favoriteRoasters.roasterId,
         createdAt: favoriteRoasters.createdAt,
-        roaster: {
-          id: roasters.id,
-          businessName: roasters.businessName,
-          description: roasters.description,
-          logo: roasters.logo,
-          location: roasters.location,
-          website: roasters.website,
-          userId: roasters.userId,
-          user: {
-            firstName: users.firstName,
-            lastName: users.lastName,
-            profileImageUrl: users.profileImageUrl,
-          }
-        }
+        businessName: roasters.businessName,
+        description: roasters.description,
+        city: roasters.city,
+        state: roasters.state,
+        averageRating: roasters.averageRating,
+        totalReviews: roasters.totalReviews,
+        roasterUserId: roasters.userId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl
       })
       .from(favoriteRoasters)
       .leftJoin(roasters, eq(roasters.id, favoriteRoasters.roasterId))

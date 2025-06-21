@@ -1194,6 +1194,63 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Favorites routes
+  app.post('/api/favorites/roasters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roasterId = parseInt(req.params.id);
+      
+      // Check if already favorited
+      const isAlreadyFavorite = await storage.isFavoriteRoaster(userId, roasterId);
+      if (isAlreadyFavorite) {
+        return res.status(409).json({ message: "Roaster already in favorites" });
+      }
+      
+      const favorite = await storage.addFavoriteRoaster(userId, roasterId);
+      res.json(favorite);
+    } catch (error) {
+      console.error("Error adding favorite roaster:", error);
+      res.status(500).json({ message: "Failed to add favorite roaster" });
+    }
+  });
+
+  app.delete('/api/favorites/roasters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roasterId = parseInt(req.params.id);
+      
+      await storage.removeFavoriteRoaster(userId, roasterId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing favorite roaster:", error);
+      res.status(500).json({ message: "Failed to remove favorite roaster" });
+    }
+  });
+
+  app.get('/api/favorites/roasters', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const favorites = await storage.getFavoriteRoastersByUser(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorite roasters:", error);
+      res.status(500).json({ message: "Failed to fetch favorite roasters" });
+    }
+  });
+
+  app.get('/api/favorites/roasters/:id/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roasterId = parseInt(req.params.id);
+      
+      const isFavorite = await storage.isFavoriteRoaster(userId, roasterId);
+      res.json({ isFavorite });
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
+    }
+  });
+
   // Real-time tracking routes
   app.get('/api/orders/:id/tracking', isAuthenticated, async (req: any, res) => {
     try {

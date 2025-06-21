@@ -140,7 +140,7 @@ export default function ProductDetail() {
                 <div key={index} className="aspect-square overflow-hidden rounded-lg cursor-pointer">
                   <img
                     src={`https://images.unsplash.com/photo-155982726${index}-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=200&h=200`}
-                    alt={`${product.name} view ${index}`}
+                    alt={`${product?.name || "Product"} view ${index}`}
                     className="w-full h-full object-cover hover:opacity-75 transition-opacity"
                   />
                 </div>
@@ -152,7 +152,7 @@ export default function ProductDetail() {
           <div>
             <div className="flex items-center mb-4">
               <Badge className={roastLevelClass}>
-                {product.roastLevel}
+                {product?.roastLevel}
               </Badge>
               <div className="flex items-center ml-4">
                 <div className="flex items-center">
@@ -167,14 +167,14 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{product?.name}</h1>
             
             <div className="flex items-center mb-6">
               <span className="text-3xl font-bold text-gray-900">
-                ${parseFloat(product.price).toFixed(2)}
+                ${product?.price ? parseFloat(product.price).toFixed(2) : '0.00'}
               </span>
               <span className="ml-4 text-sm text-roastah-warm-gray">
-                {product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock'}
+                {(product?.stockQuantity || 0) > 0 ? `${product?.stockQuantity} in stock` : 'Out of stock'}
               </span>
             </div>
 
@@ -182,7 +182,7 @@ export default function ProductDetail() {
             <Card className="mb-6">
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-2">Tasting Notes</h3>
-                <p className="text-roastah-warm-gray">{product.tastingNotes}</p>
+                <p className="text-roastah-warm-gray">{product?.tastingNotes}</p>
               </CardContent>
             </Card>
 
@@ -192,19 +192,19 @@ export default function ProductDetail() {
               <div className="space-y-2 text-sm text-roastah-warm-gray">
                 <div className="flex justify-between">
                   <span>Origin:</span>
-                  <span>{product.origin}</span>
+                  <span>{product?.origin}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Process:</span>
-                  <span>{product.process}</span>
+                  <span>{product?.process}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Altitude:</span>
-                  <span>{product.altitude}</span>
+                  <span>{product?.altitude}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Varietal:</span>
-                  <span>{product.varietal}</span>
+                  <span>{product?.varietal}</span>
                 </div>
               </div>
             </div>

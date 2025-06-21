@@ -432,7 +432,7 @@ export default function Profile() {
                     </div>
                   </div>
                   <Link href="/become-roastah">
-                    <Button className="bg-green-600 text-white hover:bg-green-700 font-semibold">
+                    <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                       Get Started
                     </Button>
                   </Link>

@@ -147,51 +147,45 @@ export default function Navbar() {
             </div>
 
             <div className="p-4 space-y-2">
-              {/* Buyer Navigation */}
+              {/* Common Navigation - Always visible */}
+              <Link href="/products" onClick={closeMenu}>
+                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                  location.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                }`}>
+                  <Coffee className="h-5 w-5" />
+                  <span className="font-medium">Browse Products</span>
+                </div>
+              </Link>
+
+              <Link href="/leaderboard" onClick={closeMenu}>
+                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                  location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                }`}>
+                  <Trophy className="h-5 w-5" />
+                  <span className="font-medium">Roastah Leaderboard</span>
+                </div>
+              </Link>
+
+              {/* Buyer-specific Navigation - Only show for non-roasters */}
               {!isRoaster && (
-                <>
-                  <Link href="/products" onClick={closeMenu}>
-                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                    }`}>
-                      <Coffee className="h-5 w-5" />
-                      <span className="font-medium">Browse Products</span>
-                    </div>
-                  </Link>
-
-                  <Link href="/leaderboard" onClick={closeMenu}>
-                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                    }`}>
-                      <Trophy className="h-5 w-5" />
-                      <span className="font-medium">Roastah Leaderboard</span>
-                    </div>
-                  </Link>
-
-                  <Link href="/become-roastah" onClick={closeMenu}>
-                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                    }`}>
-                      <Package className="h-5 w-5" />
-                      <span className="font-medium">Become a Roastah</span>
-                    </div>
-                  </Link>
-
-                  <div className="border-t my-4"></div>
-                </>
+                <Link href="/become-roastah" onClick={closeMenu}>
+                  <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                    location === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                  }`}>
+                    <Package className="h-5 w-5" />
+                    <span className="font-medium">Become a Roastah</span>
+                  </div>
+                </Link>
               )}
 
-              {/* Roaster Navigation */}
+              {/* Seller Navigation - Only show in seller mode */}
               {isRoaster && (
                 <>
-                  <Link href="/leaderboard" onClick={closeMenu}>
-                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                    }`}>
-                      <Trophy className="h-5 w-5" />
-                      <span className="font-medium">Roastah Leaderboard</span>
-                    </div>
-                  </Link>
+                  <div className="border-t my-4"></div>
+                  
+                  <div className="px-3 py-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Seller Tools</span>
+                  </div>
 
                   <Link href="/seller/dashboard" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
@@ -228,10 +222,10 @@ export default function Navbar() {
                       <span className="font-medium">E-commerce Admin</span>
                     </div>
                   </Link>
-
-                  <div className="border-t my-4"></div>
                 </>
               )}
+
+              <div className="border-t my-4"></div>
 
               {/* Common Navigation */}
               <Link href="/security" onClick={closeMenu}>
@@ -252,14 +246,26 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              {/* Switch Mode for Roasters */}
-              {isRoaster && (
-                <Link href="/" onClick={closeMenu}>
-                  <div className="flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors text-gray-700">
-                    <ShoppingCart className="h-5 w-5" />
-                    <span className="font-medium">Switch to Buyer Mode</span>
+              {/* Mode Switch - Only for approved roasters */}
+              {hasRoaster && roaster?.isApproved && (
+                <>
+                  <div className="border-t my-4"></div>
+                  
+                  <div className="px-3 py-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mode</span>
                   </div>
-                </Link>
+                  
+                  <button 
+                    onClick={() => {
+                      setIsRoaster(!isRoaster);
+                      closeMenu();
+                    }}
+                    className="w-full flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors text-left text-gray-700"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                    <span className="font-medium">Switch to {isRoaster ? 'Buyer' : 'Seller'} Mode</span>
+                  </button>
+                </>
               )}
 
               <div className="border-t my-4"></div>

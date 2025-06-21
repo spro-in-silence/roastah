@@ -189,26 +189,30 @@ export default function Navbar() {
             </div>
 
             <div className="p-4 space-y-2">
-              {/* Common Navigation - Always visible */}
-              <Link href="/products" onClick={closeMenu}>
-                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                }`}>
-                  <Coffee className="h-5 w-5" />
-                  <span className="font-medium">Browse Products</span>
-                </div>
-              </Link>
+              {/* Buyer-specific Navigation - Only show when not in seller mode */}
+              {!isRoaster && (
+                <>
+                  <Link href="/products" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <Coffee className="h-5 w-5" />
+                      <span className="font-medium">Browse Products</span>
+                    </div>
+                  </Link>
 
-              <Link href="/leaderboard" onClick={closeMenu}>
-                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                }`}>
-                  <Trophy className="h-5 w-5" />
-                  <span className="font-medium">Roastah Leaderboard</span>
-                </div>
-              </Link>
+                  <Link href="/leaderboard" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <Trophy className="h-5 w-5" />
+                      <span className="font-medium">Roastah Leaderboard</span>
+                    </div>
+                  </Link>
+                </>
+              )}
 
-              {/* Buyer-specific Navigation - Only show for non-roasters */}
+              {/* Become a Roastah - Only show for non-roasters */}
               {!isRoaster && (
                 <Link href="/become-roastah" onClick={closeMenu}>
                   <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${

@@ -142,8 +142,17 @@ export default function Profile() {
         lastName: user.lastName || "",
         email: user.email || "",
       });
+      
+      // Populate address form with existing data
+      resetAddress({
+        addressLine1: user.addressLine1 || "",
+        addressLine2: user.addressLine2 || "",
+        city: user.city || "",
+        state: user.state || "",
+        zipCode: user.zipCode || "",
+      });
     }
-  }, [user, resetPersonal]);
+  }, [user, resetPersonal, resetAddress]);
 
   const updatePersonalInfoMutation = useMutation({
     mutationFn: async (data: any) => {

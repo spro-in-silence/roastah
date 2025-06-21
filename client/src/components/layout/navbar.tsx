@@ -14,6 +14,7 @@ export default function Navbar() {
   const { user, isAuthenticated, isRoaster: contextIsRoaster } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isRoaster, setIsRoaster] = useState(contextIsRoaster);
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
@@ -84,18 +85,21 @@ export default function Navbar() {
                   {/* Real-time Notifications */}
                   <RealtimeNotifications showAsDropdown={true} />
 
-                  {/* Cart - only show for buyers */}
+                  {/* Cart Toggle - only show for buyers */}
                   {!isRoaster && (
-                    <Link href="/cart">
-                      <Button variant="ghost" size="sm" className="relative p-2">
-                        <ShoppingCart className="h-5 w-5" />
-                        {cartItemCount > 0 && (
-                          <Badge className="absolute -top-1 -right-1 bg-roastah-yellow text-gray-900 text-xs h-5 w-5 flex items-center justify-center p-0">
-                            {cartItemCount}
-                          </Badge>
-                        )}
-                      </Button>
-                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="relative p-2"
+                      onClick={() => setIsCartOpen(!isCartOpen)}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      {cartItemCount > 0 && (
+                        <Badge className="absolute -top-1 -right-1 bg-roastah-yellow text-gray-900 text-xs h-5 w-5 flex items-center justify-center p-0">
+                          {cartItemCount}
+                        </Badge>
+                      )}
+                    </Button>
                   )}
 
                   {/* Profile */}
@@ -286,6 +290,91 @@ export default function Navbar() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Sidebar */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25" 
+            onClick={() => setIsCartOpen(false)}
+          />
+          
+          {/* Cart Panel */}
+          <div className="fixed top-0 right-0 bottom-0 w-96 bg-white shadow-xl transform transition-transform">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Your Cart</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsCartOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {cartItems.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>Your cart is empty</p>
+                  <p className="text-sm mt-2">Add some coffee to get started!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(cartItems as CartItem[]).map((item) => (
+                    <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                      <img 
+                        src={item.product?.imageUrl || '/placeholder-coffee.jpg'} 
+                        alt={item.product?.name || 'Product'}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-sm">{item.product?.name}</h3>
+                        <p className="text-sm text-gray-500">${item.product?.price}</p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <span className="text-sm">Qty: {item.quantity}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">${((item.product?.price || 0) * item.quantity).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {cartItems.length > 0 && (
+              <div className="border-t p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-bold text-lg">
+                    ${(cartItems as CartItem[]).reduce((sum, item) => sum + ((item.product?.price || 0) * item.quantity), 0).toFixed(2)}
+                  </span>
+                </div>
+                <Link href="/checkout">
+                  <Button 
+                    className="w-full bg-roastah-teal hover:bg-roastah-dark-teal text-white"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    Proceed to Checkout
+                  </Button>
+                </Link>
+                <Link href="/cart">
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-2"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    View Full Cart
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

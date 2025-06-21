@@ -52,6 +52,23 @@ export interface IStorage {
   getOrderItemsByRoaster(roasterId: number): Promise<OrderItem[]>;
   updateOrderStatus(id: number, status: string): Promise<void>;
   updateOrderItemStatus(id: number, status: string): Promise<void>;
+  
+  // Review operations
+  createReview(review: InsertReview): Promise<Review>;
+  getReviewsByProductId(productId: number): Promise<Review[]>;
+  updateReviewHelpful(id: number): Promise<void>;
+  
+  // Wishlist operations
+  addToWishlist(item: InsertWishlistItem): Promise<WishlistItem>;
+  getWishlistByUserId(userId: string): Promise<WishlistItem[]>;
+  removeFromWishlist(userId: string, productId: number): Promise<void>;
+  
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationsByUserId(userId: string): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<void>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
+  deleteNotification(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -251,6 +268,120 @@ export class DatabaseStorage implements IStorage {
       .update(orderItems)
       .set({ status })
       .where(eq(orderItems.id, id));
+  }
+
+  // Review operations
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db
+      .insert(reviews)
+      .values(review)
+      .returning();
+    return newReview;
+  }
+
+  async getReviewsByProductId(productId: number): Promise<Review[]> {
+    return await db
+      .select({
+        id: reviews.id,
+        userId: reviews.userId,
+        productId: reviews.productId,
+        rating: reviews.rating,
+        title: reviews.title,
+        content: reviews.content,
+        verifiedPurchase: reviews.verifiedPurchase,
+        helpfulVotes: reviews.helpfulVotes,
+        createdAt: reviews.createdAt,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(eq(reviews.productId, productId))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async updateReviewHelpful(id: number): Promise<void> {
+    await db
+      .update(reviews)
+      .set({ helpfulVotes: reviews.helpfulVotes + 1 })
+      .where(eq(reviews.id, id));
+  }
+
+  // Wishlist operations
+  async addToWishlist(item: InsertWishlistItem): Promise<WishlistItem> {
+    const [newItem] = await db
+      .insert(wishlist)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+
+  async getWishlistByUserId(userId: string): Promise<WishlistItem[]> {
+    return await db
+      .select({
+        id: wishlist.id,
+        userId: wishlist.userId,
+        productId: wishlist.productId,
+        createdAt: wishlist.createdAt,
+        product: {
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          images: products.images,
+          roastLevel: products.roastLevel,
+          origin: products.origin,
+        },
+      })
+      .from(wishlist)
+      .leftJoin(products, eq(wishlist.productId, products.id))
+      .where(eq(wishlist.userId, userId))
+      .orderBy(desc(wishlist.createdAt));
+  }
+
+  async removeFromWishlist(userId: string, productId: number): Promise<void> {
+    await db
+      .delete(wishlist)
+      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+  }
+
+  // Notification operations
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async deleteNotification(id: number): Promise<void> {
+    await db
+      .delete(notifications)
+      .where(eq(notifications.id, id));
   }
 }
 

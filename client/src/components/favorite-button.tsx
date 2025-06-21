@@ -28,18 +28,36 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
   // Toggle favorite mutation
   const toggleFavoriteMutation = useMutation({
     mutationFn: () => apiRequest("POST", `/api/favorites/roasters/${roasterId}`),
+    onMutate: async () => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['/api/favorites/roasters', roasterId, 'check'] });
+
+      // Snapshot the previous value
+      const previousFavorite = queryClient.getQueryData(['/api/favorites/roasters', roasterId, 'check']);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['/api/favorites/roasters', roasterId, 'check'], (old: any) => ({
+        isFavorite: !old?.isFavorite
+      }));
+
+      // Return a context object with the snapshotted value
+      return { previousFavorite };
+    },
     onSuccess: (data: any) => {
+      console.log("Toggle favorite response:", data);
       const newFavoriteStatus = data.isFavorite;
       
-      // Update cache for check query
-      updateCachedData(
-        queryClient,
+      // Update cache with server response
+      queryClient.setQueryData(
         ['/api/favorites/roasters', roasterId, 'check'],
         { isFavorite: newFavoriteStatus }
       );
       
-      // Invalidate favorites list
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites/roasters'] });
+      // Only invalidate the favorites list, not the check query
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/favorites/roasters'],
+        exact: true
+      });
       
       toast({
         title: newFavoriteStatus ? "Added to Favorites" : "Removed from Favorites",
@@ -48,8 +66,14 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
           : "This roaster has been removed from your favorites.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
       console.error("Error toggling favorite:", error);
+      
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousFavorite) {
+        queryClient.setQueryData(['/api/favorites/roasters', roasterId, 'check'], context.previousFavorite);
+      }
+      
       toast({
         title: "Error",
         description: error.message || "Failed to update favorites",

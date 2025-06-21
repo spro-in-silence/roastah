@@ -30,11 +30,66 @@ if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   console.warn('VITE_STRIPE_PUBLIC_KEY is not configured');
 }
 
+const US_STATES = [
+  { value: "AL", label: "Alabama" },
+  { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" },
+  { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" },
+  { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" },
+  { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" },
+  { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" },
+  { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" },
+  { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" },
+  { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" },
+  { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" },
+  { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" },
+  { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" },
+  { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" },
+  { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" },
+  { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" },
+  { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" },
+  { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" },
+  { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" },
+  { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" },
+  { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" },
+  { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" },
+  { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" },
+  { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" },
+  { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" },
+  { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" },
+  { value: "WY", label: "Wyoming" },
+  { value: "DC", label: "District of Columbia" }
+];
+
 const addressSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Valid email is required"),
-  address: z.string().min(1, "Address is required"),
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(5, "Valid ZIP code is required"),
@@ -162,14 +217,28 @@ function CheckoutForm() {
                     </div>
                     
                     <div className="md:col-span-2">
-                      <Label htmlFor="address">Address</Label>
+                      <Label htmlFor="addressLine1">Address Line 1</Label>
                       <Input
-                        id="address"
-                        {...register("address")}
-                        className={errors.address ? "border-red-500" : ""}
+                        id="addressLine1"
+                        {...register("addressLine1")}
+                        placeholder="123 Coffee Street"
+                        className={errors.addressLine1 ? "border-red-500" : ""}
                       />
-                      {errors.address && (
-                        <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+                      {errors.addressLine1 && (
+                        <p className="text-red-500 text-sm mt-1">{errors.addressLine1.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                      <Input
+                        id="addressLine2"
+                        {...register("addressLine2")}
+                        placeholder="Apartment, suite, unit, building, floor, etc."
+                        className={errors.addressLine2 ? "border-red-500" : ""}
+                      />
+                      {errors.addressLine2 && (
+                        <p className="text-red-500 text-sm mt-1">{errors.addressLine2.message}</p>
                       )}
                     </div>
                     

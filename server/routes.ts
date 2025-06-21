@@ -1465,13 +1465,14 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // USPS Address Validation
   app.post('/api/validate-address', isAuthenticated, async (req: any, res) => {
     try {
-      const { address, city, state, zipCode } = req.body;
+      const { addressLine1, addressLine2, city, state, zipCode } = req.body;
       
       // Mock USPS validation - in production, integrate with actual USPS API
       const validationResult = {
         isValid: true,
         standardizedAddress: {
-          address: address.trim(),
+          addressLine1: addressLine1.trim(),
+          addressLine2: addressLine2 ? addressLine2.trim() : "",
           city: city.trim().toUpperCase(),
           state: state.toUpperCase(),
           zipCode: zipCode.trim()
@@ -1481,10 +1482,10 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       };
       
       // Basic validation checks
-      if (!address || !city || !state || !zipCode) {
+      if (!addressLine1 || !city || !state || !zipCode) {
         return res.status(400).json({
           isValid: false,
-          error: "All address fields are required"
+          error: "Address line 1, city, state, and ZIP code are required"
         });
       }
       

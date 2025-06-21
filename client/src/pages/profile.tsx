@@ -28,7 +28,8 @@ const personalInfoSchema = z.object({
 });
 
 const addressSchema = z.object({
-  address: z.string().min(1, "Address is required"),
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(5, "Valid ZIP code is required"),
@@ -191,7 +192,13 @@ export default function Profile() {
 
   const onSubmitAddress = async (data: any) => {
     try {
-      const addressData = { ...data, state: selectedState };
+      const addressData = { 
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2 || "",
+        city: data.city,
+        state: selectedState,
+        zipCode: data.zipCode
+      };
       
       // Validate address with USPS
       await validateUSPSAddress(addressData);
@@ -394,15 +401,27 @@ export default function Profile() {
                     <form onSubmit={handleSubmitAddress(onSubmitAddress)} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                          <Label htmlFor="address">Street Address</Label>
+                          <Label htmlFor="addressLine1">Address Line 1</Label>
                           <Input
-                            id="address"
-                            {...registerAddress("address")}
+                            id="addressLine1"
+                            {...registerAddress("addressLine1")}
                             placeholder="123 Coffee Street"
-                            className={addressErrors.address ? "border-red-500" : ""}
+                            className={addressErrors.addressLine1 ? "border-red-500" : ""}
                           />
-                          {addressErrors.address && (
-                            <p className="text-red-500 text-sm mt-1">{addressErrors.address.message}</p>
+                          {addressErrors.addressLine1 && (
+                            <p className="text-red-500 text-sm mt-1">{addressErrors.addressLine1.message}</p>
+                          )}
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                          <Input
+                            id="addressLine2"
+                            {...registerAddress("addressLine2")}
+                            placeholder="Apartment, suite, unit, building, floor, etc."
+                            className={addressErrors.addressLine2 ? "border-red-500" : ""}
+                          />
+                          {addressErrors.addressLine2 && (
+                            <p className="text-red-500 text-sm mt-1">{addressErrors.addressLine2.message}</p>
                           )}
                         </div>
                         <div>

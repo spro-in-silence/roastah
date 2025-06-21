@@ -110,6 +110,7 @@ export default function Profile() {
     handleSubmit: handleSubmitAddress,
     formState: { errors: addressErrors },
     setValue: setAddressValue,
+    reset: resetAddress,
   } = useForm({
     resolver: zodResolver(addressSchema),
   });

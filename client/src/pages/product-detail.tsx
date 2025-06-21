@@ -272,6 +272,21 @@ export default function ProductDetail() {
               </Button>
             </div>
 
+            {/* Roaster Information */}
+            {product?.roasterId && (
+              <Card className="mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">Roasted by</h3>
+                      <p className="text-sm text-gray-600">Local artisan roaster</p>
+                    </div>
+                    <FavoriteButton roasterId={product.roasterId} showText />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Shipping Info */}
             <div className="text-sm text-roastah-warm-gray space-y-2">
               <p className="flex items-center">

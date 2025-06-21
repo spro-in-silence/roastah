@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export default function SellerProductsNew() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -83,15 +84,25 @@ export default function SellerProductsNew() {
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductForm) => {
-      await apiRequest("POST", "/api/roaster/products", {
+      const result = await apiRequest("POST", "/api/roaster/products", {
         ...data,
         price: data.price.toString(),
         stockQuantity: data.stockQuantity,
         status: "published",
         images: [], // TODO: Implement image upload
       });
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (newProduct) => {
+      // Update cache immediately by adding the new product
+      queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) {
+          return [newProduct];
+        }
+        return [newProduct, ...oldData];
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
       toast({
         title: "Product Created",
         description: "Your product has been successfully created and published.",

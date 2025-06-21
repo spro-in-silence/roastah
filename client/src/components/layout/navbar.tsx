@@ -15,7 +15,16 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isRoaster, setIsRoaster] = useState(contextIsRoaster);
+  // Initialize mode from localStorage or default to buyer mode
+  const [isRoaster, setIsRoaster] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('userMode');
+      if (savedMode !== null) {
+        return savedMode === 'seller';
+      }
+    }
+    return contextIsRoaster;
+  });
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
@@ -24,10 +33,24 @@ export default function Navbar() {
 
   const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
-  // Sync local state with context
+  // Only sync with context on initial load if no saved preference
   useEffect(() => {
-    setIsRoaster(contextIsRoaster);
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('userMode');
+      if (savedMode === null) {
+        setIsRoaster(contextIsRoaster);
+        localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
+      }
+    }
   }, [contextIsRoaster]);
+
+  // Handle mode switching with persistence
+  const handleModeSwitch = () => {
+    const newMode = !isRoaster;
+    setIsRoaster(newMode);
+    localStorage.setItem('userMode', newMode ? 'seller' : 'buyer');
+    closeMenu();
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,10 +289,7 @@ export default function Navbar() {
                   </div>
                   
                   <button 
-                    onClick={() => {
-                      setIsRoaster(!isRoaster);
-                      closeMenu();
-                    }}
+                    onClick={handleModeSwitch}
                     className="w-full flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors text-left text-gray-700"
                   >
                     <RotateCcw className="h-5 w-5" />

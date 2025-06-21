@@ -1,0 +1,263 @@
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Navbar from "@/components/layout/navbar";
+import Footer from "@/components/layout/footer";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+
+export default function SellerDashboard() {
+  const { isAuthenticated, isLoading, isRoaster } = useUser();
+  const { toast } = useToast();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  // Redirect if not a roaster
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !isRoaster) {
+      toast({
+        title: "Access Denied",
+        description: "You need to be a roaster to access this page.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/become-roastah";
+      }, 1000);
+    }
+  }, [isAuthenticated, isLoading, isRoaster, toast]);
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["/api/roaster/products"],
+    enabled: isAuthenticated && isRoaster,
+  });
+
+  const { data: orders = [] } = useQuery({
+    queryKey: ["/api/roaster/orders"],
+    enabled: isAuthenticated && isRoaster,
+  });
+
+  // Calculate stats
+  const totalProducts = products.length;
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
+  const averageRating = 4.8; // This would come from actual reviews
+
+  // Get recent orders (last 3)
+  const recentOrders = orders.slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-6">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isRoaster) {
+    return null; // Will redirect in useEffect
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Dashboard Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Seller Dashboard</h1>
+            <p className="text-roastah-warm-gray">Welcome back to your roastery</p>
+          </div>
+          <Link href="/seller/products/new">
+            <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </Link>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-roastah-yellow/20 rounded-lg flex items-center justify-center mr-4">
+                  <DollarSign className="h-6 w-6 text-roastah-yellow" />
+                </div>
+                <div>
+                  <p className="text-roastah-warm-gray text-sm">Revenue (30 days)</p>
+                  <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-roastah-teal/20 rounded-lg flex items-center justify-center mr-4">
+                  <ShoppingCart className="h-6 w-6 text-roastah-teal" />
+                </div>
+                <div>
+                  <p className="text-roastah-warm-gray text-sm">Orders</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                  <Package className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-roastah-warm-gray text-sm">Products</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalProducts}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                  <Star className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-roastah-warm-gray text-sm">Rating</p>
+                  <p className="text-2xl font-bold text-gray-900">{averageRating}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Orders & Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Recent Orders</CardTitle>
+                <Link href="/seller/orders">
+                  <Button variant="ghost" className="text-roastah-teal hover:text-roastah-dark-teal text-sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-roastah-warm-gray">No orders yet</p>
+                  <p className="text-sm text-roastah-warm-gray mt-1">
+                    Orders will appear here once customers start buying your products
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order: any) => (
+                    <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">Order #{order.id}</p>
+                        <p className="text-xs text-roastah-warm-gray">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-sm">${parseFloat(order.price || 0).toFixed(2)}</p>
+                        <Badge
+                          className={
+                            order.status === "delivered"
+                              ? "bg-green-100 text-green-800"
+                              : order.status === "shipped"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }
+                        >
+                          {order.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Sales Analytics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                <div className="text-center text-roastah-warm-gray">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4" />
+                  <p className="text-lg font-medium">Analytics Coming Soon</p>
+                  <p className="text-sm">Detailed sales analytics and insights</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        {totalProducts === 0 && (
+          <Card className="mt-8">
+            <CardContent className="p-8 text-center">
+              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Start Selling Your Coffee</h3>
+              <p className="text-roastah-warm-gray mb-6">
+                Add your first product to start connecting with coffee enthusiasts
+              </p>
+              <Link href="/seller/products/new">
+                <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Product
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Footer />
+    </div>
+  );
+}

@@ -31,7 +31,8 @@ export interface Address {
   firstName: string;
   lastName: string;
   email: string;
-  address: string;
+  addressLine1: string;
+  addressLine2?: string;
   city: string;
   state: string;
   zipCode: string;

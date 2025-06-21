@@ -258,14 +258,14 @@ function CheckoutForm() {
                       <Label htmlFor="state">State</Label>
                       <Select onValueChange={(value) => setValue("state", value)}>
                         <SelectTrigger className={errors.state ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select State" />
+                          <SelectValue placeholder="Select a state" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="CA">California</SelectItem>
-                          <SelectItem value="NY">New York</SelectItem>
-                          <SelectItem value="OR">Oregon</SelectItem>
-                          <SelectItem value="WA">Washington</SelectItem>
-                          <SelectItem value="TX">Texas</SelectItem>
+                        <SelectContent className="max-h-48 overflow-y-auto">
+                          {US_STATES.map((state) => (
+                            <SelectItem key={state.value} value={state.value}>
+                              {state.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       {errors.state && (

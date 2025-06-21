@@ -37,6 +37,10 @@ export const users = pgTable("users", {
   isRoasterApproved: boolean("is_roaster_approved").default(false),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeConnectAccountId: varchar("stripe_connect_account_id"),
+  mfaEnabled: boolean("mfa_enabled").default(false),
+  mfaSecret: varchar("mfa_secret"),
+  backupCodes: text("backup_codes").array(),
+  lastBackupCodeUsed: timestamp("last_backup_code_used"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

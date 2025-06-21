@@ -48,6 +48,7 @@ export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserMFA(id: string, mfaData: { mfaEnabled?: boolean; mfaSecret?: string; backupCodes?: string[]; lastBackupCodeUsed?: Date }): Promise<User>;
   
   // Roaster operations
   createRoaster(roaster: InsertRoaster): Promise<Roaster>;
@@ -141,6 +142,18 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateUserMFA(id: string, mfaData: { mfaEnabled?: boolean; mfaSecret?: string; backupCodes?: string[]; lastBackupCodeUsed?: Date }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...mfaData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

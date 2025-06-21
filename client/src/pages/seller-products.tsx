@@ -100,6 +100,8 @@ export default function SellerProducts() {
                          product.origin?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === "all" ||
+                         (statusFilter === "published" && product.status === "published") ||
+                         (statusFilter === "draft" && product.status === "draft") ||
                          (statusFilter === "active" && product.isActive) ||
                          (statusFilter === "inactive" && !product.isActive) ||
                          (statusFilter === "out_of_stock" && product.stockQuantity === 0);
@@ -160,6 +162,8 @@ export default function SellerProducts() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Drafts</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="out_of_stock">Out of Stock</SelectItem>
@@ -244,22 +248,28 @@ export default function SellerProducts() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={
-                              product.stockQuantity === 0
-                                ? "bg-red-100 text-red-800"
-                                : product.isActive
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }
-                          >
-                            {product.stockQuantity === 0 
-                              ? "Out of Stock" 
-                              : product.isActive 
-                              ? "Active" 
-                              : "Inactive"
-                            }
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Badge
+                              className={
+                                product.status === "draft"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : product.stockQuantity === 0
+                                  ? "bg-red-100 text-red-800"
+                                  : product.isActive
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {product.status === "draft" 
+                                ? "Draft" 
+                                : product.stockQuantity === 0 
+                                ? "Out of Stock" 
+                                : product.isActive 
+                                ? "Published" 
+                                : "Inactive"
+                              }
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">

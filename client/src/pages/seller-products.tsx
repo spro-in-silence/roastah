@@ -33,7 +33,7 @@ export default function SellerProducts() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -106,19 +106,14 @@ export default function SellerProducts() {
     }
   };
 
-  // Filter products based on search and status
-  const filteredProducts = products.filter((product: Product) => {
+  // Filter products based on search and state
+  const filteredProducts = products.filter((product: ProductWithState) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.origin?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" ||
-                         (statusFilter === "published" && product.status === "published") ||
-                         (statusFilter === "draft" && product.status === "draft") ||
-                         (statusFilter === "active" && product.isActive) ||
-                         (statusFilter === "inactive" && !product.isActive) ||
-                         (statusFilter === "out_of_stock" && product.stockQuantity === 0);
+    const matchesState = stateFilter === "all" || product.state === stateFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesState;
   });
 
   if (isLoading) {
@@ -168,17 +163,17 @@ export default function SellerProducts() {
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={stateFilter} onValueChange={setStateFilter}>
                 <SelectTrigger className="w-48 ml-4">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="pending_review">Pending Review</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Drafts</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -229,12 +224,12 @@ export default function SellerProducts() {
                       <TableHead>Product</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>State & Tags</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.map((product: Product) => (
+                    {filteredProducts.map((product: ProductWithState) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
@@ -260,27 +255,22 @@ export default function SellerProducts() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Badge
-                              className={
-                                product.status === "draft"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : product.stockQuantity === 0
-                                  ? "bg-red-100 text-red-800"
-                                  : product.isActive
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }
-                            >
-                              {product.status === "draft" 
-                                ? "Draft" 
-                                : product.stockQuantity === 0 
-                                ? "Out of Stock" 
-                                : product.isActive 
-                                ? "Published" 
-                                : "Inactive"
-                              }
+                          <div className="flex flex-wrap gap-1">
+                            {/* Main State Badge */}
+                            <Badge className={getStateColor(product.state)}>
+                              {getStateLabel(product.state)}
                             </Badge>
+                            
+                            {/* Tag Badges */}
+                            {getActiveTags(product).map((tag) => (
+                              <Badge 
+                                key={tag}
+                                variant="outline" 
+                                className={`text-xs ${getTagColor(tag)}`}
+                              >
+                                {getTagLabel(tag)}
+                              </Badge>
+                            ))}
                           </div>
                         </TableCell>
                         <TableCell>

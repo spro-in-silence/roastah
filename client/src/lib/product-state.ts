@@ -141,15 +141,15 @@ export const getStateDescription = (state: ProductState): string => {
 export const getAvailableTransitions = (currentState: ProductState): ProductState[] => {
   switch (currentState) {
     case 'draft':
-      return ['pending_review', 'published'];
+      return ['pending_review', 'published', 'archived'];
     case 'pending_review':
-      return ['published', 'rejected'];
+      return ['published', 'rejected', 'draft'];
     case 'published':
-      return ['archived'];
+      return ['archived', 'draft', 'pending_review'];
     case 'archived':
-      return ['published'];
+      return ['published', 'draft'];
     case 'rejected':
-      return ['draft', 'pending_review'];
+      return ['draft', 'pending_review', 'published'];
     default:
       return [];
   }

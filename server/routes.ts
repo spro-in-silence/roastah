@@ -1047,6 +1047,33 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Leaderboard routes
+  app.get('/api/leaderboard', async (req, res) => {
+    try {
+      const { dateRange = 'all', limit = '10' } = req.query;
+      const leaderboard = await storage.getLeaderboard(
+        dateRange as string, 
+        parseInt(limit as string)
+      );
+      res.json(leaderboard);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      res.status(500).json({ message: 'Failed to fetch leaderboard' });
+    }
+  });
+
+  app.post('/api/roasters/:id/update-metrics', isAuthenticated, async (req, res) => {
+    try {
+      const roasterId = parseInt(req.params.id);
+      await storage.updateRoasterMetrics(roasterId);
+      const score = await storage.calculateLeaderboardScore(roasterId);
+      res.json({ success: true, leaderboardScore: score });
+    } catch (error) {
+      console.error('Error updating roaster metrics:', error);
+      res.status(500).json({ message: 'Failed to update metrics' });
+    }
+  });
+
   // Real-time tracking routes
   app.get('/api/orders/:id/tracking', isAuthenticated, async (req: any, res) => {
     try {

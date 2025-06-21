@@ -23,6 +23,7 @@ import MedusaAdmin from "@/pages/medusa-admin";
 import SecurityDashboard from "@/pages/security-dashboard";
 import TestPayment from "@/pages/test-payment";
 import TrackingDemo from "@/pages/tracking-demo";
+import Leaderboard from "@/pages/leaderboard";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -62,6 +63,7 @@ function Router() {
           <Route path="/security" component={SecurityDashboard} />
           <Route path="/test-payment" component={TestPayment} />
           <Route path="/tracking-demo" component={TrackingDemo} />
+          <Route path="/leaderboard" component={Leaderboard} />
         </>
       )}
       <Route component={NotFound} />

@@ -16,6 +16,7 @@ import {
   bulkUploads,
   disputes,
   favoriteRoasters,
+  giftCards,
   type User,
   type UpsertUser,
   type Roaster,
@@ -48,6 +49,8 @@ import {
   type Dispute,
   type InsertDispute,
   type FavoriteRoaster,
+  type GiftCard,
+  type InsertGiftCard,
   type InsertFavoriteRoaster,
 } from "@shared/schema";
 import { db } from "./db";
@@ -157,6 +160,14 @@ export interface IStorage {
   removeFavoriteRoaster(userId: string, roasterId: number): Promise<void>;
   getFavoriteRoastersByUser(userId: string): Promise<any[]>;
   isFavoriteRoaster(userId: string, roasterId: number): Promise<boolean>;
+  
+  // Gift card operations
+  createGiftCard(giftCard: InsertGiftCard): Promise<GiftCard>;
+  getGiftCardById(id: number): Promise<GiftCard | undefined>;
+  getGiftCardByCode(code: string): Promise<GiftCard | undefined>;
+  getGiftCardsByPurchaser(purchaserId: string): Promise<GiftCard[]>;
+  redeemGiftCard(code: string, userId: string, amount: number): Promise<GiftCard>;
+  updateGiftCardStatus(id: number, status: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -928,6 +939,78 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     return !!favorite;
+  }
+
+  // Gift card operations
+  async createGiftCard(giftCardData: InsertGiftCard): Promise<GiftCard> {
+    // Generate unique gift card code
+    const code = this.generateGiftCardCode();
+    
+    // Set expiration date to 1 year from now
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    
+    const [giftCard] = await db
+      .insert(giftCards)
+      .values({
+        ...giftCardData,
+        code,
+        expiresAt,
+        remainingBalance: giftCardData.amount,
+      })
+      .returning();
+    return giftCard;
+  }
+
+  async getGiftCardById(id: number): Promise<GiftCard | undefined> {
+    const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.id, id));
+    return giftCard;
+  }
+
+  async getGiftCardByCode(code: string): Promise<GiftCard | undefined> {
+    const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.code, code));
+    return giftCard;
+  }
+
+  async getGiftCardsByPurchaser(purchaserId: string): Promise<GiftCard[]> {
+    return await db
+      .select()
+      .from(giftCards)
+      .where(eq(giftCards.purchaserId, purchaserId))
+      .orderBy(desc(giftCards.createdAt));
+  }
+
+  async redeemGiftCard(code: string, userId: string, amount: number): Promise<GiftCard> {
+    const [giftCard] = await db
+      .update(giftCards)
+      .set({
+        redeemedBy: userId,
+        redeemedAt: new Date(),
+        remainingBalance: sql`${giftCards.remainingBalance} - ${amount}`,
+        status: sql`CASE WHEN ${giftCards.remainingBalance} - ${amount} <= 0 THEN 'redeemed' ELSE 'partially_redeemed' END`,
+        updatedAt: new Date(),
+      })
+      .where(eq(giftCards.code, code))
+      .returning();
+    return giftCard;
+  }
+
+  async updateGiftCardStatus(id: number, status: string): Promise<void> {
+    await db
+      .update(giftCards)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(giftCards.id, id));
+  }
+
+  private generateGiftCardCode(): string {
+    // Generate a unique 16-character alphanumeric code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 16; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    // Format as XXXX-XXXX-XXXX-XXXX
+    return code.match(/.{1,4}/g)?.join('-') || code;
   }
 }
 

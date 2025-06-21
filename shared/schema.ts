@@ -585,3 +585,50 @@ export type BulkUpload = typeof bulkUploads.$inferSelect;
 export type InsertBulkUpload = z.infer<typeof insertBulkUploadSchema>;
 export type Dispute = typeof disputes.$inferSelect;
 export type InsertDispute = z.infer<typeof insertDisputeSchema>;
+
+// Gift Cards
+export const giftCards = pgTable("gift_cards", {
+  id: serial("id").primaryKey(),
+  purchaserId: varchar("purchaser_id").notNull().references(() => users.id),
+  recipientEmail: varchar("recipient_email"),
+  recipientPhone: varchar("recipient_phone"),
+  recipientName: varchar("recipient_name"),
+  senderName: varchar("sender_name").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  code: varchar("code").notNull().unique(),
+  category: varchar("category").notNull(), // appreciation, congratulations, celebration, any-occasion, seasonal
+  design: varchar("design").notNull(), // design identifier
+  message: text("message"),
+  deliveryDate: timestamp("delivery_date").notNull(),
+  status: varchar("status").notNull().default("pending"), // pending, delivered, redeemed, expired
+  redeemedBy: varchar("redeemed_by").references(() => users.id),
+  redeemedAt: timestamp("redeemed_at"),
+  remainingBalance: decimal("remaining_balance", { precision: 10, scale: 2 }),
+  expiresAt: timestamp("expires_at"), // gift cards expire after 1 year
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const giftCardRelations = relations(giftCards, ({ one }) => ({
+  purchaser: one(users, {
+    fields: [giftCards.purchaserId],
+    references: [users.id],
+  }),
+  redeemedByUser: one(users, {
+    fields: [giftCards.redeemedBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertGiftCardSchema = createInsertSchema(giftCards).omit({
+  id: true,
+  code: true,
+  createdAt: true,
+  updatedAt: true,
+  redeemedAt: true,
+  remainingBalance: true,
+});
+
+export type GiftCard = typeof giftCards.$inferSelect;
+export type InsertGiftCard = z.infer<typeof insertGiftCardSchema>;

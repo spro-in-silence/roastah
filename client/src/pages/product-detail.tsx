@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Star, Heart, Truck, Shield, Minus, Plus, Share2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +26,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [grindSize, setGrindSize] = useState("whole_bean");
 
-  const { data: product, isLoading } = useQuery({
+  const { data: product, isLoading } = useQuery<Product>({
     queryKey: [`/api/products/${id}`],
     enabled: !!id,
   });
@@ -108,7 +109,7 @@ export default function ProductDetail() {
   };
 
   const defaultColor = "bg-gray-100 text-gray-800";
-  const roastLevelClass = roastLevelColors[product.roastLevel?.toLowerCase() as keyof typeof roastLevelColors] || defaultColor;
+  const roastLevelClass = product?.roastLevel ? roastLevelColors[product.roastLevel.toLowerCase() as keyof typeof roastLevelColors] || defaultColor : defaultColor;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,7 +122,7 @@ export default function ProductDetail() {
           <span>/</span>
           <a href="/products" className="hover:text-roastah-teal">Coffee</a>
           <span>/</span>
-          <span className="text-gray-900">{product.name}</span>
+          <span className="text-gray-900">{product?.name}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -129,8 +130,8 @@ export default function ProductDetail() {
           <div>
             <div className="aspect-square overflow-hidden rounded-xl mb-4">
               <img
-                src={product.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=800&h=800"}
-                alt={product.name}
+                src={product?.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=800&h=800"}
+                alt={product?.name || "Product"}
                 className="w-full h-full object-cover"
               />
             </div>

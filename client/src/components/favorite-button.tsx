@@ -19,12 +19,12 @@ export function FavoriteButton({ roasterId, className = "", showText = false }: 
   const queryClient = useQueryClient();
 
   // Check if roaster is favorited
-  const { data: favoriteStatus, isLoading } = useQuery({
+  const { data: favoriteStatus, isLoading } = useQuery<{ isFavorite: boolean }>({
     queryKey: ['/api/favorites/roasters', roasterId, 'check'],
     enabled: isAuthenticated,
   });
 
-  const isFavorite = favoriteStatus?.isFavorite || false;
+  const isFavorite = favoriteStatus?.isFavorite ?? false;
 
   // Add to favorites mutation
   const addFavoriteMutation = useMutation({

@@ -167,3 +167,10 @@ export function updateReviewCache(
 
   queryClient.invalidateQueries({ queryKey: reviewQueryKey });
 }
+
+/**
+ * Generic cache data update utility for simple updates
+ */
+export function updateCachedData(queryClient: QueryClient, queryKey: any[], data: any) {
+  queryClient.setQueryData(queryKey, data);
+}

@@ -168,7 +168,9 @@ export default function Leaderboard() {
           <div className="space-y-4">
             {leaderboard.map((roaster) => {
               const tier = getRankingTier(roaster.rank);
-              const score = parseFloat(roaster.leaderboardScore);
+              const score = roaster.leaderboardScore && !isNaN(parseFloat(roaster.leaderboardScore)) 
+                ? parseFloat(roaster.leaderboardScore) 
+                : 0;
               
               return (
                 <Card key={roaster.id} className={`overflow-hidden transition-all hover:shadow-lg ${
@@ -244,7 +246,9 @@ export default function Leaderboard() {
                             <div className="flex items-center justify-center mb-1">
                               <Star className="h-4 w-4 text-yellow-500 mr-1" />
                               <span className="text-lg font-semibold text-gray-900">
-                                {parseFloat(roaster.averageRating).toFixed(1)}
+                                {roaster.averageRating && !isNaN(parseFloat(roaster.averageRating)) 
+                                  ? parseFloat(roaster.averageRating).toFixed(1) 
+                                  : '0.0'}
                               </span>
                             </div>
                             <p className="text-xs text-gray-500">

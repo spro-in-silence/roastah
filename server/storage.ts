@@ -839,12 +839,18 @@ export class DatabaseStorage implements IStorage {
 
     if (!roaster) return 0;
 
+    // Safely parse rating and reviews with fallbacks
+    const rating = parseFloat(roaster.averageRating || '0') || 0;
+    const reviews = parseInt(String(roaster.totalReviews || 0)) || 0;
+
     // Public metrics only scoring algorithm
     // 70% weight for average rating, 30% weight for number of reviews
-    return (
-      (Number(roaster.averageRating || 0) / 5.0 * 70) +
-      (Math.min(Number(roaster.totalReviews || 0) / 100.0, 1.0) * 30)
-    );
+    const ratingScore = Math.max(0, Math.min(5, rating)) / 5.0 * 70;
+    const reviewScore = Math.min(reviews / 100.0, 1.0) * 30;
+    
+    const totalScore = ratingScore + reviewScore;
+    
+    return Math.round(totalScore * 100) / 100;
   }
 }
 

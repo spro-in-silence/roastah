@@ -260,8 +260,9 @@ export function requireRole(role: 'admin' | 'roaster' | 'user') {
       // For roaster role, check if user has approved roaster account
       if (role === 'roaster') {
         const { storage } = await import('./storage');
+        const user = await storage.getUser(userId);
         const roaster = await storage.getRoasterByUserId(userId);
-        if (!roaster || !roaster.isApproved) {
+        if (!roaster || !user?.isRoasterApproved) {
           return res.status(403).json({ error: 'Roaster access required' });
         }
       }

@@ -1462,24 +1462,11 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
-  // USPS Address Validation
+  // Address validation and saving
   app.post('/api/validate-address', isAuthenticated, async (req: any, res) => {
     try {
       const { addressLine1, addressLine2, city, state, zipCode } = req.body;
-      
-      // Mock USPS validation - in production, integrate with actual USPS API
-      const validationResult = {
-        isValid: true,
-        standardizedAddress: {
-          addressLine1: addressLine1.trim(),
-          addressLine2: addressLine2 ? addressLine2.trim() : "",
-          city: city.trim().toUpperCase(),
-          state: state.toUpperCase(),
-          zipCode: zipCode.trim()
-        },
-        deliveryPoint: true,
-        suggestions: []
-      };
+      const userId = req.user.claims.sub;
       
       // Basic validation checks
       if (!addressLine1 || !city || !state || !zipCode) {
@@ -1495,6 +1482,46 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
           error: "Invalid ZIP code format"
         });
       }
+      
+      // Enhanced validation - check for common invalid patterns
+      const invalidPatterns = [
+        /^123\s/i, // Starts with "123 "
+        /test/i,
+        /fake/i,
+        /invalid/i,
+        /example/i
+      ];
+      
+      const isInvalidAddress = invalidPatterns.some(pattern => 
+        pattern.test(addressLine1) || 
+        pattern.test(city) || 
+        (addressLine2 && pattern.test(addressLine2))
+      );
+      
+      if (isInvalidAddress) {
+        return res.status(400).json({
+          isValid: false,
+          error: "Please enter a valid address"
+        });
+      }
+      
+      // Save the validated address to user profile
+      const addressData = {
+        addressLine1: addressLine1.trim(),
+        addressLine2: addressLine2 ? addressLine2.trim() : "",
+        city: city.trim(),
+        state: state.toUpperCase(),
+        zipCode: zipCode.trim()
+      };
+      
+      await storage.updateUserAddress(userId, addressData);
+      
+      const validationResult = {
+        isValid: true,
+        standardizedAddress: addressData,
+        deliveryPoint: true,
+        suggestions: []
+      };
       
       res.json(validationResult);
     } catch (error) {

@@ -61,6 +61,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserMFA(id: string, mfaData: { mfaEnabled?: boolean; mfaSecret?: string; backupCodes?: string[]; lastBackupCodeUsed?: Date }): Promise<User>;
+  updateUserAddress(id: string, addressData: { addressLine1: string; addressLine2?: string; city: string; state: string; zipCode: string }): Promise<User>;
   
   // Roaster operations
   createRoaster(roaster: InsertRoaster): Promise<Roaster>;
@@ -197,6 +198,22 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({
         ...mfaData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserAddress(id: string, addressData: { addressLine1: string; addressLine2?: string; city: string; state: string; zipCode: string }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        addressLine1: addressData.addressLine1,
+        addressLine2: addressData.addressLine2 || "",
+        city: addressData.city,
+        state: addressData.state,
+        zipCode: addressData.zipCode,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))

@@ -86,6 +86,7 @@ export const products = pgTable("products", {
   varietal: varchar("varietal"),
   tastingNotes: text("tasting_notes"),
   images: text("images").array(),
+  status: varchar("status").notNull().default("published"), // published, draft, archived
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

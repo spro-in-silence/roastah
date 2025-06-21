@@ -85,6 +85,9 @@ export default function SellerProductsNew() {
     mutationFn: async (data: ProductForm) => {
       await apiRequest("POST", "/api/roaster/products", {
         ...data,
+        price: data.price.toString(),
+        stockQuantity: data.stockQuantity,
+        status: "published",
         images: [], // TODO: Implement image upload
       });
     },
@@ -116,14 +119,38 @@ export default function SellerProductsNew() {
   });
 
   const saveDraftMutation = useMutation({
-    mutationFn: async (data: Partial<ProductForm>) => {
-      // TODO: Implement draft saving
-      console.log("Saving draft:", data);
+    mutationFn: async (data: ProductForm) => {
+      await apiRequest("POST", "/api/roaster/products", {
+        ...data,
+        price: data.price.toString(),
+        stockQuantity: data.stockQuantity,
+        status: "draft",
+        images: [], // TODO: Implement image upload
+      });
     },
     onSuccess: () => {
       toast({
         title: "Draft Saved",
         description: "Your product has been saved as a draft.",
+      });
+      setLocation("/seller/products");
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to save draft. Please try again.",
+        variant: "destructive",
       });
     },
   });

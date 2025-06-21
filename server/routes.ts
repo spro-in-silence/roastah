@@ -24,6 +24,7 @@ import {
   bulkUploads, disputes
 } from "@shared/schema";
 import { MedusaBridge } from "./medusa-bridge";
+import { realtimeService } from "./realtime";
 import { insertProductSchema, insertRoasterSchema, insertCartItemSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -1046,6 +1047,98 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Real-time tracking routes
+  app.get('/api/orders/:id/tracking', isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const tracking = await storage.getOrderTracking(orderId);
+      res.json(tracking);
+    } catch (error) {
+      console.error("Error fetching order tracking:", error);
+      res.status(500).json({ message: "Failed to fetch order tracking" });
+    }
+  });
+
+  app.post('/api/orders/:id/tracking', isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const trackingData = { ...req.body, orderId };
+      
+      const tracking = await storage.createOrderTracking(trackingData);
+      
+      // Broadcast real-time update
+      await realtimeService.broadcastOrderUpdate(orderId, tracking);
+      
+      res.json(tracking);
+    } catch (error) {
+      console.error("Error creating order tracking:", error);
+      res.status(500).json({ message: "Failed to create order tracking" });
+    }
+  });
+
+  app.put('/api/orders/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const order = await storage.getOrderById(orderId);
+      const oldStatus = order?.status;
+      
+      await storage.updateOrderStatus(orderId, status);
+      
+      // Broadcast status change
+      if (oldStatus && oldStatus !== status) {
+        await realtimeService.broadcastOrderStatusChange(orderId, status, oldStatus);
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  // Notification routes
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getNotificationsByUserId(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const notification = await storage.createNotification(req.body);
+      
+      // Broadcast real-time notification
+      await realtimeService.broadcastNotification(notification);
+      
+      res.json(notification);
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.put('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.markNotificationAsRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket server
+  realtimeService.initialize(httpServer);
+  
   return httpServer;
 }

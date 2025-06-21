@@ -642,6 +642,75 @@ export class DatabaseStorage implements IStorage {
       .set(updateData)
       .where(eq(disputes.id, id));
   }
+
+  // Real-time tracking operations
+  async createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking> {
+    const [result] = await db
+      .insert(orderTracking)
+      .values(tracking)
+      .returning();
+    return result;
+  }
+
+  async getOrderTracking(orderId: number): Promise<OrderTracking[]> {
+    return await db
+      .select()
+      .from(orderTracking)
+      .where(eq(orderTracking.orderId, orderId))
+      .orderBy(desc(orderTracking.createdAt));
+  }
+
+  async updateOrderTracking(id: number, updates: Partial<InsertOrderTracking>): Promise<OrderTracking> {
+    const [result] = await db
+      .update(orderTracking)
+      .set(updates)
+      .where(eq(orderTracking.id, id))
+      .returning();
+    return result;
+  }
+
+  // Real-time connection operations
+  async createRealtimeConnection(connection: InsertRealtimeConnection): Promise<RealtimeConnection> {
+    const [result] = await db
+      .insert(realtimeConnections)
+      .values(connection)
+      .returning();
+    return result;
+  }
+
+  async getRealtimeConnectionsByUser(userId: string): Promise<RealtimeConnection[]> {
+    return await db
+      .select()
+      .from(realtimeConnections)
+      .where(eq(realtimeConnections.userId, userId))
+      .orderBy(desc(realtimeConnections.createdAt));
+  }
+
+  async updateRealtimeConnection(id: number, updates: Partial<InsertRealtimeConnection>): Promise<void> {
+    await db
+      .update(realtimeConnections)
+      .set(updates)
+      .where(eq(realtimeConnections.id, id));
+  }
+
+  async removeRealtimeConnection(connectionId: string): Promise<void> {
+    await db
+      .delete(realtimeConnections)
+      .where(eq(realtimeConnections.connectionId, connectionId));
+  }
+
+  // Enhanced order operations for real-time features
+  async getRoasterById(id: number): Promise<Roaster | undefined> {
+    const [roaster] = await db.select().from(roasters).where(eq(roasters.id, id));
+    return roaster;
+  }
+
+  async getOrderItemsByOrder(orderId: number): Promise<OrderItem[]> {
+    return await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+  }
 }
 
 export const storage = new DatabaseStorage();

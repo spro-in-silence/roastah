@@ -152,6 +152,9 @@ export default function Profile() {
         state: user.state || "",
         zipCode: user.zipCode || "",
       });
+      
+      // Set the selected state for the dropdown
+      setSelectedState(user.state || "");
     }
   }, [user, resetPersonal, resetAddress]);
 

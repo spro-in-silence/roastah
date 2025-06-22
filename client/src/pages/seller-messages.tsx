@@ -79,6 +79,7 @@ export default function SellerMessages() {
   });
 
   const onSubmit = (data: MessageFormData) => {
+    console.log("Form submitted with data:", data);
     createMessageMutation.mutate(data);
   };
 

@@ -16,8 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { MessageSquare, Send, Users, Calendar, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { z } from "zod";
-import Navbar from "@/components/layout/navbar";
-import Footer from "@/components/layout/footer";
+
 
 // Form schema for message creation
 const messageFormSchema = insertSellerMessageSchema.extend({
@@ -95,33 +94,30 @@ export default function SellerMessages() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="w-full mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
-          <p className="text-gray-600">Send updates and announcements to customers who have favorited your products or made purchases.</p>
-        </div>
+    <div className="w-full mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
+        <p className="text-gray-600">Send updates and announcements to customers who have favorited your products or made purchases.</p>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          {/* Message Creation Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Compose New Message
-              </CardTitle>
-              <CardDescription>
-                Create a message to send to your customers. Only customers who have favorited your products or made purchases will receive it.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="subjectId"
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        {/* Message Creation Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Compose New Message
+            </CardTitle>
+            <CardDescription>
+              Create a message to send to your customers. Only customers who have favorited your products or made purchases will receive it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="subjectId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Message Subject Category</FormLabel>
@@ -312,8 +308,6 @@ export default function SellerMessages() {
           </Card>
         )}
       </div>
-      
-      <Footer />
     </div>
   );
 }

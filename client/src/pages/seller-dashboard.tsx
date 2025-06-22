@@ -175,7 +175,7 @@ export default function SellerDashboard() {
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-6">
-          <SellerAnalyticsDashboard />
+          <SellerAnalyticsDashboard roasterId={1} />
         </TabsContent>
 
         <TabsContent value="recent-orders" className="space-y-4">
@@ -223,7 +223,7 @@ export default function SellerDashboard() {
         </TabsContent>
 
         <TabsContent value="bulk-upload">
-          <BulkProductUpload />
+          <BulkProductUpload roasterId={1} />
         </TabsContent>
       </Tabs>
 

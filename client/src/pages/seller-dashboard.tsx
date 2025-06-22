@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare } from "lucide-react";
+import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,13 +95,13 @@ export default function SellerDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Dashboard Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Seller Dashboard</h1>
-            <p className="text-roastah-warm-gray">Welcome back to your roastery</p>
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Seller Dashboard</h1>
+          <p className="text-gray-600">Manage your roastery operations and track performance.</p>
+        </div>
+
+        <div className="mb-6">
           <Link href="/seller/products/new">
             <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
               <Plus className="h-4 w-4 mr-2" />
@@ -110,61 +110,62 @@ export default function SellerDashboard() {
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          {/* Business Overview */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-roastah-yellow/20 rounded-lg flex items-center justify-center mr-4">
-                  <DollarSign className="h-6 w-6 text-roastah-yellow" />
-                </div>
-                <div>
-                  <p className="text-roastah-warm-gray text-sm">Revenue (30 days)</p>
-                  <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
-                </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-roastah-teal" />
+                Business Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Revenue</span>
+                <Badge variant="outline">${totalRevenue.toFixed(2)}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Active Products</span>
+                <Badge variant="outline">{totalProducts}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Orders</span>
+                <Badge variant="outline">{totalOrders}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Average Rating</span>
+                <Badge variant="default">{averageRating}/5</Badge>
               </div>
             </CardContent>
           </Card>
 
+          {/* Quick Actions */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-roastah-teal/20 rounded-lg flex items-center justify-center mr-4">
-                  <ShoppingCart className="h-6 w-6 text-roastah-teal" />
-                </div>
-                <div>
-                  <p className="text-roastah-warm-gray text-sm">Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <Package className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-roastah-warm-gray text-sm">Products</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalProducts}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <Star className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-roastah-warm-gray text-sm">Rating</p>
-                  <p className="text-2xl font-bold text-gray-900">{averageRating}</p>
-                </div>
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link href="/seller/products/new" className="block">
+                <Button variant="outline" className="w-full justify-start">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Product
+                </Button>
+              </Link>
+              <Link href="/seller/orders" className="block">
+                <Button variant="outline" className="w-full justify-start">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Manage Orders
+                </Button>
+              </Link>
+              <Link href="/seller/messages" className="block">
+                <Button variant="outline" className="w-full justify-start">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Send Messages
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

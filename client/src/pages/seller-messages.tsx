@@ -80,8 +80,17 @@ export default function SellerMessages() {
 
   const onSubmit = (data: MessageFormData) => {
     console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
     createMessageMutation.mutate(data);
   };
+
+  // Add debugging for form state
+  console.log("Form validation state:", {
+    isValid: form.formState.isValid,
+    errors: form.formState.errors,
+    isSubmitting: form.formState.isSubmitting,
+    values: form.getValues()
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -181,6 +190,17 @@ export default function SellerMessages() {
                   type="submit"
                   className="w-full"
                   disabled={createMessageMutation.isPending}
+                  onClick={(e) => {
+                    console.log("Button clicked!");
+                    const formData = form.getValues();
+                    console.log("Current form values:", formData);
+                    if (!formData.subjectId || !formData.title || !formData.content) {
+                      console.log("Form validation failed - missing required fields");
+                      return;
+                    }
+                    e.preventDefault();
+                    onSubmit(formData);
+                  }}
                 >
                   {createMessageMutation.isPending ? (
                     "Publishing Message..."

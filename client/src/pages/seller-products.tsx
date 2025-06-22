@@ -547,11 +547,14 @@ export default function SellerProducts() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Add New Product
+                  {editingProduct ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                  {editingProduct ? `Edit Product: ${editingProduct.name}` : "Add New Product"}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Create a single product with detailed information and images.
+                  {editingProduct 
+                    ? `Update product details and settings. Created on ${new Date(editingProduct.createdAt).toLocaleDateString()}`
+                    : "Create a single product with detailed information and images."
+                  }
                 </p>
               </CardHeader>
               <CardContent>
@@ -713,6 +716,97 @@ export default function SellerProducts() {
                     </div>
                   </div>
 
+                  {/* Product Settings */}
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4">Product Settings</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Private Product Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">Private Product</Label>
+                          <p className="text-xs text-gray-500">Only visible to you and invited customers</p>
+                        </div>
+                        <Switch
+                          checked={watch("isPrivate") ?? false}
+                          onCheckedChange={(checked) => setValue("isPrivate", checked)}
+                        />
+                      </div>
+
+                      {/* Unlisted Product Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">Unlisted Product</Label>
+                          <p className="text-xs text-gray-500">Hidden from search results and listings</p>
+                        </div>
+                        <Switch
+                          checked={watch("isUnlisted") ?? false}
+                          onCheckedChange={(checked) => setValue("isUnlisted", checked)}
+                        />
+                      </div>
+
+                      {/* Pre-order Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">Pre-order Product</Label>
+                          <p className="text-xs text-gray-500">Allow customers to pre-order before availability</p>
+                        </div>
+                        <Switch
+                          checked={watch("isPreorder") ?? false}
+                          onCheckedChange={(checked) => setValue("isPreorder", checked)}
+                        />
+                      </div>
+
+                      {/* Scheduled Publishing Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">Scheduled Publishing</Label>
+                          <p className="text-xs text-gray-500">Schedule when product becomes available</p>
+                        </div>
+                        <Switch
+                          checked={watch("isScheduled") ?? false}
+                          onCheckedChange={(checked) => setValue("isScheduled", checked)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Conditional Date Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      {watch("isPreorder") && (
+                        <div>
+                          <Label htmlFor="preorderShippingDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Pre-order Shipping Date
+                          </Label>
+                          <Input
+                            id="preorderShippingDate"
+                            type="datetime-local"
+                            {...register("preorderShippingDate")}
+                            className="mt-1"
+                          />
+                          {errors.preorderShippingDate && (
+                            <p className="text-red-600 text-sm mt-1">{errors.preorderShippingDate.message}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {watch("isScheduled") && (
+                        <div>
+                          <Label htmlFor="scheduledPublishAt" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Scheduled Publish Date
+                          </Label>
+                          <Input
+                            id="scheduledPublishAt"
+                            type="datetime-local"
+                            {...register("scheduledPublishAt")}
+                            className="mt-1"
+                          />
+                          {errors.scheduledPublishAt && (
+                            <p className="text-red-600 text-sm mt-1">{errors.scheduledPublishAt.message}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Product Images */}
                   <div>
                     <h2 className="text-lg font-semibold mb-4">Product Images</h2>
@@ -733,7 +827,10 @@ export default function SellerProducts() {
                       disabled={createProductMutation.isPending}
                       className="flex-1 bg-roastah-teal text-white hover:bg-roastah-dark-teal"
                     >
-                      {createProductMutation.isPending ? "Publishing..." : "Publish Product"}
+                      {createProductMutation.isPending 
+                        ? (editingProduct ? "Updating..." : "Publishing...") 
+                        : (editingProduct ? "Update Product" : "Publish Product")
+                      }
                     </Button>
                     <Button
                       type="button"
@@ -749,6 +846,7 @@ export default function SellerProducts() {
                       variant="outline"
                       onClick={() => {
                         reset();
+                        setEditingProduct(null);
                         setActiveTab("manage");
                       }}
                       className="flex-1 sm:flex-none"

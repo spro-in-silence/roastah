@@ -325,7 +325,7 @@ export default function SellerProducts() {
                               <div className="text-sm text-gray-500">{product.origin}</div>
                             </div>
                           </TableCell>
-                          <TableCell>${product.price.toFixed(2)}</TableCell>
+                          <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                           <TableCell>{product.stockQuantity}</TableCell>
                           <TableCell>
                             <Badge className={getStateColor(product.state)}>

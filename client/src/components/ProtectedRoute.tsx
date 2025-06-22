@@ -38,6 +38,10 @@ export default function ProtectedRoute({
 
   // Redirect unauthenticated users from auth-only pages
   if (!requireAuth && isAuthenticated && redirectTo) {
+    // If user is a completed roaster, redirect to seller dashboard instead of home
+    if (redirectTo === "/home" && (user as any)?.role === 'roaster' && (user as any)?.isRoasterApproved) {
+      return <Navigate to="/seller/dashboard" replace />;
+    }
     return <Navigate to={redirectTo} replace />;
   }
 

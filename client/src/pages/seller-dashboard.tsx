@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings } from "lucide-react";
+import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -241,6 +241,51 @@ export default function SellerDashboard() {
         </div>
 
         {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-roastah-teal/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Plus className="h-6 w-6 text-roastah-teal" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Add Product</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Create a new coffee product</p>
+              <Link href="/seller/products/new">
+                <Button variant="outline" size="sm" className="w-full">
+                  Add Product
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Send Message</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Message your customers</p>
+              <Link href="/seller/messages">
+                <Button variant="outline" size="sm" className="w-full">
+                  Compose Message
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">View Analytics</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Track your performance</p>
+              <Button variant="outline" size="sm" className="w-full">
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {totalProducts === 0 && (
           <Card className="mt-8">
             <CardContent className="p-8 text-center">

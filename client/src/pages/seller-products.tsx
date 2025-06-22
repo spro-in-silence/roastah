@@ -72,6 +72,12 @@ export default function SellerProducts() {
     enabled: isAuthenticated && isRoaster,
   });
 
+  // Get roaster info to get the roaster ID
+  const { data: roasterInfo } = useQuery({
+    queryKey: ["/api/roaster/profile"],
+    enabled: isAuthenticated && isRoaster,
+  });
+
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: number) => {
       await apiRequest("DELETE", `/api/roaster/products/${productId}`);
@@ -227,10 +233,10 @@ export default function SellerProducts() {
                   <div className="text-center py-12">
                     <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {(products as any[]).length === 0 ? "No products yet" : "No products found"}
+                      {products.length === 0 ? "No products yet" : "No products found"}
                     </h3>
                     <p className="text-roastah-warm-gray mb-6">
-                      {(products as any[]).length === 0 
+                      {products.length === 0 
                         ? "Start by adding your first coffee product to share with customers"
                         : "Try adjusting your search or filter criteria"
                       }
@@ -375,7 +381,7 @@ export default function SellerProducts() {
 
           {/* Bulk Upload Tab */}
           <TabsContent value="bulk-upload" className="space-y-6">
-            <BulkProductUpload />
+            {roasterInfo?.id && <BulkProductUpload roasterId={roasterInfo.id} />}
           </TabsContent>
         </Tabs>
       </div>

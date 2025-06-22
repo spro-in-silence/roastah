@@ -1029,6 +1029,189 @@ export class DatabaseStorage implements IStorage {
     // Format as XXXX-XXXX-XXXX-XXXX
     return code.match(/.{1,4}/g)?.join('-') || code;
   }
+
+  // Message Subject operations
+  async getAllMessageSubjects(): Promise<MessageSubject[]> {
+    return await db
+      .select()
+      .from(messageSubjects)
+      .where(eq(messageSubjects.isActive, true))
+      .orderBy(messageSubjects.name);
+  }
+
+  async createMessageSubject(subject: InsertMessageSubject): Promise<MessageSubject> {
+    const [newSubject] = await db
+      .insert(messageSubjects)
+      .values(subject)
+      .returning();
+    return newSubject;
+  }
+
+  // Seller Message operations
+  async createSellerMessage(message: InsertSellerMessage): Promise<SellerMessage> {
+    const [newMessage] = await db
+      .insert(sellerMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  async getSellerMessages(sellerId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: sellerMessages.id,
+        sellerId: sellerMessages.sellerId,
+        subjectId: sellerMessages.subjectId,
+        title: sellerMessages.title,
+        content: sellerMessages.content,
+        publishedAt: sellerMessages.publishedAt,
+        createdAt: sellerMessages.createdAt,
+        subject: {
+          id: messageSubjects.id,
+          name: messageSubjects.name,
+          description: messageSubjects.description,
+        },
+      })
+      .from(sellerMessages)
+      .leftJoin(messageSubjects, eq(sellerMessages.subjectId, messageSubjects.id))
+      .where(eq(sellerMessages.sellerId, sellerId))
+      .orderBy(sql`${sellerMessages.publishedAt} desc`);
+  }
+
+  async getSellerMessageById(messageId: number): Promise<any | undefined> {
+    const [message] = await db
+      .select({
+        id: sellerMessages.id,
+        sellerId: sellerMessages.sellerId,
+        subjectId: sellerMessages.subjectId,
+        title: sellerMessages.title,
+        content: sellerMessages.content,
+        publishedAt: sellerMessages.publishedAt,
+        createdAt: sellerMessages.createdAt,
+        subject: {
+          id: messageSubjects.id,
+          name: messageSubjects.name,
+        },
+        seller: {
+          id: roasters.id,
+          businessName: roasters.businessName,
+        },
+      })
+      .from(sellerMessages)
+      .leftJoin(messageSubjects, eq(sellerMessages.subjectId, messageSubjects.id))
+      .leftJoin(roasters, eq(sellerMessages.sellerId, roasters.id))
+      .where(eq(sellerMessages.id, messageId));
+    return message;
+  }
+
+  // Message Recipient operations
+  async createMessageRecipients(recipients: InsertMessageRecipient[]): Promise<MessageRecipient[]> {
+    return await db
+      .insert(messageRecipients)
+      .values(recipients)
+      .returning();
+  }
+
+  async getUserMessages(userId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: messageRecipients.id,
+        messageId: messageRecipients.messageId,
+        userId: messageRecipients.userId,
+        isRead: messageRecipients.isRead,
+        readAt: messageRecipients.readAt,
+        emailSent: messageRecipients.emailSent,
+        emailSentAt: messageRecipients.emailSentAt,
+        createdAt: messageRecipients.createdAt,
+        message: {
+          id: sellerMessages.id,
+          title: sellerMessages.title,
+          content: sellerMessages.content,
+          publishedAt: sellerMessages.publishedAt,
+          seller: {
+            id: roasters.id,
+            businessName: roasters.businessName,
+          },
+          subject: {
+            id: messageSubjects.id,
+            name: messageSubjects.name,
+          },
+        },
+      })
+      .from(messageRecipients)
+      .leftJoin(sellerMessages, eq(messageRecipients.messageId, sellerMessages.id))
+      .leftJoin(roasters, eq(sellerMessages.sellerId, roasters.id))
+      .leftJoin(messageSubjects, eq(sellerMessages.subjectId, messageSubjects.id))
+      .where(eq(messageRecipients.userId, userId))
+      .orderBy(sql`${sellerMessages.publishedAt} desc`);
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(messageRecipients)
+      .where(
+        and(
+          eq(messageRecipients.userId, userId),
+          eq(messageRecipients.isRead, false)
+        )
+      );
+    return result.count;
+  }
+
+  async markMessageAsRead(userId: string, messageId: number): Promise<void> {
+    await db
+      .update(messageRecipients)
+      .set({ 
+        isRead: true, 
+        readAt: new Date() 
+      })
+      .where(
+        and(
+          eq(messageRecipients.userId, userId),
+          eq(messageRecipients.messageId, messageId)
+        )
+      );
+  }
+
+  async markEmailAsSent(userId: string, messageId: number): Promise<void> {
+    await db
+      .update(messageRecipients)
+      .set({ 
+        emailSent: true, 
+        emailSentAt: new Date() 
+      })
+      .where(
+        and(
+          eq(messageRecipients.userId, userId),
+          eq(messageRecipients.messageId, messageId)
+        )
+      );
+  }
+
+  // Get recipients for a seller's message (favorites + past buyers)
+  async getMessageRecipients(sellerId: number): Promise<string[]> {
+    // Get users who favorited this seller's products
+    const favoriteUsers = await db
+      .select({ userId: favorites.userId })
+      .from(favorites)
+      .leftJoin(products, eq(favorites.productId, products.id))
+      .where(eq(products.roasterId, sellerId));
+
+    // Get users who have purchased from this seller
+    const pastBuyers = await db
+      .select({ userId: orders.userId })
+      .from(orders)
+      .leftJoin(orderItems, eq(orders.id, orderItems.orderId))
+      .where(eq(orderItems.roasterId, sellerId));
+
+    // Combine and deduplicate user IDs
+    const allRecipients = new Set<string>();
+    favoriteUsers.forEach(user => allRecipients.add(user.userId));
+    pastBuyers.forEach(user => allRecipients.add(user.userId));
+
+    return Array.from(allRecipients);
+  }
 }
 
 export const storage = new DatabaseStorage();

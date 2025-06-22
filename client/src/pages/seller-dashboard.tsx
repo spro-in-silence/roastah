@@ -95,7 +95,7 @@ export default function SellerDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="w-full mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Seller Dashboard</h1>
           <p className="text-gray-600">Manage your roastery operations and track performance.</p>

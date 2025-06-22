@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Store, Users, TrendingUp, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ type RoastahApplicationForm = z.infer<typeof roastahApplicationSchema>;
 export default function BecomeRoastah() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -64,9 +64,9 @@ export default function BecomeRoastah() {
   // Redirect if already a roaster
   useEffect(() => {
     if (isRoaster) {
-      setLocation("/seller/dashboard");
+      navigate("/seller/dashboard");
     }
-  }, [isRoaster, setLocation]);
+  }, [isRoaster, navigate]);
 
   const submitApplicationMutation = useMutation({
     mutationFn: async (data: RoastahApplicationForm) => {
@@ -84,7 +84,7 @@ export default function BecomeRoastah() {
           title: "Welcome to Roastah!",
           description: "Your application has been approved. Welcome to the Roastah community!",
         });
-        setLocation("/seller/dashboard");
+        navigate("/seller/dashboard");
       }, 2000);
     },
     onError: (error) => {

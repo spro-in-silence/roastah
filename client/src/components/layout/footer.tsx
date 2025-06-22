@@ -19,22 +19,22 @@ export default function Footer() {
             <h3 className="font-semibold mb-4">Shop</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <Link href="/products" className="hover:text-white transition-colors">
+                <Link to="/products" className="hover:text-white transition-colors">
                   All Coffee
                 </Link>
               </li>
               <li>
-                <Link href="/products?roastLevel=light" className="hover:text-white transition-colors">
+                <Link to="/products?roastLevel=light" className="hover:text-white transition-colors">
                   Light Roast
                 </Link>
               </li>
               <li>
-                <Link href="/products?roastLevel=medium" className="hover:text-white transition-colors">
+                <Link to="/products?roastLevel=medium" className="hover:text-white transition-colors">
                   Medium Roast
                 </Link>
               </li>
               <li>
-                <Link href="/products?roastLevel=dark" className="hover:text-white transition-colors">
+                <Link to="/products?roastLevel=dark" className="hover:text-white transition-colors">
                   Dark Roast
                 </Link>
               </li>
@@ -69,7 +69,7 @@ export default function Footer() {
             <h3 className="font-semibold mb-4">Sell</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <Link href="/become-roastah" className="hover:text-white transition-colors">
+                <Link to="/become-roastah" className="hover:text-white transition-colors">
                   Become a Roastah
                 </Link>
               </li>

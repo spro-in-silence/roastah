@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -27,13 +26,10 @@ export default function SellerDashboard() {
       });
       setTimeout(() => {
         window.location.href = "/api/login";
-      }, 500);
+      }, 2000);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
 
-  // Redirect if not a roaster
-  useEffect(() => {
     if (!isLoading && isAuthenticated && !isRoaster) {
       toast({
         title: "Access Denied",
@@ -41,29 +37,40 @@ export default function SellerDashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/become-roastah";
-      }, 1000);
+        window.location.href = "/";
+      }, 2000);
     }
   }, [isAuthenticated, isLoading, isRoaster, toast]);
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["/api/roaster/products"],
+  // Fetch data
+  const { data: products = [], error: productsError } = useQuery({
+    queryKey: ['/api/roaster/products'],
     enabled: isAuthenticated && isRoaster,
   });
 
-  const { data: orders = [] } = useQuery({
-    queryKey: ["/api/roaster/orders"],
+  const { data: orders = [], error: ordersError } = useQuery({
+    queryKey: ['/api/roaster/orders'],
     enabled: isAuthenticated && isRoaster,
   });
+
+  // Handle authentication errors
+  useEffect(() => {
+    if (productsError && isUnauthorizedError(productsError)) {
+      window.location.href = "/api/login";
+    }
+    if (ordersError && isUnauthorizedError(ordersError)) {
+      window.location.href = "/api/login";
+    }
+  }, [productsError, ordersError]);
 
   // Calculate stats
-  const totalProducts = products.length;
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
-  const averageRating = 4.8; // This would come from actual reviews
-
+  const totalProducts = Array.isArray(products) ? products.length : 0;
+  const totalOrders = Array.isArray(orders) ? orders.length : 0;
+  const totalRevenue = Array.isArray(orders) ? orders.reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0) : 0;
+  const activeProducts = totalProducts; // Assuming all products are active for now
+  const averageRating = 4.5; // This would come from reviews in a real app
   // Get recent orders (last 3)
-  const recentOrders = orders.slice(0, 3);
+  const recentOrders = Array.isArray(orders) ? orders.slice(0, 3) : [];
 
   if (isLoading) {
     return (
@@ -94,189 +101,138 @@ export default function SellerDashboard() {
         <p className="text-gray-600">Manage your roastery operations and track performance.</p>
       </div>
 
-
-
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         {/* Business Overview */}
         <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-roastah-teal" />
-                Business Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total Revenue</span>
-                <Badge variant="outline">${totalRevenue.toFixed(2)}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Active Products</span>
-                <Badge variant="outline">{totalProducts}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total Orders</span>
-                <Badge variant="outline">{totalOrders}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Average Rating</span>
-                <Badge variant="default">{averageRating}/5</Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-roastah-teal" />
+              Business Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Total Revenue</span>
+              <Badge variant="outline">${totalRevenue.toFixed(2)}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Active Products</span>
+              <Badge variant="outline">{totalProducts}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Total Orders</span>
+              <Badge variant="outline">{totalOrders}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Average Rating</span>
+              <Badge variant="default">{averageRating}/5</Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Quick Actions */}
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <Link to="/seller/products">
+              <Button className="w-full h-20 flex flex-col gap-2 bg-white border-2 border-roastah-teal text-roastah-teal hover:bg-roastah-light-teal">
+                <Package className="h-6 w-6" />
+                <span className="text-sm font-medium">Manage Products</span>
+              </Button>
+            </Link>
+            <Link to="/seller/orders">
+              <Button className="w-full h-20 flex flex-col gap-2 bg-white border-2 border-roastah-teal text-roastah-teal hover:bg-roastah-light-teal">
+                <ShoppingCart className="h-6 w-6" />
+                <span className="text-sm font-medium">View Orders</span>
+              </Button>
+            </Link>
+            <Link to="/seller/messages">
+              <Button className="w-full h-20 flex flex-col gap-2 bg-white border-2 border-roastah-teal text-roastah-teal hover:bg-roastah-light-teal">
+                <MessageSquare className="h-6 w-6" />
+                <span className="text-sm font-medium">Messages</span>
+              </Button>
+            </Link>
+            <Link to="/seller/profile">
+              <Button className="w-full h-20 flex flex-col gap-2 bg-white border-2 border-roastah-teal text-roastah-teal hover:bg-roastah-light-teal">
+                <Settings className="h-6 w-6" />
+                <span className="text-sm font-medium">Settings</span>
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="analytics" className="mb-8">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="recent-orders">Recent Orders</TabsTrigger>
+          <TabsTrigger value="bulk-upload">Bulk Upload</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <SellerAnalyticsDashboard />
+        </TabsContent>
+
+        <TabsContent value="recent-orders" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                Quick Actions
+                <ShoppingBag className="h-5 w-5 text-roastah-teal" />
+                Recent Orders
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link to="/seller/products/new" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Product
-                </Button>
-              </Link>
-              <Link to="/seller/orders" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Manage Orders
-                </Button>
-              </Link>
-              <Link to="/seller/messages" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Send Messages
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Orders & Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Orders */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Recent Orders</CardTitle>
-                <Link to="/seller/orders">
-                  <Button variant="ghost" className="text-roastah-teal hover:text-roastah-dark-teal text-sm">
-                    View All
-                  </Button>
-                </Link>
-              </div>
             </CardHeader>
             <CardContent>
-              {recentOrders.length === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-roastah-warm-gray">No orders yet</p>
-                  <p className="text-sm text-roastah-warm-gray mt-1">
-                    Orders will appear here once customers start buying your products
-                  </p>
-                </div>
-              ) : (
+              {recentOrders.length > 0 ? (
                 <div className="space-y-4">
                   {recentOrders.map((order: any) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium text-sm">Order #{order.id}</p>
-                        <p className="text-xs text-roastah-warm-gray">
+                        <p className="font-medium">Order #{order.id}</p>
+                        <p className="text-sm text-gray-600">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-sm">${parseFloat(order.price || 0).toFixed(2)}</p>
-                        <Badge
-                          className={
-                            order.status === "delivered"
-                              ? "bg-green-100 text-green-800"
-                              : order.status === "shipped"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }
-                        >
-                          {order.status}
+                        <p className="font-medium">${order.totalAmount?.toFixed(2) || '0.00'}</p>
+                        <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
+                          {order.status || 'pending'}
                         </Badge>
                       </div>
                     </div>
                   ))}
+                  <Link to="/seller/orders">
+                    <Button variant="outline" className="w-full">
+                      View All Orders
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+                  <p className="text-gray-600 mb-4">Orders will appear here once customers start purchasing your products.</p>
                 </div>
               )}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Sales Analytics */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                <div className="text-center text-roastah-warm-gray">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4" />
-                  <p className="text-lg font-medium">Analytics Coming Soon</p>
-                  <p className="text-sm">Detailed sales analytics and insights</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <TabsContent value="bulk-upload">
+          <BulkProductUpload />
+        </TabsContent>
+      </Tabs>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-roastah-teal/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Plus className="h-6 w-6 text-roastah-teal" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Add Product</h3>
-              <p className="text-sm text-roastah-warm-gray mb-4">Create a new coffee product</p>
-              <Link to="/seller/products/new">
-                <Button variant="outline" size="sm" className="w-full">
-                  Add Product
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Send Message</h3>
-              <p className="text-sm text-roastah-warm-gray mb-4">Message your customers</p>
-              <Link to="/seller/messages">
-                <Button variant="outline" size="sm" className="w-full">
-                  Compose Message
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-6 w-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">View Analytics</h3>
-              <p className="text-sm text-roastah-warm-gray mb-4">Track your performance</p>
-              <Button variant="outline" size="sm" className="w-full">
-                View Analytics
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {totalProducts === 0 && (
-          <Card className="mt-8">
-            <CardContent className="p-8 text-center">
-              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+      {/* Get Started Section - Only show if no products */}
+      {totalProducts === 0 && (
+        <Card className="bg-gradient-to-r from-roastah-light-teal to-roastah-teal text-white">
+          <CardContent className="text-center py-12">
+            <div className="max-w-md mx-auto">
+              <Plus className="h-16 w-16 mx-auto mb-6 opacity-80" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Start Selling Your Coffee</h3>
               <p className="text-roastah-warm-gray mb-6">
                 Add your first product to start connecting with coffee enthusiasts
@@ -287,10 +243,10 @@ export default function SellerDashboard() {
                   Add Your First Product
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

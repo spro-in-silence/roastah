@@ -15,8 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import Navbar from "@/components/layout/navbar";
-import Footer from "@/components/layout/footer";
+
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -329,14 +328,11 @@ export default function SellerProducts() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
+      <div className="w-full mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+          <div className="bg-white rounded-xl p-6">
+            <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>

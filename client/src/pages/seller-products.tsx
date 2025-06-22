@@ -149,9 +149,13 @@ export default function SellerProducts() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">My Products</h1>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Management</h1>
+          <p className="text-gray-600">Manage your coffee products and inventory.</p>
+        </div>
+
+        <div className="mb-6">
           <Link href="/seller/products/new">
             <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
               <Plus className="h-4 w-4 mr-2" />

@@ -98,17 +98,13 @@ export default function SellerMessages() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Customer Messages
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Send updates and announcements to customers who have favorited your products or made purchases
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Messages</h1>
+          <p className="text-gray-600">Send updates and announcements to customers who have favorited your products or made purchases.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
           {/* Message Creation Form */}
           <Card>
             <CardHeader>
@@ -273,7 +269,7 @@ export default function SellerMessages() {
 
         {/* Message Detail View */}
         {selectedMessage && (
-          <Card className="mt-8">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />

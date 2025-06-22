@@ -195,7 +195,7 @@ export default function GiftCards() {
               Please sign in to purchase gift cards.
             </p>
             <Button asChild>
-              <a href="/api/login">Sign In</a>
+              <a to="/api/login">Sign In</a>
             </Button>
           </div>
         </div>

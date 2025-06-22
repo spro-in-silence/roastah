@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,7 +131,7 @@ export default function Cart() {
                 <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
                 <p className="text-roastah-warm-gray mb-6">Start browsing our amazing coffee selection</p>
-                <Link href="/products">
+                <Link to="/products">
                   <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                     Shop Coffee
                   </Button>
@@ -221,7 +221,7 @@ export default function Cart() {
                   <span>Total:</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
-                <Link href="/checkout">
+                <Link to="/checkout">
                   <Button className="w-full mt-6 bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                     Proceed to Checkout
                   </Button>

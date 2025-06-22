@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ type ProductForm = z.infer<typeof productSchema>;
 export default function SellerProductsNew() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const navigate = useLocation();
   const queryClient = useQueryClient();
 
   const {
@@ -107,7 +107,7 @@ export default function SellerProductsNew() {
         title: "Product Created",
         description: "Your product has been successfully created and published.",
       });
-      setLocation("/seller/products");
+      navigate("/seller/products");
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -144,7 +144,7 @@ export default function SellerProductsNew() {
         title: "Draft Saved",
         description: "Your product has been saved as a draft.",
       });
-      setLocation("/seller/products");
+      navigate("/seller/products");
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -204,7 +204,7 @@ export default function SellerProductsNew() {
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center mb-8">
-          <Link href="/seller/products">
+          <Link to="/seller/products">
             <Button variant="ghost" size="sm" className="mr-4 text-roastah-teal hover:text-roastah-dark-teal">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -405,7 +405,7 @@ export default function SellerProductsNew() {
                 >
                   {saveDraftMutation.isPending ? "Saving..." : "Save Draft"}
                 </Button>
-                <Link href="/seller/products">
+                <Link to="/seller/products">
                   <Button type="button" variant="outline">
                     Cancel
                   </Button>

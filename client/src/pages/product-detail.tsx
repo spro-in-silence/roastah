@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Star, Heart, Truck, Shield, Minus, Plus, Share2, ArrowLeft } from "lucide-react";
@@ -119,9 +119,9 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumbs */}
         <nav className="flex items-center space-x-2 text-sm text-roastah-warm-gray mb-8">
-          <a href="/" className="hover:text-roastah-teal">Home</a>
+          <a to="/" className="hover:text-roastah-teal">Home</a>
           <span>/</span>
-          <a href="/products" className="hover:text-roastah-teal">Coffee</a>
+          <a to="/products" className="hover:text-roastah-teal">Coffee</a>
           <span>/</span>
           <span className="text-gray-900">{product?.name}</span>
         </nav>

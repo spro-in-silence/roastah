@@ -88,7 +88,7 @@ export default function Navbar() {
                 </Button>
               )}
               
-              <Link href="/" className="flex items-center">
+              <Link to="/" className="flex items-center">
                 <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
                   <Coffee className="h-5 w-5" />
                 </div>
@@ -118,7 +118,7 @@ export default function Navbar() {
                   <RealtimeNotifications showAsDropdown={true} />
 
                   {/* Cart Toggle - only show for non-approved roasters or on cart/checkout pages */}
-                  {(!user?.isRoasterApproved || location === '/cart' || location === '/checkout') && (
+                  {(!user?.isRoasterApproved || location.pathname === '/cart' || location.pathname === '/checkout') && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -135,7 +135,7 @@ export default function Navbar() {
                   )}
 
                   {/* Profile */}
-                  <Link href="/profile">
+                  <Link to="/profile">
                     <Button variant="ghost" size="sm" className="p-2">
                       {user?.profileImageUrl ? (
                         <img
@@ -192,36 +192,36 @@ export default function Navbar() {
               {/* Buyer-specific Navigation - Only show for non-roasters */}
               {!user?.isRoasterApproved && (
                 <>
-                  <Link href="/products" onClick={closeMenu}>
+                  <Link to="/products" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname.startsWith('/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Coffee className="h-5 w-5" />
                       <span className="font-medium">Browse Products</span>
                     </div>
                   </Link>
 
-                  <Link href="/favorites" onClick={closeMenu}>
+                  <Link to="/favorites" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/favorites' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname === '/favorites' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Heart className="h-5 w-5" />
                       <span className="font-medium">My Favorites</span>
                     </div>
                   </Link>
 
-                  <Link href="/gift-cards" onClick={closeMenu}>
+                  <Link to="/gift-cards" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/gift-cards' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname === '/gift-cards' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Gift className="h-5 w-5" />
                       <span className="font-medium">Gift Cards</span>
                     </div>
                   </Link>
 
-                  <Link href="/leaderboard" onClick={closeMenu}>
+                  <Link to="/leaderboard" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname === '/leaderboard' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Trophy className="h-5 w-5" />
                       <span className="font-medium">Roastah Leaderboard</span>
@@ -232,9 +232,9 @@ export default function Navbar() {
 
               {/* Become a Roastah - Only show for non-roasters */}
               {!user?.isRoasterApproved && (
-                <Link href="/become-roastah" onClick={closeMenu}>
+                <Link to="/become-roastah" onClick={closeMenu}>
                   <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                    location === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    location.pathname === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                   }`}>
                     <Package className="h-5 w-5" />
                     <span className="font-medium">Become a Roastah</span>
@@ -251,45 +251,45 @@ export default function Navbar() {
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Seller Tools</span>
                   </div>
 
-                  <Link href="/seller/dashboard" onClick={closeMenu}>
+                  <Link to="/seller/dashboard" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller/dashboard') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname.startsWith('/seller/dashboard') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <BarChart3 className="h-5 w-5" />
                       <span className="font-medium">Seller Dashboard</span>
                     </div>
                   </Link>
 
-                  <Link href="/seller/products" onClick={closeMenu}>
+                  <Link to="/seller/products" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname.startsWith('/seller/products') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Package className="h-5 w-5" />
                       <span className="font-medium">My Products</span>
                     </div>
                   </Link>
 
-                  <Link href="/seller/orders" onClick={closeMenu}>
+                  <Link to="/seller/orders" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller/orders') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname.startsWith('/seller/orders') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <ShoppingBag className="h-5 w-5" />
                       <span className="font-medium">Orders</span>
                     </div>
                   </Link>
 
-                  <Link href="/seller/messages" onClick={closeMenu}>
+                  <Link to="/seller/messages" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.startsWith('/seller/messages') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname.startsWith('/seller/messages') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <MessageSquare className="h-5 w-5" />
                       <span className="font-medium">Messages</span>
                     </div>
                   </Link>
 
-                  <Link href="/medusa-admin" onClick={closeMenu}>
+                  <Link to="/medusa-admin" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location === '/medusa-admin' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                      location.pathname === '/medusa-admin' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <Database className="h-5 w-5" />
                       <span className="font-medium">E-commerce Admin</span>
@@ -301,18 +301,18 @@ export default function Navbar() {
               <div className="border-t my-4"></div>
 
               {/* Common Navigation */}
-              <Link href="/security" onClick={closeMenu}>
+              <Link to="/security" onClick={closeMenu}>
                 <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location === '/security' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                  location.pathname === '/security' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                 }`}>
                   <Shield className="h-5 w-5" />
                   <span className="font-medium">Security Dashboard</span>
                 </div>
               </Link>
 
-              <Link href="/profile" onClick={closeMenu}>
+              <Link to="/profile" onClick={closeMenu}>
                 <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location === '/profile' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                  location.pathname === '/profile' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                 }`}>
                   <User className="h-5 w-5" />
                   <span className="font-medium">Profile Settings</span>
@@ -343,7 +343,7 @@ export default function Navbar() {
               {/* Sign Out */}
               <div className="mt-4">
                 <a 
-                  href="/api/logout" 
+                  to="/api/logout" 
                   className="flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-red-50 text-red-600 transition-colors"
                 >
                   <span className="font-medium">Sign Out</span>
@@ -416,7 +416,7 @@ export default function Navbar() {
                     ${(cartItems as CartItem[]).reduce((sum, item) => sum + ((item.product?.price || 0) * item.quantity), 0).toFixed(2)}
                   </span>
                 </div>
-                <Link href="/checkout">
+                <Link to="/checkout">
                   <Button 
                     className="w-full bg-roastah-teal hover:bg-roastah-dark-teal text-white"
                     onClick={() => setIsCartOpen(false)}
@@ -424,7 +424,7 @@ export default function Navbar() {
                     Proceed to Checkout
                   </Button>
                 </Link>
-                <Link href="/cart">
+                <Link to="/cart">
                   <Button 
                     variant="outline" 
                     className="w-full mt-2"

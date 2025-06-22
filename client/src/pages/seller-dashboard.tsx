@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,19 +141,19 @@ export default function SellerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/seller/products/new" className="block">
+              <Link to="/seller/products/new" className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Product
                 </Button>
               </Link>
-              <Link href="/seller/orders" className="block">
+              <Link to="/seller/orders" className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <ShoppingBag className="h-4 w-4 mr-2" />
                   Manage Orders
                 </Button>
               </Link>
-              <Link href="/seller/messages" className="block">
+              <Link to="/seller/messages" className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Send Messages
@@ -170,7 +170,7 @@ export default function SellerDashboard() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Recent Orders</CardTitle>
-                <Link href="/seller/orders">
+                <Link to="/seller/orders">
                   <Button variant="ghost" className="text-roastah-teal hover:text-roastah-dark-teal text-sm">
                     View All
                   </Button>
@@ -243,7 +243,7 @@ export default function SellerDashboard() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Add Product</h3>
               <p className="text-sm text-roastah-warm-gray mb-4">Create a new coffee product</p>
-              <Link href="/seller/products/new">
+              <Link to="/seller/products/new">
                 <Button variant="outline" size="sm" className="w-full">
                   Add Product
                 </Button>
@@ -258,7 +258,7 @@ export default function SellerDashboard() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Send Message</h3>
               <p className="text-sm text-roastah-warm-gray mb-4">Message your customers</p>
-              <Link href="/seller/messages">
+              <Link to="/seller/messages">
                 <Button variant="outline" size="sm" className="w-full">
                   Compose Message
                 </Button>
@@ -288,7 +288,7 @@ export default function SellerDashboard() {
               <p className="text-roastah-warm-gray mb-6">
                 Add your first product to start connecting with coffee enthusiasts
               </p>
-              <Link href="/seller/products/new">
+              <Link to="/seller/products/new">
                 <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Product

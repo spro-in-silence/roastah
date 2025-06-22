@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { User, CheckCircle, Package, Clock, MapPin, Edit3, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,7 +359,7 @@ export default function Profile() {
                       <div className="text-center py-8">
                         <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-roastah-warm-gray">No orders yet</p>
-                        <Link href="/products" className="mt-4 inline-block">
+                        <Link to="/products" className="mt-4 inline-block">
                           <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                             Start Shopping
                           </Button>
@@ -550,7 +550,7 @@ export default function Profile() {
                       </p>
                     </div>
                   </div>
-                  <Link href="/become-roastah">
+                  <Link to="/become-roastah">
                     <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                       Get Started
                     </Button>

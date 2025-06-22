@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Heart, MapPin, Star, ExternalLink, Package, Coffee } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export default function Favorites() {
               Please sign in to view your favorite roasters.
             </p>
             <Button asChild>
-              <a href="/api/login">Sign In</a>
+              <a to="/api/login">Sign In</a>
             </Button>
           </div>
         </div>
@@ -107,10 +107,10 @@ export default function Favorites() {
               </p>
               <div className="flex justify-center gap-4">
                 <Button asChild size="lg">
-                  <Link href="/leaderboard">Browse Roasters</Link>
+                  <Link to="/leaderboard">Browse Roasters</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/products">View Products</Link>
+                  <Link to="/products">View Products</Link>
                 </Button>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function Favorites() {
                           </Link>
                         </Button>
                         <Button asChild variant="outline" size="sm">
-                          <Link href="/leaderboard">
+                          <Link to="/leaderboard">
                             <ExternalLink className="h-4 w-4" />
                           </Link>
                         </Button>
@@ -204,7 +204,7 @@ export default function Favorites() {
               {/* Bottom Actions */}
               <div className="text-center">
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/leaderboard">
+                  <Link to="/leaderboard">
                     <Coffee className="h-5 w-5 mr-2" />
                     Discover More Roasters
                   </Link>

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
@@ -39,13 +39,13 @@ export default function Home() {
               Connect directly with passionate micro-roasters and home roasters crafting the perfect cup
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/products">
+              <Link to="/products">
                 <Button size="lg" className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold">
                   Shop Coffee
                 </Button>
               </Link>
               {!isRoaster && (
-                <Link href="/become-roastah">
+                <Link to="/become-roastah">
                   <Button
                     variant="outline"
                     size="lg"
@@ -65,7 +65,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12">Explore by Roast</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Link href="/products?roastLevel=light" className="group cursor-pointer">
+            <Link to="/products?roastLevel=light" className="group cursor-pointer">
               <div
                 className="bg-cover bg-center h-64 rounded-xl mb-4 group-hover:scale-105 transition-transform"
                 style={{
@@ -79,7 +79,7 @@ export default function Home() {
               <p className="text-roastah-warm-gray">Bright, acidic, and full of origin flavors</p>
             </Link>
 
-            <Link href="/products?roastLevel=medium" className="group cursor-pointer">
+            <Link to="/products?roastLevel=medium" className="group cursor-pointer">
               <div
                 className="bg-cover bg-center h-64 rounded-xl mb-4 group-hover:scale-105 transition-transform"
                 style={{
@@ -93,7 +93,7 @@ export default function Home() {
               <p className="text-roastah-warm-gray">Balanced sweetness and body</p>
             </Link>
 
-            <Link href="/products?roastLevel=dark" className="group cursor-pointer">
+            <Link to="/products?roastLevel=dark" className="group cursor-pointer">
               <div
                 className="bg-cover bg-center h-64 rounded-xl mb-4 group-hover:scale-105 transition-transform"
                 style={{
@@ -115,7 +115,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-12">
             <h2 className="text-3xl font-bold">Featured Coffee</h2>
-            <Link href="/products">
+            <Link to="/products">
               <Button variant="ghost" className="text-roastah-teal hover:text-roastah-dark-teal font-semibold">
                 View All
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -133,7 +133,7 @@ export default function Home() {
             <div className="text-center py-12">
               <p className="text-roastah-warm-gray text-lg">No products available at the moment.</p>
               {isRoaster && (
-                <Link href="/seller/products/new" className="mt-4 inline-block">
+                <Link to="/seller/products/new" className="mt-4 inline-block">
                   <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
                     Add Your First Product
                   </Button>

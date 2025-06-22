@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Navbar from "@/components/layout/navbar";
-import Footer from "@/components/layout/footer";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -36,13 +34,10 @@ export default function SellerOrders() {
       });
       setTimeout(() => {
         window.location.href = "/api/login";
-      }, 500);
+      }, 2000);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
 
-  // Redirect if not a roaster
-  useEffect(() => {
     if (!isLoading && isAuthenticated && !isRoaster) {
       toast({
         title: "Access Denied",
@@ -50,86 +45,76 @@ export default function SellerOrders() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/become-roastah";
-      }, 1000);
+        window.location.href = "/";
+      }, 2000);
     }
   }, [isAuthenticated, isLoading, isRoaster, toast]);
 
-  const { data: orderItems = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ["/api/roaster/orders"],
+  // Fetch orders
+  const { data: orders = [], error: ordersError } = useQuery({
+    queryKey: ['/api/roaster/orders'],
     enabled: isAuthenticated && isRoaster,
   });
 
+  // Handle authentication errors
+  useEffect(() => {
+    if (ordersError && isUnauthorizedError(ordersError)) {
+      window.location.href = "/api/login";
+    }
+  }, [ordersError]);
+
+  // Status update mutation
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      await apiRequest("PUT", `/api/roaster/orders/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/roaster/orders"] });
-      toast({
-        title: "Status Updated",
-        description: "Order status has been successfully updated.",
+    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+      await apiRequest(`/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
       });
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/roaster/orders'] });
+      toast({
+        title: "Success",
+        description: "Order status updated successfully",
+      });
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update order status. Please try again.",
+        description: error.message || "Failed to update order status",
         variant: "destructive",
       });
     },
   });
 
-  const handleStatusUpdate = (id: number, status: string) => {
-    updateOrderStatusMutation.mutate({ id, status });
+  // Handle status change
+  const handleStatusChange = (orderId: number, newStatus: string) => {
+    updateOrderStatusMutation.mutate({ orderId, status: newStatus });
   };
 
-  // Filter orders based on search and status
-  const filteredOrderItems = orderItems.filter((item: any) => {
-    const matchesSearch = item.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.id.toString().includes(searchQuery);
-    
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-    
+  // Filter orders
+  const filteredOrders = Array.isArray(orders) ? orders.filter((order: any) => {
+    const matchesSearch = order.id.toString().includes(searchQuery) ||
+                         order.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "processing":
-        return "bg-blue-100 text-blue-800";
-      case "shipped":
-        return "bg-green-100 text-green-800";
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  // Calculate order total
+  const calculateOrderTotal = (orderItems: any) => {
+    if (!Array.isArray(orderItems)) return 0;
+    return orderItems.reduce((sum: number, item: any) => {
+      return sum + (parseFloat(item.price) * item.quantity);
+    }, 0);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
-            <div className="bg-white rounded-xl p-6">
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
+      <div className="w-full mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+          <div className="bg-white rounded-xl p-6">
+            <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
@@ -141,29 +126,27 @@ export default function SellerOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="w-full mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
-          <p className="text-gray-600">Track and manage customer orders and fulfillment.</p>
-        </div>
+    <div className="w-full mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
+        <p className="text-gray-600">Track and manage customer orders and fulfillment.</p>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 ml-4">
+                <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -172,133 +155,142 @@ export default function SellerOrders() {
                   <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="shipped">Shipped</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </CardHeader>
-
-          <CardContent>
-            {ordersLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="flex items-center space-x-4 p-4">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                      </div>
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredOrderItems.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {orderItems.length === 0 ? "No orders yet" : "No orders found"}
-                </h3>
-                <p className="text-roastah-warm-gray">
-                  {orderItems.length === 0 
-                    ? "Orders will appear here once customers start buying your products"
-                    : "Try adjusting your search or filter criteria"
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrderItems.map((item: any) => (
-                      <TableRow key={item.id}>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order: any) => {
+                    const orderItems = Array.isArray(order.orderItems) ? order.orderItems : [];
+                    const total = calculateOrderTotal(orderItems);
+                    
+                    return (
+                      <TableRow key={order.id}>
                         <TableCell>
-                          <div>
-                            <div className="font-medium text-gray-900">#{item.orderId}</div>
-                            <div className="text-sm text-roastah-warm-gray">
-                              {new Date(item.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
+                          <div className="font-medium">#{order.id}</div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&w=32&h=32&fit=crop&crop=face" />
-                              <AvatarFallback>CU</AvatarFallback>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>
+                                {order.customerEmail?.charAt(0)?.toUpperCase() || 'U'}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium text-gray-900">Customer #{item.orderId}</div>
-                              <div className="text-sm text-roastah-warm-gray">customer@example.com</div>
+                              <div className="font-medium">{order.customerName || 'Customer'}</div>
+                              <div className="text-sm text-gray-500">{order.customerEmail}</div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium text-gray-900">
-                            {item.product?.name || "Product"}
+                          <div className="text-sm">
+                            {orderItems.length} item{orderItems.length !== 1 ? 's' : ''}
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-900">
-                          {item.quantity}
-                        </TableCell>
-                        <TableCell className="text-gray-900">
-                          ${parseFloat(item.price || 0).toFixed(2)}
+                        <TableCell>
+                          <div className="font-medium">${total.toFixed(2)}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusBadgeColor(item.status)}>
-                            {item.status}
+                          <Badge 
+                            variant={
+                              order.status === 'delivered' ? 'default' :
+                              order.status === 'shipped' ? 'secondary' :
+                              order.status === 'processing' ? 'outline' :
+                              order.status === 'cancelled' ? 'destructive' :
+                              'outline'
+                            }
+                          >
+                            {order.status || 'pending'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="ghost" size="sm" className="text-roastah-teal hover:text-roastah-dark-teal">
+                          <div className="text-sm">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrderId(order.id);
+                                setShowTracking(true);
+                              }}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {item.status === "pending" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(item.id, "processing")}
-                                disabled={updateOrderStatusMutation.isPending}
-                                className="text-blue-600 hover:text-blue-900"
-                              >
-                                Process
-                              </Button>
-                            )}
-                            {item.status === "processing" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(item.id, "shipped")}
-                                disabled={updateOrderStatusMutation.isPending}
-                                className="text-green-600 hover:text-green-900"
-                              >
-                                <Truck className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Select
+                              value={order.status || 'pending'}
+                              onValueChange={(value) => handleStatusChange(order.id, value)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchQuery || statusFilter !== "all" ? "No orders found" : "No orders yet"}
+              </h3>
+              <p className="text-gray-600">
+                {searchQuery || statusFilter !== "all" 
+                  ? "Try adjusting your search or filter criteria."
+                  : "Orders will appear here once customers start purchasing your products."
+                }
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <Footer />
+      {/* Order Tracking Modal */}
+      {showTracking && selectedOrderId && (
+        <OrderTracking
+          orderId={selectedOrderId}
+          isOpen={showTracking}
+          onClose={() => {
+            setShowTracking(false);
+            setSelectedOrderId(null);
+          }}
+        />
+      )}
+
+      {/* Real-time Notifications */}
+      <RealtimeNotifications />
     </div>
   );
 }

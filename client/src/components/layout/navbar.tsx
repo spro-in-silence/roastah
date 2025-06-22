@@ -413,7 +413,7 @@ export default function Navbar() {
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-medium">Total:</span>
                   <span className="font-bold text-lg">
-                    ${(cartItems as CartItem[]).reduce((sum, item) => sum + ((item.product?.price || 0) * item.quantity), 0).toFixed(2)}
+                    ${(cartItems as CartItem[]).reduce((sum, item) => sum + (Number(item.product?.price || 0) * Number(item.quantity)), 0).toFixed(2)}
                   </span>
                 </div>
                 <Link to="/checkout">

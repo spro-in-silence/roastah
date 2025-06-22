@@ -53,7 +53,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        if (import.meta.env.DEV) {
+          console.log('WebSocket connected');
+        }
         setIsConnected(true);
         setConnectionStatus('connected');
         
@@ -82,7 +84,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+        if (import.meta.env.DEV) {
+          console.log('WebSocket disconnected:', event.code, event.reason);
+        }
         setIsConnected(false);
         setConnectionStatus('disconnected');
         setSubscribedOrders(new Set());
@@ -94,9 +98,11 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
         }
 
         // Attempt to reconnect after 3 seconds if not manually disconnected
-        if (event.code !== 1000 && autoConnect) {
+        if (event.code !== 1000 && autoConnect && isAuthenticated) {
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            if (connectionStatus === 'disconnected') {
+              connect();
+            }
           }, 3000);
         }
       };
@@ -138,39 +144,53 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
   const handleMessage = useCallback((message: RealtimeMessage) => {
     switch (message.type) {
       case 'connection_established':
-        console.log('Connection established:', message.connectionId);
+        if (import.meta.env.DEV) {
+          console.log('Connection established:', message.connectionId);
+        }
         break;
         
       case 'authenticated':
-        console.log('Authentication successful for user:', message.userId);
+        if (import.meta.env.DEV) {
+          console.log('Authentication successful for user:', message.userId);
+        }
         setConnectionStatus('authenticated');
         setError(null);
         break;
         
       case 'order_subscribed':
-        console.log('Subscribed to order:', message.orderId);
+        if (import.meta.env.DEV) {
+          console.log('Subscribed to order:', message.orderId);
+        }
         if (message.orderId) {
           setSubscribedOrders(prev => new Set(prev).add(message.orderId!));
         }
         break;
         
       case 'notifications_subscribed':
-        console.log('Subscribed to notifications');
+        if (import.meta.env.DEV) {
+          console.log('Subscribed to notifications');
+        }
         setIsSubscribedToNotifications(true);
         break;
         
       case 'tracking_update':
-        console.log('Order tracking update:', message.data);
+        if (import.meta.env.DEV) {
+          console.log('Order tracking update:', message.data);
+        }
         onOrderUpdate?.(message.data);
         break;
         
       case 'notification':
-        console.log('New notification:', message.data);
+        if (import.meta.env.DEV) {
+          console.log('New notification:', message.data);
+        }
         onNotification?.(message.data);
         break;
         
       case 'status_change':
-        console.log('Order status change:', message.data);
+        if (import.meta.env.DEV) {
+          console.log('Order status change:', message.data);
+        }
         onStatusChange?.(message.data);
         break;
         
@@ -179,7 +199,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
         break;
         
       default:
-        console.log('Unknown message type:', message.type);
+        if (import.meta.env.DEV) {
+          console.log('Unknown message type:', message.type);
+        }
     }
   }, [onOrderUpdate, onNotification, onStatusChange]);
 
@@ -201,7 +223,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
 
   const subscribeToNotifications = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, cannot subscribe to notifications');
+      if (import.meta.env.DEV) {
+        console.warn('WebSocket not connected, cannot subscribe to notifications');
+      }
       return;
     }
 
@@ -216,14 +240,10 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
 
   // Auto-connect when authenticated
   useEffect(() => {
-    if (autoConnect && isAuthenticated && user?.id && !isConnected) {
+    if (autoConnect && isAuthenticated && user?.id && connectionStatus === 'disconnected') {
       connect();
     }
-    
-    return () => {
-      disconnect();
-    };
-  }, [autoConnect, isAuthenticated, user?.id, connect, disconnect, isConnected]);
+  }, [autoConnect, isAuthenticated, user?.id, connectionStatus, connect]);
 
   // Cleanup on unmount
   useEffect(() => {

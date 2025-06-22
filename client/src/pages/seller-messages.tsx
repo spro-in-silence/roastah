@@ -190,17 +190,6 @@ export default function SellerMessages() {
                   type="submit"
                   className="w-full"
                   disabled={createMessageMutation.isPending}
-                  onClick={(e) => {
-                    console.log("Button clicked!");
-                    const formData = form.getValues();
-                    console.log("Current form values:", formData);
-                    if (!formData.subjectId || !formData.title || !formData.content) {
-                      console.log("Form validation failed - missing required fields");
-                      return;
-                    }
-                    e.preventDefault();
-                    onSubmit(formData);
-                  }}
                 >
                   {createMessageMutation.isPending ? (
                     "Publishing Message..."

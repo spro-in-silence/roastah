@@ -101,14 +101,7 @@ export default function SellerDashboard() {
           <p className="text-gray-600">Manage your roastery operations and track performance.</p>
         </div>
 
-        <div className="mb-6">
-          <Link href="/seller/products/new">
-            <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </Link>
-        </div>
+
 
         <div className="grid gap-6 md:grid-cols-2 mb-8">
           {/* Business Overview */}

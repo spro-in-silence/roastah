@@ -130,13 +130,15 @@ export default function SellerDashboard() {
   });
 
   // Calculate stats
-  const totalProducts = (products as any[]).length;
-  const totalOrders = (orders as any[]).length;
-  const totalRevenue = (orders as any[]).reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
+  const productList = Array.isArray(products) ? products : [];
+  const orderList = Array.isArray(orders) ? orders : [];
+  const totalProducts = productList.length;
+  const totalOrders = orderList.length;
+  const totalRevenue = orderList.reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
   const averageRating = 4.8; // This would come from actual reviews
 
   // Get recent orders (last 3)
-  const recentOrders = (orders as any[]).slice(0, 3);
+  const recentOrders = orderList.slice(0, 3);
 
   if (isLoading) {
     return (
@@ -276,7 +278,7 @@ export default function SellerDashboard() {
 
           {/* Analytics Dashboard */}
           <div key="analytics" className={`${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
-            <SellerAnalyticsDashboard />
+            <SellerAnalyticsDashboard roasterId={1} />
           </div>
 
           {/* Recent Products */}
@@ -288,11 +290,11 @@ export default function SellerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {products.length === 0 ? (
+              {productList.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">No products yet. Create your first product!</p>
               ) : (
                 <div className="space-y-3">
-                  {(products as any[]).slice(0, 3).map((product: any) => (
+                  {productList.slice(0, 3).map((product: any) => (
                     <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <h4 className="font-medium">{product.name}</h4>
@@ -355,7 +357,7 @@ export default function SellerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <BulkProductUpload />
+              <BulkProductUpload roasterId={1} />
             </CardContent>
           </Card>
 

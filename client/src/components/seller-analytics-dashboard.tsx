@@ -174,7 +174,7 @@ export default function SellerAnalyticsDashboard({ roasterId }: SellerAnalyticsD
 
       {/* Charts and Analytics */}
       <Tabs defaultValue="sales" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="sales">Sales Performance</TabsTrigger>
           <TabsTrigger value="commissions">Commission Tracking</TabsTrigger>
           <TabsTrigger value="campaigns">Marketing Campaigns</TabsTrigger>

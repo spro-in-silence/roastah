@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { CartItem } from "@/lib/types";
 
 export default function Navbar() {
-  const [location] = useLocation();
+  const location = useLocation();
   const { user, isAuthenticated, isRoaster: contextIsRoaster } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);

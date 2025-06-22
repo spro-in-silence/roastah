@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,12 +47,12 @@ import {
 } from "@/lib/product-state";
 
 export default function SellerProductEdit() {
-  const [, params] = useRoute("/seller/products/:id/edit");
-  const [, navigate] = useLocation();
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const productId = parseInt(params?.id || "0");
+  const productId = parseInt(id || "0");
 
   // Fetch product data
   const { data: product, isLoading: productLoading } = useQuery<ProductWithState>({

@@ -73,7 +73,7 @@ export default function SellerProducts() {
   });
 
   // Get roaster info to get the roaster ID
-  const { data: roasterInfo } = useQuery({
+  const { data: roasterInfo } = useQuery<{id: number}>({
     queryKey: ["/api/roaster/profile"],
     enabled: isAuthenticated && isRoaster,
   });
@@ -381,7 +381,13 @@ export default function SellerProducts() {
 
           {/* Bulk Upload Tab */}
           <TabsContent value="bulk-upload" className="space-y-6">
-            {roasterInfo?.id && <BulkProductUpload roasterId={roasterInfo.id} />}
+            {products.length > 0 && products[0]?.roasterId ? (
+              <BulkProductUpload roasterId={products[0].roasterId} />
+            ) : roasterInfo?.id ? (
+              <BulkProductUpload roasterId={roasterInfo.id} />
+            ) : (
+              <BulkProductUpload roasterId={1} />
+            )}
           </TabsContent>
         </Tabs>
       </div>

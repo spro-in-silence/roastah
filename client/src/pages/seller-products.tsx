@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { useUser } from "@/contexts/UserContext";
@@ -46,6 +47,14 @@ const productSchema = z.object({
   altitude: z.string().optional(),
   varietal: z.string().optional(),
   tastingNotes: z.string().min(1, "Tasting notes are required"),
+  // Product tags
+  isUnlisted: z.boolean().default(false),
+  isPreorder: z.boolean().default(false),
+  isPrivate: z.boolean().default(false),
+  isScheduled: z.boolean().default(false),
+  // Scheduling dates
+  scheduledPublishAt: z.string().optional(),
+  preorderShippingDate: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -58,6 +67,7 @@ export default function SellerProducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("manage");
+  const [editingProduct, setEditingProduct] = useState<ProductWithState | null>(null);
 
   // Product form
   const {
@@ -72,8 +82,40 @@ export default function SellerProducts() {
     defaultValues: {
       stockQuantity: 50,
       price: 0,
+      isUnlisted: false,
+      isPreorder: false,
+      isPrivate: false,
+      isScheduled: false,
     },
   });
+
+  // Function to handle product editing
+  const handleEditProduct = (product: ProductWithState) => {
+    setEditingProduct(product);
+    
+    // Populate the form with product data
+    reset({
+      name: product.name,
+      description: product.description || "",
+      price: parseFloat(product.price),
+      stockQuantity: product.stockQuantity,
+      origin: product.origin || "",
+      roastLevel: product.roastLevel,
+      process: product.process || "",
+      altitude: product.altitude || "",
+      varietal: product.varietal || "",
+      tastingNotes: product.tastingNotes || "",
+      isUnlisted: product.isUnlisted || false,
+      isPreorder: product.isPreorder || false,
+      isPrivate: product.isPrivate || false,
+      isScheduled: product.isScheduled || false,
+      scheduledPublishAt: product.scheduledPublishAt ? new Date(product.scheduledPublishAt).toISOString().slice(0, 16) : "",
+      preorderShippingDate: product.preorderShippingDate ? new Date(product.preorderShippingDate).toISOString().slice(0, 16) : "",
+    });
+    
+    // Switch to the Add Product tab
+    setActiveTab("add-single");
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -161,10 +203,15 @@ export default function SellerProducts() {
     }
   };
 
-  // Product creation mutations
+  // Product creation/update mutations
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductForm) => {
-      const result = await apiRequest("POST", "/api/roaster/products", {
+      const endpoint = editingProduct 
+        ? `/api/roaster/products/${editingProduct.id}`
+        : "/api/roaster/products";
+      const method = editingProduct ? "PUT" : "POST";
+      
+      const result = await apiRequest(method, endpoint, {
         ...data,
         price: data.price.toString(),
         stockQuantity: data.stockQuantity,
@@ -173,20 +220,32 @@ export default function SellerProducts() {
       });
       return result;
     },
-    onSuccess: (newProduct) => {
+    onSuccess: (updatedProduct) => {
       queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
         if (!oldData || !Array.isArray(oldData)) {
-          return [newProduct];
+          return [updatedProduct];
         }
-        return [newProduct, ...oldData];
+        
+        if (editingProduct) {
+          // Update existing product
+          return oldData.map((product: any) => 
+            product.id === editingProduct.id ? updatedProduct : product
+          );
+        } else {
+          // Add new product
+          return [updatedProduct, ...oldData];
+        }
       });
       
       queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
       toast({
-        title: "Product Created",
-        description: "Your product has been successfully created and published.",
+        title: editingProduct ? "Product Updated" : "Product Created",
+        description: editingProduct 
+          ? "Your product has been successfully updated."
+          : "Your product has been successfully created and published.",
       });
       reset();
+      setEditingProduct(null);
       setActiveTab("manage");
     },
     onError: (error) => {
@@ -203,7 +262,9 @@ export default function SellerProducts() {
       }
       toast({
         title: "Error",
-        description: "Failed to create product. Please try again.",
+        description: editingProduct 
+          ? "Failed to update product. Please try again."
+          : "Failed to create product. Please try again.",
         variant: "destructive",
       });
     },
@@ -455,7 +516,7 @@ export default function SellerProducts() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setLocation(`/seller/products/${product.id}/edit`)}
+                                  onClick={() => handleEditProduct(product)}
                                   className="text-roastah-teal hover:text-roastah-dark-teal"
                                 >
                                   <Edit className="h-4 w-4" />

@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare, ShoppingBag, Move, RotateCcw } from "lucide-react";
+import { DollarSign, ShoppingCart, Package, Star, Plus, TrendingUp, BarChart3, Upload, Settings, MessageSquare, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,80 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import SellerAnalyticsDashboard from "@/components/seller-analytics-dashboard";
 import BulkProductUpload from "@/components/bulk-product-upload";
-import { Responsive, WidthProvider, Layout } from "react-grid-layout";
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function SellerDashboard() {
   const { isAuthenticated, isLoading, isRoaster } = useUser();
   const { toast } = useToast();
-  
-  // Dashboard customization state
-  const [isCustomizing, setIsCustomizing] = useState(false);
-  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({});
-  
-  // Default layout configuration
-  const defaultLayouts = useMemo(() => ({
-    lg: [
-      { i: 'overview', x: 0, y: 0, w: 6, h: 4, minW: 4, minH: 3 },
-      { i: 'actions', x: 6, y: 0, w: 6, h: 4, minW: 4, minH: 3 },
-      { i: 'analytics', x: 0, y: 4, w: 12, h: 6, minW: 8, minH: 4 },
-      { i: 'recent-products', x: 0, y: 10, w: 6, h: 5, minW: 4, minH: 4 },
-      { i: 'recent-orders', x: 6, y: 10, w: 6, h: 5, minW: 4, minH: 4 },
-      { i: 'bulk-upload', x: 0, y: 15, w: 6, h: 4, minW: 4, minH: 3 },
-      { i: 'add-product', x: 6, y: 15, w: 6, h: 4, minW: 4, minH: 3 }
-    ],
-    md: [
-      { i: 'overview', x: 0, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
-      { i: 'actions', x: 5, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
-      { i: 'analytics', x: 0, y: 4, w: 10, h: 6, minW: 6, minH: 4 },
-      { i: 'recent-products', x: 0, y: 10, w: 5, h: 5, minW: 3, minH: 4 },
-      { i: 'recent-orders', x: 5, y: 10, w: 5, h: 5, minW: 3, minH: 4 },
-      { i: 'bulk-upload', x: 0, y: 15, w: 5, h: 4, minW: 3, minH: 3 },
-      { i: 'add-product', x: 5, y: 15, w: 5, h: 4, minW: 3, minH: 3 }
-    ],
-    sm: [
-      { i: 'overview', x: 0, y: 0, w: 6, h: 4, minW: 6, minH: 3 },
-      { i: 'actions', x: 0, y: 4, w: 6, h: 4, minW: 6, minH: 3 },
-      { i: 'analytics', x: 0, y: 8, w: 6, h: 6, minW: 6, minH: 4 },
-      { i: 'recent-products', x: 0, y: 14, w: 6, h: 5, minW: 6, minH: 4 },
-      { i: 'recent-orders', x: 0, y: 19, w: 6, h: 5, minW: 6, minH: 4 },
-      { i: 'bulk-upload', x: 0, y: 24, w: 6, h: 4, minW: 6, minH: 3 },
-      { i: 'add-product', x: 0, y: 28, w: 6, h: 4, minW: 6, minH: 3 }
-    ]
-  }), []);
-  
-  // Initialize layouts from localStorage or use defaults
-  useEffect(() => {
-    const savedLayouts = localStorage.getItem('seller-dashboard-layouts');
-    if (savedLayouts) {
-      try {
-        setLayouts(JSON.parse(savedLayouts));
-      } catch {
-        setLayouts(defaultLayouts);
-      }
-    } else {
-      setLayouts(defaultLayouts);
-    }
-  }, [defaultLayouts]);
-  
-  // Save layouts to localStorage
-  const handleLayoutChange = (layout: Layout[], layouts: { [key: string]: Layout[] }) => {
-    setLayouts(layouts);
-    localStorage.setItem('seller-dashboard-layouts', JSON.stringify(layouts));
-  };
-  
-  // Reset to default layout
-  const resetLayout = () => {
-    setLayouts(defaultLayouts);
-    localStorage.setItem('seller-dashboard-layouts', JSON.stringify(defaultLayouts));
-    toast({
-      title: "Layout Reset",
-      description: "Dashboard layout has been reset to default.",
-    });
-  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -118,27 +48,23 @@ export default function SellerDashboard() {
   }, [isAuthenticated, isLoading, isRoaster, toast]);
 
   const { data: products = [] } = useQuery({
-    queryKey: ['/api/roaster/products'],
-    retry: false,
+    queryKey: ["/api/roaster/products"],
     enabled: isAuthenticated && isRoaster,
   });
 
   const { data: orders = [] } = useQuery({
-    queryKey: ['/api/roaster/orders'],
-    retry: false,
+    queryKey: ["/api/roaster/orders"],
     enabled: isAuthenticated && isRoaster,
   });
 
   // Calculate stats
-  const productList = Array.isArray(products) ? products : [];
-  const orderList = Array.isArray(orders) ? orders : [];
-  const totalProducts = productList.length;
-  const totalOrders = orderList.length;
-  const totalRevenue = orderList.reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
+  const totalProducts = products.length;
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.price || 0), 0);
   const averageRating = 4.8; // This would come from actual reviews
 
   // Get recent orders (last 3)
-  const recentOrders = orderList.slice(0, 3);
+  const recentOrders = orders.slice(0, 3);
 
   if (isLoading) {
     return (
@@ -169,51 +95,17 @@ export default function SellerDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Seller Dashboard</h1>
-            <p className="text-gray-600">Manage your roastery operations and track performance.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={isCustomizing ? "default" : "outline"}
-              onClick={() => setIsCustomizing(!isCustomizing)}
-              className="flex items-center gap-2"
-            >
-              <Move className="h-4 w-4" />
-              {isCustomizing ? "Save Layout" : "Customize"}
-            </Button>
-            {isCustomizing && (
-              <Button
-                variant="outline"
-                onClick={resetLayout}
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset
-              </Button>
-            )}
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Seller Dashboard</h1>
+          <p className="text-gray-600">Manage your roastery operations and track performance.</p>
         </div>
 
-        <ResponsiveGridLayout
-          className="layout"
-          layouts={layouts}
-          onLayoutChange={handleLayoutChange}
-          breakpoints={{ lg: 1200, md: 996, sm: 768 }}
-          cols={{ lg: 12, md: 10, sm: 6 }}
-          rowHeight={60}
-          isDraggable={isCustomizing}
-          isResizable={isCustomizing}
-          compactType="vertical"
-          preventCollision={false}
-          autoSize={true}
-          margin={[16, 16]}
-          containerPadding={[0, 0]}
-        >
+
+
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
           {/* Business Overview */}
-          <Card key="overview" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-roastah-teal" />
@@ -241,7 +133,7 @@ export default function SellerDashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card key="actions" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
@@ -249,137 +141,162 @@ export default function SellerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/seller/products">
+              <Link href="/seller/products/new" className="block">
                 <Button variant="outline" className="w-full justify-start">
-                  <Package className="h-4 w-4 mr-2" />
-                  Manage Products
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Product
                 </Button>
               </Link>
-              <Link href="/seller/orders">
+              <Link href="/seller/orders" className="block">
                 <Button variant="outline" className="w-full justify-start">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  View Orders
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Manage Orders
                 </Button>
               </Link>
-              <Link href="/seller/messages">
+              <Link href="/seller/messages" className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Messages
-                </Button>
-              </Link>
-              <Link href="/profile">
-                <Button variant="outline" className="w-full justify-start">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  Send Messages
                 </Button>
               </Link>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Analytics Dashboard */}
-          <div key="analytics" className={`${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
-            <SellerAnalyticsDashboard roasterId={1} />
-          </div>
-
-          {/* Recent Products */}
-          <Card key="recent-products" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-blue-600" />
-                Recent Products
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {productList.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No products yet. Create your first product!</p>
-              ) : (
-                <div className="space-y-3">
-                  {productList.slice(0, 3).map((product: any) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{product.name}</h4>
-                        <p className="text-sm text-gray-600">${product.price}</p>
-                      </div>
-                      <Badge variant="outline">{product.origin}</Badge>
-                    </div>
-                  ))}
-                  <Link href="/seller/products">
-                    <Button variant="outline" className="w-full mt-3">
-                      View All Products
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+        {/* Recent Orders & Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Orders */}
-          <Card key="recent-orders" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-purple-600" />
-                Recent Orders
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Recent Orders</CardTitle>
+                <Link href="/seller/orders">
+                  <Button variant="ghost" className="text-roastah-teal hover:text-roastah-dark-teal text-sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               {recentOrders.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No orders yet. Your first sale is coming!</p>
+                <div className="text-center py-8">
+                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-roastah-warm-gray">No orders yet</p>
+                  <p className="text-sm text-roastah-warm-gray mt-1">
+                    Orders will appear here once customers start buying your products
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {recentOrders.map((order: any) => (
                     <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <h4 className="font-medium">Order #{order.id}</h4>
-                        <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p className="font-medium text-sm">Order #{order.id}</p>
+                        <p className="text-xs text-roastah-warm-gray">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${order.price}</p>
-                        <Badge variant="outline">{order.status}</Badge>
+                        <p className="font-medium text-sm">${parseFloat(order.price || 0).toFixed(2)}</p>
+                        <Badge
+                          className={
+                            order.status === "delivered"
+                              ? "bg-green-100 text-green-800"
+                              : order.status === "shipped"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }
+                        >
+                          {order.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
-                  <Link href="/seller/orders">
-                    <Button variant="outline" className="w-full mt-3">
-                      View All Orders
-                    </Button>
-                  </Link>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Bulk Product Upload */}
-          <Card key="bulk-upload" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
+          {/* Sales Analytics */}
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5 text-orange-600" />
-                Bulk Product Upload
-              </CardTitle>
+              <CardTitle>Sales Analytics</CardTitle>
             </CardHeader>
             <CardContent>
-              <BulkProductUpload roasterId={1} />
+              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                <div className="text-center text-roastah-warm-gray">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4" />
+                  <p className="text-lg font-medium">Analytics Coming Soon</p>
+                  <p className="text-sm">Detailed sales analytics and insights</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Add New Product */}
-          <Card key="add-product" className={`h-full ${isCustomizing ? 'ring-2 ring-blue-200 cursor-move' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-green-600" />
-                Add New Product
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-gray-600 mb-4">Quickly add a new coffee product to your inventory.</p>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-roastah-teal/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Plus className="h-6 w-6 text-roastah-teal" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Add Product</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Create a new coffee product</p>
               <Link href="/seller/products/new">
-                <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Product
+                <Button variant="outline" size="sm" className="w-full">
+                  Add Product
                 </Button>
               </Link>
             </CardContent>
           </Card>
-        </ResponsiveGridLayout>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Send Message</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Message your customers</p>
+              <Link href="/seller/messages">
+                <Button variant="outline" size="sm" className="w-full">
+                  Compose Message
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">View Analytics</h3>
+              <p className="text-sm text-roastah-warm-gray mb-4">Track your performance</p>
+              <Button variant="outline" size="sm" className="w-full">
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {totalProducts === 0 && (
+          <Card className="mt-8">
+            <CardContent className="p-8 text-center">
+              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Start Selling Your Coffee</h3>
+              <p className="text-roastah-warm-gray mb-6">
+                Add your first product to start connecting with coffee enthusiasts
+              </p>
+              <Link href="/seller/products/new">
+                <Button className="bg-roastah-teal text-white hover:bg-roastah-dark-teal">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Product
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Footer />

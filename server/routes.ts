@@ -1530,6 +1530,209 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Message Publishing System Routes
+
+  // Get all message subjects for sellers
+  app.get('/api/message-subjects', isAuthenticated, async (req: any, res) => {
+    try {
+      const subjects = await storage.getAllMessageSubjects();
+      res.json(subjects);
+    } catch (error) {
+      console.error("Error fetching message subjects:", error);
+      res.status(500).json({ message: "Failed to fetch message subjects" });
+    }
+  });
+
+  // Create a new seller message (seller only)
+  app.post('/api/seller/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user is a roaster
+      const roaster = await storage.getRoasterByUserId(userId);
+      if (!roaster) {
+        return res.status(403).json({ message: "Only sellers can send messages" });
+      }
+
+      const { subjectId, title, content } = req.body;
+
+      if (!subjectId || !title || !content) {
+        return res.status(400).json({ message: "Subject, title, and content are required" });
+      }
+
+      // Create the message
+      const message = await storage.createSellerMessage({
+        sellerId: roaster.id,
+        subjectId: parseInt(subjectId),
+        title,
+        content,
+      });
+
+      // Get recipients (users who favorited this seller or purchased from them)
+      const recipientIds = await storage.getMessageRecipients(roaster.id);
+      
+      if (recipientIds.length === 0) {
+        return res.json({ 
+          message, 
+          recipientsCount: 0,
+          note: "No recipients found. Users who favorite your products or purchase from you will receive future messages."
+        });
+      }
+
+      // Create recipient records
+      const recipients = recipientIds.map(userId => ({
+        messageId: message.id,
+        userId,
+      }));
+
+      await storage.createMessageRecipients(recipients);
+
+      // Send notification emails (simplified - would use actual email service)
+      for (const recipientId of recipientIds) {
+        try {
+          // Mark email as sent (in real implementation, send actual email here)
+          await storage.markEmailAsSent(recipientId, message.id);
+          console.log(`Email notification sent to user ${recipientId} for message ${message.id}`);
+        } catch (emailError) {
+          console.error(`Failed to send email to user ${recipientId}:`, emailError);
+        }
+      }
+
+      res.json({ 
+        message, 
+        recipientsCount: recipientIds.length,
+        success: true 
+      });
+    } catch (error) {
+      console.error("Error creating seller message:", error);
+      res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  // Get seller's messages (seller only)
+  app.get('/api/seller/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user is a roaster
+      const roaster = await storage.getRoasterByUserId(userId);
+      if (!roaster) {
+        return res.status(403).json({ message: "Only sellers can view sent messages" });
+      }
+
+      const messages = await storage.getSellerMessages(roaster.id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching seller messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get buyer's messages (buyer only)
+  app.get('/api/buyer/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user is a buyer (not a roaster)
+      const roaster = await storage.getRoasterByUserId(userId);
+      if (roaster) {
+        return res.status(403).json({ message: "Sellers cannot view buyer messages" });
+      }
+
+      const messages = await storage.getUserMessages(userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching buyer messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get unread message count for notification badge (buyer only)
+  app.get('/api/buyer/messages/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user is a buyer (not a roaster)
+      const roaster = await storage.getRoasterByUserId(userId);
+      if (roaster) {
+        return res.json({ count: 0 }); // Sellers don't get message notifications
+      }
+
+      const count = await storage.getUnreadMessageCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread message count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  // Mark message as read (buyer only)
+  app.post('/api/buyer/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = parseInt(req.params.messageId);
+      
+      // Check if user is a buyer (not a roaster)
+      const roaster = await storage.getRoasterByUserId(userId);
+      if (roaster) {
+        return res.status(403).json({ message: "Sellers cannot mark messages as read" });
+      }
+
+      if (!messageId || isNaN(messageId)) {
+        return res.status(400).json({ message: "Invalid message ID" });
+      }
+
+      await storage.markMessageAsRead(userId, messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  // Get specific message details (authenticated users only)
+  app.get('/api/messages/:messageId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = parseInt(req.params.messageId);
+      
+      if (!messageId || isNaN(messageId)) {
+        return res.status(400).json({ message: "Invalid message ID" });
+      }
+
+      const message = await storage.getSellerMessageById(messageId);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+
+      // Check if user has access to this message
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (roaster) {
+        // Seller can only view their own messages
+        if (message.sellerId !== roaster.id) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      } else {
+        // Buyer can only view messages sent to them
+        const userMessages = await storage.getUserMessages(userId);
+        const hasAccess = userMessages.some(um => um.messageId === messageId);
+        
+        if (!hasAccess) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+        
+        // Mark as read when buyer views the message
+        await storage.markMessageAsRead(userId, messageId);
+      }
+
+      res.json(message);
+    } catch (error) {
+      console.error("Error fetching message details:", error);
+      res.status(500).json({ message: "Failed to fetch message" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server

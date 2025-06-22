@@ -6,7 +6,6 @@ import {
   orders,
   orderItems,
   reviews,
-  wishlist,
   notifications,
   orderTracking,
   realtimeConnections,
@@ -17,6 +16,10 @@ import {
   disputes,
   favoriteRoasters,
   giftCards,
+  wishlist,
+  messageSubjects,
+  sellerMessages,
+  messageRecipients,
   type User,
   type UpsertUser,
   type Roaster,
@@ -52,6 +55,12 @@ import {
   type GiftCard,
   type InsertGiftCard,
   type InsertFavoriteRoaster,
+  type MessageSubject,
+  type InsertMessageSubject,
+  type SellerMessage,
+  type InsertSellerMessage,
+  type MessageRecipient,
+  type InsertMessageRecipient,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -1193,9 +1202,9 @@ export class DatabaseStorage implements IStorage {
   async getMessageRecipients(sellerId: number): Promise<string[]> {
     // Get users who favorited this seller's products
     const favoriteUsers = await db
-      .select({ userId: favorites.userId })
-      .from(favorites)
-      .leftJoin(products, eq(favorites.productId, products.id))
+      .select({ userId: wishlist.userId })
+      .from(wishlist)
+      .leftJoin(products, eq(wishlist.productId, products.id))
       .where(eq(products.roasterId, sellerId));
 
     // Get users who have purchased from this seller

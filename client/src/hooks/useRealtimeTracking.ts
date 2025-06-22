@@ -207,7 +207,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
 
   const subscribeToOrder = useCallback((orderId: number) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, cannot subscribe to order');
+      if (import.meta.env.DEV) {
+        console.warn('WebSocket not connected, cannot subscribe to order');
+      }
       return;
     }
 

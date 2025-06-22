@@ -351,14 +351,14 @@ export default function SellerProducts() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="w-full mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Product Management</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your coffee products and inventory with individual or bulk operations.</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="manage" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Manage Products
@@ -552,7 +552,7 @@ export default function SellerProducts() {
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {editingProduct 
-                    ? `Update product details and settings. Created on ${new Date(editingProduct.createdAt).toLocaleDateString()}`
+                    ? `Update product details and settings. Created on ${editingProduct.createdAt ? new Date(editingProduct.createdAt.toString()).toLocaleDateString() : 'Unknown date'}`
                     : "Create a single product with detailed information and images."
                   }
                 </p>

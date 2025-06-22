@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Search, Filter, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -14,7 +14,8 @@ import ProductCard from "@/components/product-card";
 import { Product } from "@/lib/types";
 
 export default function Products() {
-  const [location] = useLocation();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     roastLevel: [] as string[],
@@ -25,16 +26,25 @@ export default function Products() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Parse URL search params
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const roastLevelParam = urlParams.get('roastLevel');
+  const roastLevelParam = searchParams.get('roastLevel');
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
   // Get unique origins and roast levels for filter options
-  const availableOrigins = products ? [...new Set(products.map((p: Product) => p.origin))].filter(Boolean) : [];
-  const availableRoastLevels = products ? [...new Set(products.map((p: Product) => p.roastLevel))].filter(Boolean) : [];
+  const getUniqueValues = (arr: string[]) => {
+    const unique: string[] = [];
+    arr.forEach(item => {
+      if (item && !unique.includes(item)) {
+        unique.push(item);
+      }
+    });
+    return unique;
+  };
+  
+  const availableOrigins = products ? getUniqueValues(products.map((p: Product) => p.origin).filter(Boolean)) : [];
+  const availableRoastLevels = products ? getUniqueValues(products.map((p: Product) => p.roastLevel).filter(Boolean)) : [];
 
   const handleRoastLevelChange = (roastLevel: string, checked: boolean) => {
     setFilters(prev => ({

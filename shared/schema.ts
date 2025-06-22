@@ -220,6 +220,64 @@ export const orderItemRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
+// Message Publishing System
+export const messageSubjects = pgTable("message_subjects", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: varchar("description", { length: 255 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sellerMessages = pgTable("seller_messages", {
+  id: serial("id").primaryKey(),
+  sellerId: integer("seller_id").references(() => roasters.id).notNull(),
+  subjectId: integer("subject_id").references(() => messageSubjects.id).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content").notNull(),
+  publishedAt: timestamp("published_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messageRecipients = pgTable("message_recipients", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => sellerMessages.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  readAt: timestamp("read_at"),
+  emailSent: boolean("email_sent").default(false).notNull(),
+  emailSentAt: timestamp("email_sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Message Relations
+export const messageSubjectRelations = relations(messageSubjects, ({ many }) => ({
+  messages: many(sellerMessages),
+}));
+
+export const sellerMessageRelations = relations(sellerMessages, ({ one, many }) => ({
+  seller: one(roasters, {
+    fields: [sellerMessages.sellerId],
+    references: [roasters.id],
+  }),
+  subject: one(messageSubjects, {
+    fields: [sellerMessages.subjectId],
+    references: [messageSubjects.id],
+  }),
+  recipients: many(messageRecipients),
+}));
+
+export const messageRecipientRelations = relations(messageRecipients, ({ one }) => ({
+  message: one(sellerMessages, {
+    fields: [messageRecipients.messageId],
+    references: [sellerMessages.id],
+  }),
+  user: one(users, {
+    fields: [messageRecipients.userId],
+    references: [users.id],
+  }),
+}));
+
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertRoasterSchema = createInsertSchema(roasters);
@@ -240,6 +298,22 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   updatedAt: true,
 });
 
+export const insertMessageSubjectSchema = createInsertSchema(messageSubjects).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSellerMessageSchema = createInsertSchema(sellerMessages).omit({
+  id: true,
+  publishedAt: true,
+  createdAt: true,
+});
+
+export const insertMessageRecipientSchema = createInsertSchema(messageRecipients).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -251,6 +325,12 @@ export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type MessageSubject = typeof messageSubjects.$inferSelect;
+export type InsertMessageSubject = z.infer<typeof insertMessageSubjectSchema>;
+export type SellerMessage = typeof sellerMessages.$inferSelect;
+export type InsertSellerMessage = z.infer<typeof insertSellerMessageSchema>;
+export type MessageRecipient = typeof messageRecipients.$inferSelect;
+export type InsertMessageRecipient = z.infer<typeof insertMessageRecipientSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
 // Reviews table

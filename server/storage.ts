@@ -6,6 +6,7 @@ import {
   orders,
   orderItems,
   reviews,
+  wishlist,
   notifications,
   orderTracking,
   realtimeConnections,
@@ -16,7 +17,6 @@ import {
   disputes,
   favoriteRoasters,
   giftCards,
-  wishlist,
   messageSubjects,
   sellerMessages,
   messageRecipients,
@@ -1137,14 +1137,10 @@ export class DatabaseStorage implements IStorage {
           title: sellerMessages.title,
           content: sellerMessages.content,
           publishedAt: sellerMessages.publishedAt,
-          seller: {
-            id: roasters.id,
-            businessName: roasters.businessName,
-          },
-          subject: {
-            id: messageSubjects.id,
-            name: messageSubjects.name,
-          },
+          sellerId: roasters.id,
+          sellerName: roasters.businessName,
+          subjectId: messageSubjects.id,
+          subjectName: messageSubjects.name,
         },
       })
       .from(messageRecipients)

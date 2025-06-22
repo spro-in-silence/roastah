@@ -20,6 +20,7 @@ import SellerProducts from "@/pages/seller-products";
 import SellerProductsNew from "@/pages/seller-products-new";
 import SellerProductsEdit from "@/pages/seller-products-edit";
 import SellerOrders from "@/pages/seller-orders";
+import SellerMessages from "@/pages/seller-messages";
 import ProductionDemo from "@/pages/production-demo";
 import MedusaAdmin from "@/pages/medusa-admin";
 import SecurityDashboard from "@/pages/security-dashboard";

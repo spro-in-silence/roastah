@@ -194,8 +194,8 @@ export default function GiftCards() {
             <p className="text-gray-600 mb-6">
               Please sign in to purchase gift cards.
             </p>
-            <Button asChild>
-              <a to="/api/login">Sign In</a>
+            <Button onClick={() => window.location.href = '/api/login'}>
+              Sign In
             </Button>
           </div>
         </div>

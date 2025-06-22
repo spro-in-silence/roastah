@@ -185,7 +185,7 @@ export default function SellerProductEdit() {
       // Update the product list cache to reflect changes
       queryClient.setQueryData(["/api/roaster/products"], (oldData: any) => {
         if (oldData && Array.isArray(oldData) && productId) {
-          const numProductId = parseInt(productId);
+          const numProductId = parseInt(productId.toString());
           return oldData.map((product: any) => 
             product.id === numProductId 
               ? { ...product, [tag]: value }

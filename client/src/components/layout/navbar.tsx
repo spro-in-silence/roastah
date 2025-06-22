@@ -343,7 +343,7 @@ export default function Navbar() {
               {/* Sign Out */}
               <div className="mt-4">
                 <a 
-                  to="/api/logout" 
+                  href="/api/logout" 
                   className="flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-red-50 text-red-600 transition-colors"
                 >
                   <span className="font-medium">Sign Out</span>
@@ -388,7 +388,7 @@ export default function Navbar() {
                   {(cartItems as CartItem[]).map((item) => (
                     <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                       <img 
-                        src={item.product?.imageUrl || '/placeholder-coffee.jpg'} 
+                        src={item.product?.images?.[0] || '/placeholder-coffee.jpg'} 
                         alt={item.product?.name || 'Product'}
                         className="w-16 h-16 object-cover rounded"
                       />
@@ -400,7 +400,7 @@ export default function Navbar() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${((item.product?.price || 0) * item.quantity).toFixed(2)}</p>
+                        <p className="font-medium">${(Number(item.product?.price || 0) * Number(item.quantity)).toFixed(2)}</p>
                       </div>
                     </div>
                   ))}

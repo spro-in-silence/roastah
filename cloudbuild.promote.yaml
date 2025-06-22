@@ -6,31 +6,41 @@ steps:
     args:
       - '-c'
       - |
-        docker pull gcr.io/roastah-d/roastah-dev:$COMMIT_SHA
-        docker tag gcr.io/roastah-d/roastah-dev:$COMMIT_SHA gcr.io/$PROJECT_ID/roastah:$COMMIT_SHA
+        docker pull us-central1-docker.pkg.dev/roastah-d/roastah-d/roastah-d:$COMMIT_SHA
+        docker tag us-central1-docker.pkg.dev/roastah-d/roastah-d/roastah-d:$COMMIT_SHA us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$COMMIT_SHA
 
   # Push the promoted image to prod project
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/roastah:$COMMIT_SHA']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$COMMIT_SHA']
 
   # Deploy to Cloud Run in prod project
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/roastah:$COMMIT_SHA'
-      - '--region'
-      - '${_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
-      - '--set-env-vars'
-      - 'NODE_ENV=production,APP_ENV=production,GCP_PROJECT_ID=roastah'
+      - '-c'
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$COMMIT_SHA \
+          --region=${_REGION} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --service-account=256468121098-compute@developer.gserviceaccount.com \
+          --set-env-vars=NODE_ENV=production,APP_ENV=production,GCP_PROJECT_ID=roastah,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,DOCUMENT_AI_PROCESSOR_ID=sm://DOCUMENT_AI_PROCESSOR_ID,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
+          --ingress=all \
+          --no-traffic \
+          --concurrency=80 \
+          --timeout=600 \
+          --cpu=1000m \
+          --memory=512Mi \
+          --max-instances=100 \
+          --min-instances=0 \
+          --cpu-throttling \
+          --execution-environment=gen2 \
+          --session-affinity \
+          --use-http2 \
+          --cpu-boost \
+          --quiet
 
   # Send build notification
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -43,7 +53,7 @@ steps:
           --attribute="status=success,environment=production,commit=$COMMIT_SHA"
 
 images:
-  - 'gcr.io/$PROJECT_ID/roastah:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$COMMIT_SHA'
 
 substitutions:
   _SERVICE_NAME: 'roastah'

@@ -32,12 +32,12 @@ export default function SellerMessages() {
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
 
   // Fetch message subjects
-  const { data: subjects = [] } = useQuery({
+  const { data: subjects = [] } = useQuery<any[]>({
     queryKey: ["/api/message-subjects"],
   });
 
   // Fetch seller's sent messages
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<any[]>({
     queryKey: ["/api/seller/messages"],
   });
 

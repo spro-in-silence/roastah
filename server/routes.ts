@@ -1530,6 +1530,35 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Seed default message subjects (development only)
+  app.post('/api/seed/message-subjects', async (req, res) => {
+    try {
+      const defaultSubjects = [
+        { name: 'General Announcements', description: 'General updates and announcements' },
+        { name: 'New Product Launches', description: 'Notifications about new coffee offerings' },
+        { name: 'Sales & Promotions', description: 'Special offers and discount announcements' },
+        { name: 'Seasonal Collections', description: 'Seasonal coffee releases and limited editions' },
+        { name: 'Pre-orders Available', description: 'Early access to upcoming coffee releases' },
+      ];
+
+      // Check if subjects already exist
+      const existingSubjects = await storage.getAllMessageSubjects();
+      if (existingSubjects.length > 0) {
+        return res.json({ message: 'Message subjects already exist', count: existingSubjects.length });
+      }
+
+      // Create default subjects
+      for (const subject of defaultSubjects) {
+        await storage.createMessageSubject(subject);
+      }
+
+      res.json({ message: 'Default message subjects created successfully', count: defaultSubjects.length });
+    } catch (error) {
+      console.error("Error seeding message subjects:", error);
+      res.status(500).json({ message: "Failed to seed message subjects" });
+    }
+  });
+
   // Message Publishing System Routes
 
   // Get all message subjects for sellers

@@ -29,6 +29,7 @@ import TrackingDemo from "@/pages/tracking-demo";
 import Leaderboard from "@/pages/leaderboard";
 import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
+import BuyerMessages from "@/pages/buyer-messages";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -61,6 +62,7 @@ function Router() {
           <Route path="/seller/products/new" component={SellerProductsNew} />
           <Route path="/seller/products/:id/edit" component={SellerProductsEdit} />
           <Route path="/seller/orders" component={SellerOrders} />
+          <Route path="/seller/messages" component={SellerMessages} />
           <Route path="/profile" component={Profile} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/production-demo" component={ProductionDemo} />
@@ -86,6 +88,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/favorites" component={Favorites} />
           <Route path="/gift-cards" component={GiftCards} />
+          <Route path="/messages" component={BuyerMessages} />
           <Route path="/become-roastah" component={BecomeRoastah} />
           <Route path="/seller/dashboard" component={SellerDashboard} />
           <Route path="/seller/products" component={SellerProducts} />

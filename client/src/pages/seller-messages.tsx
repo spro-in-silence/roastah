@@ -16,6 +16,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { MessageSquare, Send, Users, Calendar, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { z } from "zod";
+import Navbar from "@/components/layout/navbar";
+import Footer from "@/components/layout/footer";
 
 // Form schema for message creation
 const messageFormSchema = insertSellerMessageSchema.extend({
@@ -93,237 +95,229 @@ export default function SellerMessages() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Customer Messages
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Send updates and announcements to customers who have favorited your products or made purchases
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Customer Messages
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Send updates and announcements to customers who have favorited your products or made purchases
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Message Creation Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              Compose New Message
-            </CardTitle>
-            <CardDescription>
-              Create a message to send to your customers. Only customers who have favorited your products or made purchases will receive it.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="subjectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Message Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Message Creation Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                Compose New Message
+              </CardTitle>
+              <CardDescription>
+                Create a message to send to your customers. Only customers who have favorited your products or made purchases will receive it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="subjectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message Subject Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a message category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {subjects.map((subject) => (
+                              <SelectItem key={subject.id} value={subject.id.toString()}>
+                                {subject.name} - {subject.description}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message Title</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a message category" />
-                          </SelectTrigger>
+                          <Input
+                            placeholder="Enter a compelling title for your message"
+                            {...field}
+                            maxLength={200}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {subjects.map((subject: any) => (
-                            <SelectItem key={subject.id} value={subject.id.toString()}>
-                              {subject.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <div className="text-sm text-gray-500 text-right">
+                          {field.value?.length || 0}/200
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Message Title</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter a compelling title for your message"
-                          {...field}
-                          maxLength={200}
-                        />
-                      </FormControl>
-                      <div className="text-sm text-gray-500 text-right">
-                        {field.value?.length || 0}/200
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message Content</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Write your message content here. This will be sent to customers who have favorited your products or made purchases from you."
+                            className="min-h-[200px]"
+                            {...field}
+                            maxLength={5000}
+                          />
+                        </FormControl>
+                        <div className="text-sm text-gray-500 text-right">
+                          {field.value?.length || 0}/5000
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Message Content</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Write your message content here. This will be sent to customers who have favorited your products or made purchases from you."
-                          className="min-h-[200px]"
-                          {...field}
-                          maxLength={5000}
-                        />
-                      </FormControl>
-                      <div className="text-sm text-gray-500 text-right">
-                        {field.value?.length || 0}/5000
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createMessageMutation.isPending}
-                >
-                  {createMessageMutation.isPending ? (
-                    "Publishing Message..."
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Publish Message
-                    </>
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        {/* Sent Messages List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Sent Messages
-            </CardTitle>
-            <CardDescription>
-              View your previously sent customer messages
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {messagesLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                ))}
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No messages sent yet</p>
-                <p className="text-sm">Create your first customer message using the form</p>
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {messages.map((message: any) => (
-                  <div
-                    key={message.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedMessage?.id === message.id
-                        ? "border-[#8B4513] bg-[#8B4513]/5"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                    }`}
-                    onClick={() => setSelectedMessage(message)}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={createMessageMutation.isPending}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {message.subjectName}
-                          </Badge>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(message.publishedAt), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                          {message.title}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                          {message.content}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {message.recipientCount || 0} recipients
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            Delivered
-                          </span>
-                        </div>
+                    {createMessageMutation.isPending ? (
+                      "Publishing Message..."
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Publish Message
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          {/* Sent Messages List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Sent Messages
+              </CardTitle>
+              <CardDescription>
+                View and manage your previously sent customer messages
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {messagesLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No messages sent yet</p>
+                  <p className="text-sm">Start engaging with your customers by sending your first message!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        selectedMessage?.id === message.id ? 'border-roastah-teal bg-roastah-teal/5' : 'border-gray-200 dark:border-gray-600'
+                      }`}
+                      onClick={() => setSelectedMessage(message)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-sm truncate pr-2">{message.title}</h4>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {message.subjectName}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {message.recipientCount || 0} recipients
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(message.publishedAt), "MMM d, yyyy")}
+                        </span>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Message Details Modal/Panel */}
-      {selectedMessage && (
-        <Card className="mt-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Message Details</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => setSelectedMessage(null)}>
-                Close
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Badge variant="outline">{selectedMessage.subjectName}</Badge>
-                <span className="text-sm text-gray-500 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Published: {format(new Date(selectedMessage.publishedAt), "MMM d, yyyy 'at' h:mm a")}
-                </span>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h3 className="font-semibold text-lg mb-2">{selectedMessage.title}</h3>
-                <div className="prose dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap">{selectedMessage.content}</p>
+        {/* Message Detail View */}
+        {selectedMessage && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Message Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <Badge variant="outline">{selectedMessage.subjectName}</Badge>
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Published: {format(new Date(selectedMessage.publishedAt), "MMM d, yyyy 'at' h:mm a")}
+                  </span>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">{selectedMessage.title}</h3>
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p className="whitespace-pre-wrap">{selectedMessage.content}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {selectedMessage.recipientCount || 0} customers notified
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" />
+                    Message delivered successfully
+                  </span>
                 </div>
               </div>
-              
-              <Separator />
-              
-              <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
-                <span className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {selectedMessage.recipientCount || 0} customers notified
-                </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4" />
-                  Message delivered successfully
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      
+      <Footer />
     </div>
   );
 }

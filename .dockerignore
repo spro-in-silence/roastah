@@ -129,4 +129,7 @@ README.md
 *.tsbuildinfo
 
 # Turbo
-.turbo 
+.turbo
+
+# Explicitly include migrations
+!migrations/ 

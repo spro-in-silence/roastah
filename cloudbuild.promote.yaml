@@ -26,7 +26,7 @@ steps:
           --allow-unauthenticated \
           --port=8080 \
           --service-account=256468121098-compute@developer.gserviceaccount.com \
-          --set-env-vars=NODE_ENV=production,APP_ENV=production,GCP_PROJECT_ID=roastah,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,DOCUMENT_AI_PROCESSOR_ID=sm://DOCUMENT_AI_PROCESSOR_ID,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
+          --set-env-vars=NODE_ENV=production,APP_ENV=production,GCP_PROJECT_ID=roastah \
           --ingress=all \
           --no-traffic \
           --concurrency=80 \

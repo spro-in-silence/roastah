@@ -52,10 +52,9 @@ steps:
           --image=us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA \
           --region=${_REGION} \
           --platform=managed \
-          --allow-unauthenticated \
           --port=8080 \
-          --service-account=530137774523-compute@developer.gserviceaccount.com \
-          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,DOCUMENT_AI_PROCESSOR_ID=sm://DOCUMENT_AI_PROCESSOR_ID,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
+          --service-account=188956418455-compute@developer.gserviceaccount.com \
+          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d \
           --ingress=all \
           --no-traffic \
           --concurrency=80 \

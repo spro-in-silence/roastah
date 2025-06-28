@@ -1,7 +1,7 @@
 # Cloud Build configuration for development deployment
 steps:
   # 1. Authenticate to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Authenticate
     entrypoint: bash
     args:

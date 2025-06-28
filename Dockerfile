@@ -2,7 +2,7 @@
 # Multi-stage Docker build for production deployment
 
 # Stage 1: Base Node.js image with all dependencies
-FROM node:18-alpine AS base
+FROM --platform=linux/amd64 node:18-alpine AS base
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -55,7 +55,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm run build:backend
 
 # Stage 5: Production runtime
-FROM node:18-alpine AS production
+FROM --platform=linux/amd64 node:18-alpine AS production
 
 # Install production dependencies only
 RUN apk add --no-cache \
@@ -71,7 +71,7 @@ WORKDIR /app
 
 # Copy built applications
 COPY --from=frontend-builder --chown=roastah:nodejs /app/dist ./dist
-COPY --from=backend-builder --chown=roastah:nodejs /app/build ./build
+COPY --from=backend-builder --chown=roastah:nodejs /app/dist ./dist-server
 
 # Copy package files for production dependencies
 COPY package*.json ./
@@ -105,4 +105,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "build/server.js"] 
+CMD ["node", "dist-server/index.js"] 

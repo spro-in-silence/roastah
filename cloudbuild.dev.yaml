@@ -9,7 +9,34 @@ steps:
       - |
         gcloud auth configure-docker us-central1-docker.pkg.dev
 
-  # 2. Build the Docker image
+  # 2. Generate Database Migrations
+  - name: 'node:18'
+    id: Generate Migrations
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        # Install pnpm
+        npm install -g pnpm
+        
+        # Install dependencies
+        pnpm install
+        
+        # Generate migrations
+        echo "Generating database migrations..."
+        npx drizzle-kit generate
+        
+        # List generated migrations
+        echo "Generated migrations:"
+        ls -la migrations/
+        
+        # Show migration content (first few lines)
+        if [ -f migrations/*.sql ]; then
+          echo "Migration file content preview:"
+          head -20 migrations/*.sql
+        fi
+
+  # 3. Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: Build Image
     entrypoint: bash
@@ -19,7 +46,7 @@ steps:
         docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA .
         docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA
 
-  # 3. Tag as latest
+  # 4. Tag as latest
   - name: 'gcr.io/cloud-builders/docker'
     id: Tag Latest
     entrypoint: bash
@@ -29,7 +56,7 @@ steps:
         docker tag us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest
         docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest
 
-  # 4. Deploy to Cloud Run
+  # 5. Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Deploy to Cloud Run
     entrypoint: bash
@@ -94,7 +121,7 @@ steps:
           exit 1
         fi
 
-  # 5. Keep only last 5 Cloud Run revisions
+  # 6. Keep only last 5 Cloud Run revisions
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Revisions
     entrypoint: bash
@@ -107,7 +134,7 @@ steps:
           gcloud run revisions delete $rev --region=${_REGION} --quiet
         done
 
-  # 6. Keep only last 2 Artifact Registry images
+  # 7. Keep only last 2 Artifact Registry images
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Images
     entrypoint: bash
@@ -120,7 +147,7 @@ steps:
           gcloud artifacts docker images delete "$img" --quiet --delete-tags
         done
 
-  # 7. Send build notification
+  # 8. Send build notification
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Send Notification
     entrypoint: bash

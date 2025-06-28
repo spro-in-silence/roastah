@@ -133,3 +133,4 @@ README.md
 
 # Explicitly include migrations
 !migrations/ 
+!migrations/**

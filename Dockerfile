@@ -19,7 +19,6 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
-COPY turbo.json* ./
 
 # Install pnpm (if using monorepo with turbo)
 RUN npm install -g pnpm

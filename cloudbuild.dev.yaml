@@ -1,36 +1,25 @@
-# Cloud Build configuration for development deployment to Cloud Run
+# Cloud Build configuration for development deployment
 steps:
-  # 1. Create Artifact Registry repository if it doesn't exist
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: Create Repository
+  # 1. Authenticate to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: Authenticate
     entrypoint: bash
     args:
       - '-c'
       - |
-        gcloud artifacts repositories create roastah-d \
-          --repository-format=docker \
-          --location=us-central1 \
-          --quiet || true
+        gcloud auth configure-docker us-central1-docker.pkg.dev
 
-  # 2. Build and push Docker image
+  # 2. Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    id: Build & Push
-    args: 
-      - 'build'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA'
-      - '--cache-from'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest'
-      - '--build-arg'
-      - 'NPM_CACHE=npm-cache.tar.gz'
-      - '.'
+    id: Build Image
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA .
+        docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA
 
-  # 3. Push the container image to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    id: Push Image
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA']
-
-  # 4. Tag and push latest for cache
+  # 3. Tag as latest
   - name: 'gcr.io/cloud-builders/docker'
     id: Tag Latest
     entrypoint: bash
@@ -40,7 +29,7 @@ steps:
         docker tag us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest
         docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest
 
-  # 5. Deploy to Cloud Run with IAM policy
+  # 4. Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Deploy to Cloud Run
     entrypoint: bash
@@ -52,10 +41,8 @@ steps:
           --image=us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA \
           --region=${_REGION} \
           --platform=managed \
-          --allow-unauthenticated \
           --port=8080 \
-          --service-account=530137774523-compute@developer.gserviceaccount.com \
-          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,DOCUMENT_AI_PROCESSOR_ID=sm://DOCUMENT_AI_PROCESSOR_ID,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
+          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
           --ingress=all \
           --no-traffic \
           --concurrency=80 \
@@ -78,7 +65,7 @@ steps:
         # Get the latest revision
         echo "Getting latest revision..."
         latest_rev=$(gcloud run revisions list --service=${_SERVICE_NAME} --region=${_REGION} --sort-by="~creationTimestamp" --limit=1 --format="value(metadata.name)")
-
+        
         if [ -n "$latest_rev" ]; then
           echo "Waiting for revision to be ready..."
           # Wait for revision to be ready
@@ -106,7 +93,7 @@ steps:
           exit 1
         fi
 
-  # 6. Keep only last 5 Cloud Run revisions
+  # 5. Keep only last 5 Cloud Run revisions
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Revisions
     entrypoint: bash
@@ -119,7 +106,7 @@ steps:
           gcloud run revisions delete $rev --region=${_REGION} --quiet
         done
 
-  # 7. Keep only last 2 Artifact Registry images
+  # 6. Keep only last 2 Artifact Registry images
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Images
     entrypoint: bash
@@ -132,7 +119,7 @@ steps:
           gcloud artifacts docker images delete "$img" --quiet --delete-tags
         done
 
-  # 8. Send build notification
+  # 7. Send build notification
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Send Notification
     entrypoint: bash
@@ -156,22 +143,16 @@ timeout: '1800s'
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
-  substitution_option: 'ALLOW_LOOSE'
 
-# IAM Requirements:
+# IAM Requirements (managed by Terraform):
 # - Cloud Build Service Account needs:
 #   - roles/run.admin on roastah-d project
 #   - roles/storage.admin on roastah-d project
 #   - roles/pubsub.publisher on ci-notify topic
 #   - roles/iam.serviceAccountUser on roastah-d project
-#   - roles/resourcemanager.projectIamAdmin on roastah-d project
 #   - roles/secretmanager.secretAccessor on roastah-d project
 #
 # - Service Account (roastah-d-sa) needs:
 #   - roles/secretmanager.secretAccessor on roastah-d project
 #
-# After deployment, run this command manually to allow public access:
-# gcloud run services add-iam-policy-binding roastah-d \
-#   --region=us-central1 \
-#   --member=allUsers \
-#   --role=roles/run.invoker
+# All IAM permissions are now managed by Terraform

@@ -20,7 +20,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
 
-# Install pnpm (if using monorepo with turbo)
+# Install pnpm
 RUN npm install -g pnpm
 
 # Stage 2: Dependencies installation
@@ -39,7 +39,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Build frontend
-RUN pnpm run build:frontend
+RUN pnpm run build:client
 
 # Stage 4: Backend build
 FROM base AS backend-builder
@@ -51,7 +51,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Build backend
-RUN pnpm run build:backend
+RUN pnpm run build:server
 
 # Stage 5: Production runtime
 FROM --platform=linux/amd64 node:18-alpine AS production
@@ -80,7 +80,7 @@ RUN npm install -g pnpm && \
 
 # Copy built applications
 COPY --from=frontend-builder --chown=roastah:nodejs /app/dist ./dist
-COPY --from=backend-builder --chown=roastah:nodejs /app/dist ./dist-server
+COPY --from=backend-builder --chown=roastah:nodejs /app/dist-server ./dist-server
 
 # Copy necessary files
 COPY --chown=roastah:nodejs docker-entrypoint.sh ./

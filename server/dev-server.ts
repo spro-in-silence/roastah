@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
-import fs from "fs";
+import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      console.log(logLine);
+      log(logLine);
     }
   });
 
@@ -53,7 +53,7 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    console.log('Starting Roastah server...');
+    console.log('Starting Roastah development server...');
     console.log('Environment:', process.env.NODE_ENV);
     console.log('Port:', process.env.PORT || 5000);
     
@@ -68,36 +68,21 @@ app.use((req, res, next) => {
       throw err;
     });
 
-    // Production static file serving
-    const path = require("path");
-    const distPath = path.resolve(__dirname, "../dist");
-    
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      
-      // Serve index.html for all non-API routes (SPA routing)
-      app.use("*", (req, res, next) => {
-        if (req.path.startsWith('/api')) {
-          return next();
-        }
-        res.sendFile(path.resolve(distPath, "index.html"));
-      });
-    } else {
-      console.warn('No dist directory found, skipping static file serving');
-    }
+    // Setup Vite for development
+    await setupVite(app, server);
 
-    // Use the PORT environment variable (Cloud Run provides PORT=8080)
-    // Fallback to 5000 for local development
+    // Use the PORT environment variable
     const port = process.env.PORT || 5000;
     server.listen({
       port,
       host: "0.0.0.0",
       reusePort: true,
     }, () => {
-      console.log(`✅ Roastah server started successfully on port ${port}`);
+      log(`serving on port ${port}`);
+      console.log(`✅ Roastah development server started successfully on port ${port}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('❌ Failed to start development server:', error);
     process.exit(1);
   }
-})();
+})(); 

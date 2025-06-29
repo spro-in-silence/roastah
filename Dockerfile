@@ -72,9 +72,10 @@ WORKDIR /app
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
 
-# Install only production dependencies
+# Install only production dependencies and prune any dev dependencies
 RUN npm install -g pnpm && \
     pnpm install --prod --frozen-lockfile && \
+    pnpm prune --prod && \
     pnpm store prune
 
 # Copy built applications

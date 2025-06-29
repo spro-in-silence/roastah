@@ -1,16 +1,64 @@
 # Dependencies
 node_modules
+.pnpm-store
+
+# Build outputs
+dist
+dist-server
+build
+
+# Development files
+.env.local
+.env.development
+.env.test
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build outputs
-dist
-build
-.next
-.nuxt
-.output
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Cloud Build
+cloudbuild*.yaml
+
+# Development server (not needed in production)
+server/dev-server.ts
+
+# Scripts (keep only what's needed)
+scripts/check-vite-references.js
+scripts/validate-production-deps.js
+
+# Workspace hoisting protection - exclude any potential workspace symlinks
+.pnpm-debug.log
+.pnpm-store
+node_modules/.pnpm
+node_modules/.cache
+
+# Exclude any potential workspace root files that might cause hoisting issues
+pnpm-workspace.yaml
+lerna.json
+nx.json
+
+# Keep migrations for database setup
+!migrations/
 
 # Environment files
 .env
@@ -27,7 +75,6 @@ build
 *~
 
 # OS generated files
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100

@@ -16,25 +16,11 @@ steps:
     args:
       - '-c'
       - |
-        # Install pnpm
+        echo "🔧 Generating database migrations..."
         npm install -g pnpm
-        
-        # Install dependencies
-        pnpm install
-        
-        # Generate migrations
-        echo "Generating database migrations..."
-        npx drizzle-kit generate
-        
-        # List generated migrations
-        echo "Generated migrations:"
-        ls -la migrations/
-        
-        # Show migration content (first few lines)
-        if [ -f migrations/*.sql ]; then
-          echo "Migration file content preview:"
-          head -20 migrations/*.sql
-        fi
+        pnpm install --frozen-lockfile
+        pnpm run db:generate
+        echo "✅ Database migrations generated"
 
   # 3. Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
@@ -43,6 +29,16 @@ steps:
     args:
       - '-c'
       - |
+        echo "🏗️ Building application..."
+        npm install -g pnpm
+        pnpm install --frozen-lockfile
+        pnpm run build
+        echo "✅ Application built successfully"
+        
+        echo "🔍 Running production validation..."
+        pnpm run validate-prod
+        echo "✅ Production validation passed"
+
         docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA .
         docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA
 

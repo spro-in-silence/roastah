@@ -1,6 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import { setupSecurity } from "./security";
 
 const app = express();
@@ -44,7 +43,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(logLine);
     }
   });
 
@@ -56,6 +55,26 @@ app.use((req, res, next) => {
     console.log('Starting Roastah server...');
     console.log('Environment:', process.env.NODE_ENV);
     console.log('Port:', process.env.PORT || 5000);
+    
+    // Only import Vite-related modules in development
+    let setupVite: any, serveStatic: any, log: any;
+    if (process.env.NODE_ENV === "development") {
+      const viteModule = await import("./vite");
+      setupVite = viteModule.setupVite;
+      serveStatic = viteModule.serveStatic;
+      log = viteModule.log;
+    } else {
+      // Production fallbacks
+      log = (message: string) => console.log(`[${new Date().toISOString()}] ${message}`);
+      serveStatic = (app: any) => {
+        const path = require("path");
+        const distPath = path.resolve(__dirname, "../dist");
+        app.use(express.static(distPath));
+        app.use("*", (_req: any, res: any) => {
+          res.sendFile(path.resolve(distPath, "index.html"));
+        });
+      };
+    }
     
     const server = await registerRoutes(app);
 

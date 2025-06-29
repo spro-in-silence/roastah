@@ -68,10 +68,6 @@ RUN adduser -S roastah -u 1001
 # Set working directory
 WORKDIR /app
 
-# Copy built applications
-COPY --from=frontend-builder --chown=roastah:nodejs /app/dist ./dist
-COPY --from=backend-builder --chown=roastah:nodejs /app/dist ./dist-server
-
 # Copy package files for production dependencies
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
@@ -80,6 +76,10 @@ COPY pnpm-lock.yaml* ./
 RUN npm install -g pnpm && \
     pnpm install --prod --frozen-lockfile && \
     pnpm store prune
+
+# Copy built applications
+COPY --from=frontend-builder --chown=roastah:nodejs /app/dist ./dist
+COPY --from=backend-builder --chown=roastah:nodejs /app/dist ./dist-server
 
 # Copy necessary files
 COPY --chown=roastah:nodejs docker-entrypoint.sh ./

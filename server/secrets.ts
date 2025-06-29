@@ -15,8 +15,8 @@ export async function getSecret(secretName: string): Promise<string> {
 }
 
 export async function loadSecrets(): Promise<void> {
-  // Only load from Secret Manager in production environments
-  if (process.env.NODE_ENV === 'production' || process.env.GOOGLE_CLOUD_PROJECT) {
+  // Load from Secret Manager when running in Cloud Run (dev or production)
+  if (process.env.GOOGLE_CLOUD_PROJECT) {
     try {
       const [replitDomains, replId, stripeSecretKey] = await Promise.all([
         getSecret('REPLIT_DOMAINS'),

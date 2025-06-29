@@ -3528,7 +3528,7 @@ async function getSecret(secretName) {
   }
 }
 async function loadSecrets() {
-  if (process.env.NODE_ENV === "production" || process.env.GOOGLE_CLOUD_PROJECT) {
+  if (process.env.GOOGLE_CLOUD_PROJECT) {
     try {
       const [replitDomains, replId, stripeSecretKey] = await Promise.all([
         getSecret("REPLIT_DOMAINS"),

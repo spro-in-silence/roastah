@@ -76,7 +76,7 @@ steps:
           --platform=managed \
           --allow-unauthenticated \
           --port=8080 \
-          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,SSL_ENABLED=true \
+          --set-env-vars=NODE_ENV=development,APP_ENV=development,GCP_PROJECT_ID=roastah-d,DATABASE_URL=sm://DATABASE_URL,OPENAI_API_KEY=sm://OPENAI_API_KEY,SESSION_SECRET=sm://SESSION_SECRET,GCP_SERVICE_ACCOUNT_KEY=sm://GCP_SERVICE_ACCOUNT_KEY,STRIPE_SECRET_KEY=sm://STRIPE_SECRET_KEY,SSL_ENABLED=true \
           --add-cloudsql-instances=$PROJECT_ID:us-central1:roastah-d \
           --service-account=roastah-d@$PROJECT_ID.iam.gserviceaccount.com \
           --ingress=all \

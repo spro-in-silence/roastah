@@ -3530,15 +3530,19 @@ async function getSecret(secretName) {
 async function loadSecrets() {
   if (process.env.NODE_ENV === "production" || process.env.GOOGLE_CLOUD_PROJECT) {
     try {
-      const [replitDomains, replId] = await Promise.all([
+      const [replitDomains, replId, stripeSecretKey] = await Promise.all([
         getSecret("REPLIT_DOMAINS"),
-        getSecret("REPL_ID")
+        getSecret("REPL_ID"),
+        getSecret("STRIPE_SECRET_KEY")
       ]);
       if (replitDomains) {
         process.env.REPLIT_DOMAINS = replitDomains;
       }
       if (replId) {
         process.env.REPL_ID = replId;
+      }
+      if (stripeSecretKey) {
+        process.env.STRIPE_SECRET_KEY = stripeSecretKey;
       }
     } catch (error) {
       console.warn("Failed to load secrets from Secret Manager:", error);

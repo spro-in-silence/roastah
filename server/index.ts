@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
+import { loadSecrets } from "./secrets";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -62,6 +63,9 @@ app.use((req, res, next) => {
     console.log('Starting Roastah server...');
     console.log('Environment:', process.env.NODE_ENV);
     console.log('Port:', process.env.PORT || 5000);
+    
+    // Load secrets from Secret Manager (in production)
+    await loadSecrets();
     
     const server = await registerRoutes(app);
 

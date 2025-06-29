@@ -20,6 +20,7 @@
     "postbuild": "npm run check-vite && npm run validate-prod"
   },
   "dependencies": {
+    "@google-cloud/secret-manager": "^6.0.1",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@medusajs/admin": "^7.1.18",

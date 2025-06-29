@@ -3511,6 +3511,38 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   return httpServer;
 }
 
+// server/secrets.ts
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+var client2 = new SecretManagerServiceClient();
+async function getSecret(secretName) {
+  try {
+    const name = `projects/${process.env.GOOGLE_CLOUD_PROJECT || "roastah-d"}/secrets/${secretName}/versions/latest`;
+    const [version] = await client2.accessSecretVersion({ name });
+    return version.payload?.data?.toString() || "";
+  } catch (error) {
+    console.warn(`Failed to load secret ${secretName} from Secret Manager:`, error);
+    return process.env[secretName] || "";
+  }
+}
+async function loadSecrets() {
+  if (process.env.NODE_ENV === "production" || process.env.GOOGLE_CLOUD_PROJECT) {
+    try {
+      const [replitDomains, replId] = await Promise.all([
+        getSecret("REPLIT_DOMAINS"),
+        getSecret("REPL_ID")
+      ]);
+      if (replitDomains) {
+        process.env.REPLIT_DOMAINS = replitDomains;
+      }
+      if (replId) {
+        process.env.REPL_ID = replId;
+      }
+    } catch (error) {
+      console.warn("Failed to load secrets from Secret Manager:", error);
+    }
+  }
+}
+
 // server/index.ts
 import fs2 from "fs";
 import path from "path";
@@ -3558,6 +3590,7 @@ app.use((req, res, next) => {
     console.log("Starting Roastah server...");
     console.log("Environment:", process.env.NODE_ENV);
     console.log("Port:", process.env.PORT || 5e3);
+    await loadSecrets();
     const server = await registerRoutes(app);
     app.use((err, _req, res, _next) => {
       const status = err.status || err.statusCode || 500;

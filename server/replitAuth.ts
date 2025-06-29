@@ -38,7 +38,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production', // Only use secure cookies in production
       maxAge: sessionTtl,
     },
   });
@@ -101,7 +101,34 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // Local development authentication bypass (only for localhost)
   app.get("/api/login", (req, res, next) => {
+    // If running locally, use mock auth
+    if (req.hostname === 'localhost') {
+      const mockUser = {
+        claims: {
+          sub: 'local-dev-user',
+          email: 'dev@localhost',
+          first_name: 'Local',
+          last_name: 'Developer',
+          profile_image_url: 'https://via.placeholder.com/150',
+          exp: Math.floor(Date.now() / 1000) + 3600
+        },
+        access_token: 'mock-access-token',
+        refresh_token: 'mock-refresh-token',
+        expires_at: Math.floor(Date.now() / 1000) + 3600
+      };
+      
+      req.login(mockUser, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Login failed' });
+        }
+        res.redirect('/');
+      });
+      return;
+    }
+
+    // Use real Replit authentication for dev/production
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],

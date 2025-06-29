@@ -1393,7 +1393,8 @@ function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      // Only use secure cookies in production
       maxAge: sessionTtl
     }
   });
@@ -1440,6 +1441,28 @@ async function setupAuth(app2) {
   passport.serializeUser((user, cb) => cb(null, user));
   passport.deserializeUser((user, cb) => cb(null, user));
   app2.get("/api/login", (req, res, next) => {
+    if (req.hostname === "localhost") {
+      const mockUser = {
+        claims: {
+          sub: "local-dev-user",
+          email: "dev@localhost",
+          first_name: "Local",
+          last_name: "Developer",
+          profile_image_url: "https://via.placeholder.com/150",
+          exp: Math.floor(Date.now() / 1e3) + 3600
+        },
+        access_token: "mock-access-token",
+        refresh_token: "mock-refresh-token",
+        expires_at: Math.floor(Date.now() / 1e3) + 3600
+      };
+      req.login(mockUser, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        res.redirect("/");
+      });
+      return;
+    }
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"]
@@ -3491,6 +3514,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 // server/index.ts
 import fs2 from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = path.dirname(__filename);
 var app = express();
 setupSecurity(app);
 app.use(express.json());
@@ -3540,7 +3566,7 @@ app.use((req, res, next) => {
       res.status(status).json({ message });
       throw err;
     });
-    const distPath = path.resolve(__dirname, "../dist");
+    const distPath = path.resolve(__dirname, "../dist/public");
     if (fs2.existsSync(distPath)) {
       app.use(express.static(distPath));
       app.use("*", (req, res, next) => {
@@ -3550,7 +3576,7 @@ app.use((req, res, next) => {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     } else {
-      console.warn("No dist directory found, skipping static file serving");
+      console.warn("No dist/public directory found, skipping static file serving");
     }
     const port = process.env.PORT || 5e3;
     server.listen({

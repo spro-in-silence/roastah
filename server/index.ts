@@ -2,6 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -69,8 +75,7 @@ app.use((req, res, next) => {
     });
 
     // Production static file serving
-    const path = require("path");
-    const distPath = path.resolve(__dirname, "../dist");
+    const distPath = path.resolve(__dirname, "../dist/public");
     
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
@@ -83,7 +88,7 @@ app.use((req, res, next) => {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     } else {
-      console.warn('No dist directory found, skipping static file serving');
+      console.warn('No dist/public directory found, skipping static file serving');
     }
 
     // Use the PORT environment variable (Cloud Run provides PORT=8080)

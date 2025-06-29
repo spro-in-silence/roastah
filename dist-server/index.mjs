@@ -1365,9 +1365,6 @@ import passport from "passport";
 import session from "express-session";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
-}
 var getOidcConfig = memoize(
   async () => {
     return await client.discovery(
@@ -1415,6 +1412,12 @@ async function upsertUser(claims) {
   });
 }
 async function setupAuth(app2) {
+  if (!process.env.REPLIT_DOMAINS) {
+    throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  }
+  if (!process.env.REPL_ID) {
+    throw new Error("Environment variable REPL_ID not provided");
+  }
   app2.set("trust proxy", 1);
   app2.use(getSession());
   app2.use(passport.initialize());

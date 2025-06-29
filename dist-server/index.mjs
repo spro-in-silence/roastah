@@ -3528,8 +3528,10 @@ async function getSecret(secretName) {
   }
 }
 async function loadSecrets() {
-  if (process.env.GOOGLE_CLOUD_PROJECT) {
+  const isCloudRun = process.env.GOOGLE_CLOUD_PROJECT || process.env.K_SERVICE || process.env.K_REVISION || process.env.PORT === "8080" && process.env.NODE_ENV === "development";
+  if (isCloudRun) {
     try {
+      console.log("Loading secrets from Secret Manager...");
       const [replitDomains, replId, stripeSecretKey] = await Promise.all([
         getSecret("REPLIT_DOMAINS"),
         getSecret("REPL_ID"),
@@ -3537,16 +3539,21 @@ async function loadSecrets() {
       ]);
       if (replitDomains) {
         process.env.REPLIT_DOMAINS = replitDomains;
+        console.log("Loaded REPLIT_DOMAINS from Secret Manager");
       }
       if (replId) {
         process.env.REPL_ID = replId;
+        console.log("Loaded REPL_ID from Secret Manager");
       }
       if (stripeSecretKey) {
         process.env.STRIPE_SECRET_KEY = stripeSecretKey;
+        console.log("Loaded STRIPE_SECRET_KEY from Secret Manager");
       }
     } catch (error) {
       console.warn("Failed to load secrets from Secret Manager:", error);
     }
+  } else {
+    console.log("Running locally, using environment variables");
   }
 }
 

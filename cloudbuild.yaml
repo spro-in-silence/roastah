@@ -1,4 +1,4 @@
-# Cloud Build configuration for development deployment
+# Cloud Build configuration for production deployment
 steps:
   # 1. Authenticate to Artifact Registry
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -81,9 +81,9 @@ steps:
       - '--platform'
       - 'linux/amd64'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$SHORT_SHA'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:latest'
       - '.'
 
   # 6. Push Docker images
@@ -94,8 +94,8 @@ steps:
       - '-c'
       - |
         echo "📤 Pushing Docker images..."
-        docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA
-        docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest
+        docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$SHORT_SHA
+        docker push us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:latest
         echo "✅ Images pushed successfully"
 
   # 7. Deploy to Cloud Run
@@ -109,15 +109,16 @@ steps:
         
         # Deploy the service
         gcloud run deploy ${_SERVICE_NAME} \
-          --image=us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$SHORT_SHA \
           --region=${_REGION} \
           --platform=managed \
           --allow-unauthenticated \
           --port=8080 \
-          --memory=1Gi \
-          --cpu=1 \
-          --max-instances=10 \
-          --set-env-vars="DATABASE_URL=sm://roastah-d/database-url,SESSION_SECRET=sm://roastah-d/session-secret" \
+          --memory=2Gi \
+          --cpu=2 \
+          --max-instances=100 \
+          --min-instances=1 \
+          --set-env-vars="DATABASE_URL=sm://roastah/database-url,SESSION_SECRET=sm://roastah/session-secret" \
           --set-secrets="REPLIT_DOMAINS=REPLIT_DOMAINS:latest,REPL_ID=REPL_ID:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest" \
           --quiet
 
@@ -148,7 +149,7 @@ steps:
 
         echo "✅ Deployment completed successfully"
 
-  # 8. Clean up old revisions (keep last 3)
+  # 8. Clean up old revisions (keep last 5)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Revisions
     entrypoint: bash
@@ -157,14 +158,14 @@ steps:
       - |
         echo "🧹 Cleaning up old revisions..."
         revs=$(gcloud run revisions list --service=${_SERVICE_NAME} --region=${_REGION} --sort-by="~creationTimestamp" --format="value(metadata.name)")
-        to_delete=$(echo "$revs" | tail -n +4)
+        to_delete=$(echo "$revs" | tail -n +6)
         for rev in $to_delete; do
           echo "Deleting revision: $rev"
           gcloud run revisions delete $rev --region=${_REGION} --quiet || true
         done
         echo "✅ Revision cleanup completed"
 
-  # 9. Clean up old images (keep last 2)
+  # 9. Clean up old images (keep last 3)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: Prune Old Images
     entrypoint: bash
@@ -172,8 +173,8 @@ steps:
       - '-c'
       - |
         echo "🧹 Cleaning up old images..."
-        images=$(gcloud artifacts docker images list us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d --format="value(package)" | sort -r)
-        to_delete=$(echo "$images" | tail -n +3)
+        images=$(gcloud artifacts docker images list us-central1-docker.pkg.dev/$PROJECT_ID/roastah --format="value(package)" | sort -r)
+        to_delete=$(echo "$images" | tail -n +4)
         for img in $to_delete; do
           echo "Deleting image: $img"
           gcloud artifacts docker images delete "$img" --quiet --delete-tags || true
@@ -191,17 +192,17 @@ steps:
         
         echo "📢 Sending deployment notification..."
         gcloud pubsub topics publish ci-notify \
-          --message="Development deployment completed successfully! Service URL: $SERVICE_URL" \
-          --attribute="status=success,environment=development,commit=$COMMIT_SHA,service_url=$SERVICE_URL" || true
+          --message="Production deployment completed successfully! Service URL: $SERVICE_URL" \
+          --attribute="status=success,environment=production,commit=$COMMIT_SHA,service_url=$SERVICE_URL" || true
         
         echo "✅ Notification sent"
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:$SHORT_SHA'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah-d/roastah-d:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/roastah/roastah:latest'
 
 substitutions:
-  _SERVICE_NAME: 'roastah-d'
+  _SERVICE_NAME: 'roastah'
   _REGION: 'us-central1'
 
 timeout: '1800s'
@@ -215,4 +216,4 @@ options:
 # - roles/storage.admin  
 # - roles/pubsub.publisher (for notifications)
 # - roles/secretmanager.secretAccessor
-# - roles/artifactregistry.writer
+# - roles/artifactregistry.writer 

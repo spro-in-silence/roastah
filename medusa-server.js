@@ -5,6 +5,9 @@ const loaders = require("@medusajs/medusa/dist/loaders");
 const start = async function({ port }) {
   const app = express();
 
+  // Add health route
+  app.get('/health', (req, res) => res.status(200).send('OK'));
+
   try {
     const { container } = await loaders.default({
       directory: process.cwd(),
@@ -12,10 +15,10 @@ const start = async function({ port }) {
     });
 
     const configModule = container.resolve("configModule");
-    const port_ = port ?? configModule.projectConfig.port ?? 9000;
+    const port_ = port ?? process.env.PORT ?? configModule.projectConfig.port ?? 8080;
 
     const server = GracefulShutdownServer.create(
-      app.listen(port_, (err) => {
+      app.listen(port_, '0.0.0.0', (err) => {
         if (err) {
           return;
         }

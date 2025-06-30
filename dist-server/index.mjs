@@ -3532,22 +3532,50 @@ async function loadSecrets() {
   if (isCloudRun) {
     try {
       console.log("Loading secrets from Secret Manager...");
-      const [replitDomains, replId, stripeSecretKey] = await Promise.all([
-        getSecret("REPLIT_DOMAINS"),
-        getSecret("REPL_ID"),
-        getSecret("STRIPE_SECRET_KEY")
-      ]);
-      if (replitDomains) {
-        process.env.REPLIT_DOMAINS = replitDomains;
-        console.log("Loaded REPLIT_DOMAINS from Secret Manager");
+      const secretsToLoad = [];
+      if (process.env.REPLIT_DOMAINS?.startsWith("sm://")) {
+        secretsToLoad.push(["REPLIT_DOMAINS", process.env.REPLIT_DOMAINS.replace("sm://", "")]);
       }
-      if (replId) {
-        process.env.REPL_ID = replId;
-        console.log("Loaded REPL_ID from Secret Manager");
+      if (process.env.REPL_ID?.startsWith("sm://")) {
+        secretsToLoad.push(["REPL_ID", process.env.REPL_ID.replace("sm://", "")]);
       }
-      if (stripeSecretKey) {
-        process.env.STRIPE_SECRET_KEY = stripeSecretKey;
-        console.log("Loaded STRIPE_SECRET_KEY from Secret Manager");
+      if (process.env.STRIPE_SECRET_KEY?.startsWith("sm://")) {
+        secretsToLoad.push(["STRIPE_SECRET_KEY", process.env.STRIPE_SECRET_KEY.replace("sm://", "")]);
+      }
+      if (secretsToLoad.length > 0) {
+        console.log(`Found ${secretsToLoad.length} secrets using sm:// syntax, loading from Secret Manager...`);
+        for (const [envVar, secretName] of secretsToLoad) {
+          try {
+            const secretValue = await getSecret(secretName);
+            if (secretValue) {
+              process.env[envVar] = secretValue;
+              console.log(`Loaded ${envVar} from Secret Manager`);
+            } else {
+              console.warn(`Failed to load secret ${secretName} for ${envVar}`);
+            }
+          } catch (error) {
+            console.warn(`Error loading secret ${secretName} for ${envVar}:`, error);
+          }
+        }
+      } else {
+        console.log("No sm:// secrets found, using direct Secret Manager access...");
+        const [replitDomains, replId, stripeSecretKey] = await Promise.all([
+          getSecret("REPLIT_DOMAINS"),
+          getSecret("REPL_ID"),
+          getSecret("STRIPE_SECRET_KEY")
+        ]);
+        if (replitDomains) {
+          process.env.REPLIT_DOMAINS = replitDomains;
+          console.log("Loaded REPLIT_DOMAINS from Secret Manager");
+        }
+        if (replId) {
+          process.env.REPL_ID = replId;
+          console.log("Loaded REPL_ID from Secret Manager");
+        }
+        if (stripeSecretKey) {
+          process.env.STRIPE_SECRET_KEY = stripeSecretKey;
+          console.log("Loaded STRIPE_SECRET_KEY from Secret Manager");
+        }
       }
     } catch (error) {
       console.warn("Failed to load secrets from Secret Manager:", error);

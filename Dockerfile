@@ -87,6 +87,9 @@ COPY --chown=roastah:nodejs docker-entrypoint.sh ./
 COPY --chown=roastah:nodejs drizzle.config.ts ./
 COPY --chown=roastah:nodejs migrations ./migrations
 
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads && chown roastah:nodejs uploads && chmod 755 uploads
+
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=8080

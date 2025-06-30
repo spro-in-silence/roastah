@@ -67,7 +67,7 @@ app.use((req, res, next) => {
     // Load secrets from Secret Manager (in production)
     await loadSecrets();
     
-    const server = await registerRoutes(app);
+    const httpServer = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
@@ -98,10 +98,9 @@ app.use((req, res, next) => {
     // Use the PORT environment variable (Cloud Run provides PORT=8080)
     // Fallback to 5000 for local development
     const port = process.env.PORT || 5000;
-    server.listen({
+    httpServer.listen({
       port,
       host: "0.0.0.0",
-      reusePort: true,
     }, () => {
       console.log(`✅ Roastah server started successfully on port ${port}`);
     });

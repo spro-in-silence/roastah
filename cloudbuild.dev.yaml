@@ -123,7 +123,7 @@ steps:
 
         # Get the service URL
         SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME} --region=${_REGION} --format="value(status.url)")
-        echo "Service URL: $SERVICE_URL"
+        echo "Service URL: ${SERVICE_URL}"
 
         # Wait for deployment to be ready
         echo "⏳ Waiting for deployment to be ready..."
@@ -132,7 +132,7 @@ steps:
         # Health check
         echo "🏥 Performing health check..."
         for i in {1..10}; do
-          if curl -f "$SERVICE_URL/health" > /dev/null 2>&1; then
+          if curl -f "${SERVICE_URL}/health" > /dev/null 2>&1; then
             echo "✅ Health check passed"
             break
           else
@@ -191,8 +191,8 @@ steps:
         
         echo "📢 Sending deployment notification..."
         gcloud pubsub topics publish ci-notify \
-          --message="Development deployment completed successfully! Service URL: $SERVICE_URL" \
-          --attribute="status=success,environment=development,commit=$COMMIT_SHA,service_url=$SERVICE_URL" || true
+          --message="Development deployment completed successfully! Service URL: ${SERVICE_URL}" \
+          --attribute="status=success,environment=development,commit=$COMMIT_SHA,service_url=${SERVICE_URL}" || true
         
         echo "✅ Notification sent"
 

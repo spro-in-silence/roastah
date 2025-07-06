@@ -43,6 +43,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Configuration endpoint - serves public configuration from GCP Secret Manager
+  app.get('/api/config', async (req: any, res: any) => {
+    try {
+      // Import the getSecret function to load VITE_STRIPE_PUBLIC_KEY
+      const { getSecret } = await import('./secrets');
+      
+      // Load the VITE_STRIPE_PUBLIC_KEY from GCP Secret Manager
+      const stripePublicKey = await getSecret('VITE_STRIPE_PUBLIC_KEY');
+      
+      if (!stripePublicKey) {
+        console.error('VITE_STRIPE_PUBLIC_KEY not found in secrets');
+        return res.status(500).json({ error: 'Stripe configuration not available' });
+      }
+      
+      res.json({
+        stripe: {
+          publicKey: stripePublicKey
+        }
+      });
+    } catch (error) {
+      console.error('Error loading configuration:', error);
+      res.status(500).json({ error: 'Failed to load configuration' });
+    }
+  });
+
   // Initialize MedusaJS bridge
   const medusaBridge = new MedusaBridge(app);
   medusaBridge.setupRoutes();

@@ -15,19 +15,20 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useConfig } from "@/hooks/useConfig";
 import { Address, CartItem, User } from "@/lib/types";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
+// Stripe will be loaded dynamically from the backend configuration
 let stripePromise: Promise<any> | null = null;
 
-if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY).catch((error) => {
-    console.error('Failed to load Stripe.js:', error);
-    return null;
-  });
-} else {
-  console.warn('VITE_STRIPE_PUBLIC_KEY is not configured');
+function loadStripeFromConfig(publicKey: string) {
+  if (!stripePromise) {
+    stripePromise = loadStripe(publicKey).catch((error) => {
+      console.error('Failed to load Stripe.js:', error);
+      return null;
+    });
+  }
+  return stripePromise;
 }
 
 const US_STATES = [
@@ -371,6 +372,7 @@ function CheckoutForm() {
 export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
   const { toast } = useToast();
+  const { config, loading: configLoading, error: configError } = useConfig();
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
@@ -410,6 +412,44 @@ export default function Checkout() {
       });
   }, [cartItems, toast]);
 
+  // Show loading state while configuration is loading
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
+            <div className="flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-roastah-teal border-t-transparent rounded-full" />
+              <span className="ml-3">Loading configuration...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if configuration failed to load
+  if (configError || !config?.stripe?.publicKey) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Configuration Error</h1>
+            <p className="text-gray-600 mb-4">
+              {configError || 'Payment configuration is not available. Please try again later.'}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!clientSecret) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -436,25 +476,8 @@ export default function Checkout() {
     );
   }
 
-  // Handle case where Stripe is not available
-  if (!stripePromise) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Payment Unavailable</h1>
-            <p className="text-gray-600 mb-4">
-              Payment processing is currently unavailable. Please try again later or contact support.
-            </p>
-            <Button onClick={() => window.location.href = '/cart'}>
-              Return to Cart
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Load Stripe with the public key from configuration
+  const stripePromise = loadStripeFromConfig(config.stripe.publicKey);
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>

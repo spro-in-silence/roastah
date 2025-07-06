@@ -4,14 +4,21 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useConfig } from "@/hooks/useConfig";
 import { apiRequest } from "@/lib/queryClient";
 
-// Test Stripe loading
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  console.error('VITE_STRIPE_PUBLIC_KEY is missing');
-}
+// Stripe will be loaded dynamically from the backend configuration
+let stripePromise: Promise<any> | null = null;
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
+function loadStripeFromConfig(publicKey: string) {
+  if (!stripePromise) {
+    stripePromise = loadStripe(publicKey).catch((error) => {
+      console.error('Failed to load Stripe.js:', error);
+      return null;
+    });
+  }
+  return stripePromise;
+}
 
 function TestPaymentForm() {
   const stripe = useStripe();
@@ -92,6 +99,7 @@ function TestPaymentForm() {
 export default function TestPayment() {
   const [clientSecret, setClientSecret] = useState("");
   const { toast } = useToast();
+  const { config, loading: configLoading, error: configError } = useConfig();
 
   const createTestPayment = async () => {
     try {
@@ -112,6 +120,50 @@ export default function TestPayment() {
     }
   };
 
+  // Show loading state while configuration is loading
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment System Test</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center">
+                <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full" />
+                <span className="ml-3">Loading configuration...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if configuration failed to load
+  if (configError || !config?.stripe?.publicKey) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuration Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-600 mb-4">
+                {configError || 'Payment configuration is not available.'}
+              </p>
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (!clientSecret) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
@@ -130,6 +182,9 @@ export default function TestPayment() {
       </div>
     );
   }
+
+  // Load Stripe with the public key from configuration
+  const stripePromise = loadStripeFromConfig(config.stripe.publicKey);
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>

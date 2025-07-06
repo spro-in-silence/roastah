@@ -30,6 +30,7 @@ import Leaderboard from "@/pages/leaderboard";
 import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
+import DevLogin from "@/pages/dev-login";
 
 function Router() {
   return (
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
+        <Route path="/dev-login" element={<DevLogin />} />
         
         {/* Authentication Required Routes */}
         <Route path="/home" element={

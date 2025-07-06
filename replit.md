@@ -137,6 +137,7 @@ Changelog:
 - July 06, 2025. Fixed SPA routing for production deployment outside Replit
 - July 06, 2025. Enhanced Content Security Policy for development environments
 - July 06, 2025. Created comprehensive local setup documentation
+- July 06, 2025. Added development login facade for testing buyer/seller functionality
 ```
 
 ## User Preferences

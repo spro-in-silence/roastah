@@ -282,6 +282,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Development impersonation endpoint (only for dev environments)
+  app.post('/api/dev/impersonate', async (req: any, res) => {
+    // Only allow in development environments
+    const isDev = process.env.NODE_ENV !== 'production' && 
+                  (process.env.REPL_ID || req.get('host')?.includes('localhost'));
+    
+    if (!isDev) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    try {
+      const { userType } = req.body;
+      
+      if (!['buyer', 'seller'].includes(userType)) {
+        return res.status(400).json({ error: 'Invalid user type' });
+      }
+
+      // Create or get development user
+      const devUserId = userType === 'seller' ? 'dev-seller-001' : 'dev-buyer-001';
+      const devUserData = {
+        id: devUserId,
+        email: userType === 'seller' ? 'dev-seller@roastah.com' : 'dev-buyer@roastah.com',
+        name: userType === 'seller' ? 'Development Seller' : 'Development Buyer',
+        role: userType === 'seller' ? 'roaster' : 'user',
+        isRoasterApproved: userType === 'seller',
+        mfaEnabled: false,
+      };
+
+      // Upsert the development user
+      await storage.upsertUser(devUserData);
+
+      // Create roaster profile for seller
+      if (userType === 'seller') {
+        const existingRoaster = await storage.getRoasterByUserId(devUserId);
+        if (!existingRoaster) {
+          const roaster = await storage.createRoaster({
+            userId: devUserId,
+            businessName: 'Development Coffee Roasters',
+            businessType: 'home_roaster',
+            description: 'A development roastery for testing purposes',
+          });
+
+          // Create sample products for development
+          const sampleProducts = [
+            {
+              roasterId: roaster.id,
+              name: 'Ethiopia Yirgacheffe',
+              description: 'Bright and floral with notes of lemon and tea',
+              price: '18.99',
+              stockQuantity: 100,
+              origin: 'Ethiopia',
+              roastLevel: 'Light',
+              process: 'Washed',
+              altitude: '1700-2100m',
+              varietal: 'Heirloom',
+              tastingNotes: 'Lemon, bergamot, floral, tea-like',
+              state: 'published',
+              images: ['/images/sample-coffee-1.jpg']
+            },
+            {
+              roasterId: roaster.id,
+              name: 'Colombia Huila',
+              description: 'Sweet and balanced with chocolate notes',
+              price: '16.99',
+              stockQuantity: 85,
+              origin: 'Colombia',
+              roastLevel: 'Medium',
+              process: 'Washed',
+              altitude: '1200-1800m',
+              varietal: 'Caturra, Typica',
+              tastingNotes: 'Milk chocolate, caramel, orange',
+              state: 'published',
+              images: ['/images/sample-coffee-2.jpg']
+            },
+            {
+              roasterId: roaster.id,
+              name: 'Guatemala Antigua',
+              description: 'Full-bodied with smoky undertones',
+              price: '17.99',
+              stockQuantity: 60,
+              origin: 'Guatemala',
+              roastLevel: 'Dark',
+              process: 'Washed',
+              altitude: '1500-1700m',
+              varietal: 'Bourbon, Typica',
+              tastingNotes: 'Dark chocolate, smoke, spice',
+              state: 'published',
+              images: ['/images/sample-coffee-3.jpg']
+            }
+          ];
+
+          for (const product of sampleProducts) {
+            await storage.createProduct(product);
+          }
+        }
+      }
+
+      // Create session manually for development
+      if (req.session) {
+        req.session.user = {
+          id: devUserId,
+          email: devUserData.email,
+          name: devUserData.name,
+          sub: devUserId,
+        };
+        req.session.tokens = {
+          accessToken: 'dev-access-token',
+          refreshToken: 'dev-refresh-token',
+        };
+      }
+
+      res.json({ 
+        success: true, 
+        user: devUserData,
+        message: `Successfully impersonating ${userType}` 
+      });
+    } catch (error) {
+      console.error('Impersonation error:', error);
+      res.status(500).json({ error: 'Failed to impersonate user' });
+    }
+  });
+
   // Product routes
   app.get('/api/products', async (req, res) => {
     try {

@@ -150,12 +150,26 @@ export default function Navbar() {
                   </Link>
                 </>
               ) : (
-                <Button
-                  onClick={() => window.location.href = '/api/login'}
-                  className="bg-roastah-teal text-white hover:bg-roastah-dark-teal"
-                >
-                  Sign In
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {/* Development Login Link - Only show in development */}
+                  {(window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev')) && (
+                    <Link to="/dev-login">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Dev Login
+                      </Button>
+                    </Link>
+                  )}
+                  <Button
+                    onClick={() => window.location.href = '/api/login'}
+                    className="bg-roastah-teal text-white hover:bg-roastah-dark-teal"
+                  >
+                    Sign In
+                  </Button>
+                </div>
               )}
             </div>
           </div>

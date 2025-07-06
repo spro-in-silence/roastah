@@ -4,20 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <script>
-      // Fix Vite HMR WebSocket connection issue
+      // Fix Vite HMR WebSocket connection issue for Replit environment
       if (typeof window !== 'undefined') {
-        // Override WebSocket constructor to fix undefined port issue
+        // Override WebSocket constructor to fix Replit HMR connection
         const OriginalWebSocket = window.WebSocket;
         window.WebSocket = function(url, protocols) {
-          // Fix URLs with undefined port
-          if (typeof url === 'string' && url.includes(':undefined')) {
-            url = url.replace(':undefined', ':' + (window.location.port || '5000'));
+          if (typeof url === 'string') {
+            // Fix undefined port issue
+            if (url.includes(':undefined')) {
+              url = url.replace(':undefined', ':' + (window.location.port || '5000'));
+            }
+            // Fix localhost connection in Replit environment
+            if (url.includes('localhost') && window.location.hostname !== 'localhost') {
+              url = url.replace('localhost', window.location.hostname);
+            }
+            // Fix ws protocol to match current page protocol
+            if (window.location.protocol === 'https:' && url.startsWith('ws:')) {
+              url = url.replace('ws:', 'wss:');
+            }
+            console.log('WebSocket URL:', url); // Debug log
           }
           return new OriginalWebSocket(url, protocols);
         };
-        // Copy static properties
+        // Copy static properties and prototype
         Object.setPrototypeOf(window.WebSocket, OriginalWebSocket);
         window.WebSocket.prototype = OriginalWebSocket.prototype;
+        window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+        window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+        window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+        window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
       }
     </script>
   </head>

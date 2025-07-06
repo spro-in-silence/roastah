@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <script>
+      // Fix Vite HMR WebSocket connection issue
+      if (typeof window !== 'undefined') {
+        // Override WebSocket constructor to fix undefined port issue
+        const OriginalWebSocket = window.WebSocket;
+        window.WebSocket = function(url, protocols) {
+          // Fix URLs with undefined port
+          if (typeof url === 'string' && url.includes(':undefined')) {
+            url = url.replace(':undefined', ':' + (window.location.port || '5000'));
+          }
+          return new OriginalWebSocket(url, protocols);
+        };
+        // Copy static properties
+        Object.setPrototypeOf(window.WebSocket, OriginalWebSocket);
+        window.WebSocket.prototype = OriginalWebSocket.prototype;
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

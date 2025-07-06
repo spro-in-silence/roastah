@@ -1,3 +1,8 @@
+// Set environment variables BEFORE any imports
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+process.env.PORT = process.env.PORT || '5000';
+process.env.VITE_HMR_PORT = process.env.PORT;
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
@@ -54,13 +59,17 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Set default environment variables early
+    // Set default environment variables early - before any other imports
     process.env.NODE_ENV = process.env.NODE_ENV || 'development';
     process.env.PORT = process.env.PORT || '5000';
+    
+    // Also set VITE_PORT for the Vite client to use
+    process.env.VITE_PORT = process.env.PORT;
     
     console.log('Starting Roastah development server...');
     console.log('Environment:', process.env.NODE_ENV);
     console.log('Port:', process.env.PORT);
+    console.log('Vite Port:', process.env.VITE_PORT);
     
     // Load secrets from Secret Manager
     await loadSecrets();

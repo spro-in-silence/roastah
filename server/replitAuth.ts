@@ -74,16 +74,42 @@ export async function setupAuth(app: Express) {
     app.use(getSession());
     
     // Create a development user bypass
-    app.use((req, res, next) => {
-      if (!(req.session as any).user) {
-        // Create a mock user for development
-        (req.session as any).user = {
-          id: 'dev-user-123',
-          email: 'dev@localhost',
-          name: 'Development User',
-          picture: null,
-          isAuthenticated: true
+    app.use(async (req, res, next) => {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        const devUserId = 'dev-user-123';
+        
+        // Create a mock user for development that matches the expected structure
+        req.user = {
+          claims: {
+            sub: devUserId,
+            email: 'dev@localhost',
+            name: 'Development User',
+            picture: null
+          }
         };
+        
+        // Override isAuthenticated for development
+        (req as any).isAuthenticated = () => true;
+        
+        // Ensure development user exists in database
+        try {
+          const { storage } = await import('./storage');
+          const existingUser = await storage.getUser(devUserId);
+          if (!existingUser) {
+            await storage.upsertUser({
+              id: devUserId,
+              email: 'dev@localhost',
+              firstName: 'Development',
+              lastName: 'User',
+              profileImageUrl: null,
+              role: 'roaster',
+              isRoasterApproved: true // Make dev user a roaster for testing
+            });
+            console.log('✅ Created development user in database');
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not create development user:', error);
+        }
       }
       next();
     });

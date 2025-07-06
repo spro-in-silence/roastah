@@ -4,35 +4,74 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <script>
-      // Fix Vite HMR WebSocket connection issue for Replit environment
+      // Comprehensive Vite HMR fix for Replit environment
       if (typeof window !== 'undefined') {
-        // Override WebSocket constructor to fix Replit HMR connection
+        // Set HMR configuration before Vite loads
+        window.__vite_plugin_config = {
+          server: {
+            hmr: {
+              host: window.location.hostname,
+              port: window.location.port || '5000',
+              protocol: window.location.protocol === 'https:' ? 'wss' : 'ws'
+            }
+          }
+        };
+        
+        // Override WebSocket constructor to fix all connection issues
         const OriginalWebSocket = window.WebSocket;
         window.WebSocket = function(url, protocols) {
           if (typeof url === 'string') {
+            console.log('Original WebSocket URL:', url); // Debug log
+            
             // Fix undefined port issue
             if (url.includes(':undefined')) {
               url = url.replace(':undefined', ':' + (window.location.port || '5000'));
             }
+            
             // Fix localhost connection in Replit environment
             if (url.includes('localhost') && window.location.hostname !== 'localhost') {
               url = url.replace('localhost', window.location.hostname);
             }
+            
             // Fix ws protocol to match current page protocol
             if (window.location.protocol === 'https:' && url.startsWith('ws:')) {
               url = url.replace('ws:', 'wss:');
             }
-            console.log('WebSocket URL:', url); // Debug log
+            
+            // Special handling for Vite HMR connections
+            if (url.includes('token=') || url.includes('/@vite/client')) {
+              const baseUrl = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+              const host = window.location.hostname;
+              const port = window.location.port || '5000';
+              
+              // Extract token if present
+              const tokenMatch = url.match(/token=([^&]+)/);
+              const token = tokenMatch ? `?token=${tokenMatch[1]}` : '';
+              
+              url = `${baseUrl}${host}:${port}/${token}`;
+            }
+            
+            console.log('Fixed WebSocket URL:', url); // Debug log
           }
           return new OriginalWebSocket(url, protocols);
         };
-        // Copy static properties and prototype
+        
+        // Copy all static properties and prototype
         Object.setPrototypeOf(window.WebSocket, OriginalWebSocket);
         window.WebSocket.prototype = OriginalWebSocket.prototype;
         window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
         window.WebSocket.OPEN = OriginalWebSocket.OPEN;
         window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
         window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+        
+        // Override fetch for potential HMR requests
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+          if (typeof url === 'string' && url.includes('localhost:undefined')) {
+            url = url.replace('localhost:undefined', window.location.hostname + ':' + (window.location.port || '5000'));
+          }
+          return originalFetch.call(this, url, options);
+        };
       }
     </script>
   </head>

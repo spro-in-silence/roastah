@@ -282,6 +282,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Development ADC check endpoint (only for dev environments)
+  app.get('/api/dev/check-adc', async (req: any, res) => {
+    // Only allow in development environments
+    const isDev = process.env.NODE_ENV !== 'production' && 
+                  (process.env.REPL_ID || req.get('host')?.includes('localhost'));
+    
+    if (!isDev) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    try {
+      // Try to access Google Cloud credentials
+      const { GoogleAuth } = await import('google-auth-library');
+      const auth = new GoogleAuth();
+      
+      // Attempt to get credentials
+      await auth.getCredentials();
+      
+      res.json({ hasCredentials: true });
+    } catch (error: any) {
+      console.log('ADC check failed:', error?.message || String(error));
+      res.json({ hasCredentials: false });
+    }
+  });
+
   // Development impersonation endpoint (only for dev environments)
   app.post('/api/dev/impersonate', async (req: any, res) => {
     // Only allow in development environments

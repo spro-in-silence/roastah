@@ -1,29 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Coffee, ShoppingBag, Package } from "lucide-react";
+import { Coffee, ShoppingBag, Package, Terminal, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function DevLogin() {
-  const [devKey, setDevKey] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasADC, setHasADC] = useState(false);
+  const [isCheckingADC, setIsCheckingADC] = useState(false); // Start with false to skip loading state
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleDevAuth = async () => {
-    if (devKey !== "roastah-dev-2025") {
-      toast({
-        title: "Invalid key",
-        description: "Please enter the correct development key",
-        variant: "destructive",
-      });
-      return;
+  useEffect(() => {
+    // Small delay to ensure clean render
+    const timer = setTimeout(() => {
+      // Skip ADC check in Replit environment as it takes too long
+      const isReplit = window.location.hostname.includes('replit.dev');
+      console.log('DevLogin: Environment check - isReplit:', isReplit, 'hostname:', window.location.hostname);
+      
+      if (isReplit) {
+        console.log('DevLogin: Skipping ADC check for Replit environment');
+        setHasADC(false);
+        setIsCheckingADC(false);
+      } else {
+        console.log('DevLogin: Running ADC check for local environment');
+        checkADCCredentials();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const checkADCCredentials = async () => {
+    setIsCheckingADC(true);
+    try {
+      // Quick timeout for local development
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 2000)
+      );
+      
+      const apiPromise = apiRequest("GET", "/api/dev/check-adc");
+      
+      const response = await Promise.race([apiPromise, timeoutPromise]);
+      setHasADC((response as any).hasCredentials);
+    } catch (error) {
+      console.log('ADC check failed or timed out, assuming no credentials:', error);
+      setHasADC(false);
+    } finally {
+      setIsCheckingADC(false);
     }
-    setIsAuthenticated(true);
   };
 
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
@@ -57,35 +84,71 @@ export default function DevLogin() {
     }
   };
 
-  if (!isAuthenticated) {
+  if (isCheckingADC) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-roastah-teal rounded-full flex items-center justify-center mb-4">
-              <Coffee className="h-6 w-6 text-white" />
+              <Coffee className="h-6 w-6 text-white animate-spin" />
             </div>
-            <CardTitle className="text-2xl">Roastah Development</CardTitle>
+            <CardTitle className="text-2xl">Checking Credentials</CardTitle>
             <p className="text-gray-600 dark:text-gray-300">
-              Enter the development key to access impersonation tools
+              Verifying Google Cloud credentials...
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Input
-                type="password"
-                placeholder="Development key"
-                value={devKey}
-                onChange={(e) => setDevKey(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleDevAuth()}
-              />
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasADC) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <Card className="w-full max-w-2xl">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-4">
+              <Terminal className="h-6 w-6 text-white" />
             </div>
-            <Button 
-              onClick={handleDevAuth}
-              className="w-full bg-roastah-teal hover:bg-roastah-dark-teal"
-            >
-              Access Development Tools
-            </Button>
+            <CardTitle className="text-2xl">Google Cloud Credentials Required</CardTitle>
+            <p className="text-gray-600 dark:text-gray-300">
+              Please authenticate with Google Cloud to access development tools
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 flex items-center">
+                <Terminal className="h-4 w-4 mr-2" />
+                Required Commands
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                    1. Authenticate your Google Cloud account:
+                  </p>
+                  <code className="block bg-black text-green-400 p-2 rounded text-sm">
+                    gcloud auth login
+                  </code>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                    2. Set up application default credentials:
+                  </p>
+                  <code className="block bg-black text-green-400 p-2 rounded text-sm">
+                    gcloud auth application-default login
+                  </code>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <Button 
+                onClick={checkADCCredentials}
+                className="bg-roastah-teal hover:bg-roastah-dark-teal"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Check Credentials Again
+              </Button>
+            </div>
             <p className="text-xs text-gray-500 text-center">
               This page is only available in development environments
             </p>

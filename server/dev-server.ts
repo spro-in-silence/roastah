@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
 import { setupVite, serveStatic, log } from "./vite";
+import { loadSecrets } from "./secrets";
 
 const app = express();
 
@@ -56,6 +57,9 @@ app.use((req, res, next) => {
     console.log('Starting Roastah development server...');
     console.log('Environment:', process.env.NODE_ENV);
     console.log('Port:', process.env.PORT || 5000);
+    
+    // Load secrets from Secret Manager
+    await loadSecrets();
     
     const server = await registerRoutes(app);
 

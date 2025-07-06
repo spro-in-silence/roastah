@@ -28,14 +28,18 @@ import { realtimeService } from "./realtime";
 import { insertProductSchema, insertRoasterSchema, insertCartItemSchema } from "@shared/schema";
 import { z } from "zod";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-05-28.basil",
-});
+// Stripe will be initialized after secrets are loaded
+let stripe: Stripe | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize Stripe after secrets are loaded
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+  }
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-05-28.basil",
+  });
+  
   // Auth middleware
   await setupAuth(app);
 

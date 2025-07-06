@@ -192,7 +192,7 @@ steps:
         echo "📢 Sending deployment notification..."
         gcloud pubsub topics publish ci-notify \
           --message="Development deployment completed successfully! Service URL: ${SERVICE_URL}" \
-          --attribute="status=success,environment=development,commit=$COMMIT_SHA,service_url=${SERVICE_URL}" || true
+          --attribute="status=success,environment=development,commit=$COMMIT_SHA" || true
         
         echo "✅ Notification sent"
 

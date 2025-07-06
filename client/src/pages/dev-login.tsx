@@ -8,7 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function DevLogin() {
   const [hasADC, setHasADC] = useState(false);
-  const [isCheckingADC, setIsCheckingADC] = useState(false); // Start with false to skip loading state
+  const [isCheckingADC, setIsCheckingADC] = useState(true); // Start with true, will be set based on environment
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -16,14 +16,14 @@ export default function DevLogin() {
   useEffect(() => {
     // Small delay to ensure clean render
     const timer = setTimeout(() => {
-      // Skip ADC check in Replit environment as it takes too long
       const isReplit = window.location.hostname.includes('replit.dev');
       console.log('DevLogin: Environment check - isReplit:', isReplit, 'hostname:', window.location.hostname);
       
       if (isReplit) {
-        console.log('DevLogin: Skipping ADC check for Replit environment');
-        setHasADC(false);
+        console.log('DevLogin: Replit environment - going directly to impersonation options');
+        setHasADC(true); // Skip ADC check and go directly to options
         setIsCheckingADC(false);
+
       } else {
         console.log('DevLogin: Running ADC check for local environment');
         checkADCCredentials();
@@ -36,17 +36,29 @@ export default function DevLogin() {
   const checkADCCredentials = async () => {
     setIsCheckingADC(true);
     try {
-      // Quick timeout for local development
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 2000)
-      );
+      // Direct fetch with timeout for localhost
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       
-      const apiPromise = apiRequest("GET", "/api/dev/check-adc");
+      const response = await fetch('/api/dev/check-adc', {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      const response = await Promise.race([apiPromise, timeoutPromise]);
-      setHasADC((response as any).hasCredentials);
-    } catch (error) {
-      console.log('ADC check failed or timed out, assuming no credentials:', error);
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('ADC check response:', data);
+        setHasADC(data.hasCredentials);
+      } else {
+        console.log('ADC check failed with status:', response.status);
+        setHasADC(false);
+      }
+    } catch (error: any) {
+      console.log('ADC check failed or timed out:', error?.name || error?.message || error);
       setHasADC(false);
     } finally {
       setIsCheckingADC(false);
@@ -83,6 +95,8 @@ export default function DevLogin() {
       setIsLoading(false);
     }
   };
+
+
 
   if (isCheckingADC) {
     return (

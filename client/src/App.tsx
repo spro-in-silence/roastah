@@ -33,7 +33,11 @@ import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
 
 function DevAwareLanding() {
-  const isDev = window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost';
+  // Only show dev-login in development environments (Replit and localhost)
+  // Cloud Run environments should show the normal landing page
+  const isDev = window.location.hostname.includes('replit.dev') || 
+                window.location.hostname === 'localhost' ||
+                window.location.hostname.startsWith('127.0.0.1');
   
   if (isDev) {
     return <DevLogin />;

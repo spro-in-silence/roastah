@@ -47,13 +47,20 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
       setError(null);
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      // In development, the frontend runs on port 5173 but backend runs on port 5000
+      const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
+      const host = isDev ? "localhost:5000" : window.location.host;
+      const wsUrl = `${protocol}//${host}/ws`;
+      
+      if (isDev) {
+        console.log('WebSocket connecting to:', wsUrl);
+      }
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('WebSocket connected');
         }
         setIsConnected(true);
@@ -84,7 +91,7 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
       };
 
       ws.onclose = (event) => {
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('WebSocket disconnected:', event.code, event.reason);
         }
         setIsConnected(false);
@@ -142,15 +149,16 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
   }, []);
 
   const handleMessage = useCallback((message: RealtimeMessage) => {
+    const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
     switch (message.type) {
       case 'connection_established':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Connection established:', message.connectionId);
         }
         break;
         
       case 'authenticated':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Authentication successful for user:', message.userId);
         }
         setConnectionStatus('authenticated');
@@ -158,7 +166,7 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
         break;
         
       case 'order_subscribed':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Subscribed to order:', message.orderId);
         }
         if (message.orderId) {
@@ -167,28 +175,28 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
         break;
         
       case 'notifications_subscribed':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Subscribed to notifications');
         }
         setIsSubscribedToNotifications(true);
         break;
         
       case 'tracking_update':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Order tracking update:', message.data);
         }
         onOrderUpdate?.(message.data);
         break;
         
       case 'notification':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('New notification:', message.data);
         }
         onNotification?.(message.data);
         break;
         
       case 'status_change':
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Order status change:', message.data);
         }
         onStatusChange?.(message.data);
@@ -199,15 +207,16 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
         break;
         
       default:
-        if (import.meta.env.DEV) {
+        if (isDev) {
           console.log('Unknown message type:', message.type);
         }
     }
   }, [onOrderUpdate, onNotification, onStatusChange]);
 
   const subscribeToOrder = useCallback((orderId: number) => {
+    const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      if (import.meta.env.DEV) {
+      if (isDev) {
         console.warn('WebSocket not connected, cannot subscribe to order');
       }
       return;
@@ -224,8 +233,9 @@ export function useRealtimeTracking(options: UseRealtimeTrackingOptions = {}) {
   }, [subscribedOrders]);
 
   const subscribeToNotifications = useCallback(() => {
+    const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      if (import.meta.env.DEV) {
+      if (isDev) {
         console.warn('WebSocket not connected, cannot subscribe to notifications');
       }
       return;

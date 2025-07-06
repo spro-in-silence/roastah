@@ -49,6 +49,11 @@ export async function setupVite(app: Express, server: Server) {
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
+    // Skip WebSocket upgrade requests
+    if (url.startsWith('/ws')) {
+      return next();
+    }
+
     try {
       const clientTemplate = path.resolve(
         __dirname,

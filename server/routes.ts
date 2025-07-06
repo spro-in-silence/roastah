@@ -621,9 +621,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced payment processing with commission tracking
-  app.post("/api/create-payment-intent", paymentLimiter, enhancedAuthCheck, validatePaymentIntent, handleValidationErrors, async (req, res) => {
+  app.post("/api/create-payment-intent", paymentLimiter, enhancedAuthCheck, validatePaymentIntent, handleValidationErrors, async (req: any, res: any) => {
     try {
       const { amount, cartItems, metadata = {} } = req.body;
+      
+      if (!stripe) {
+        throw new Error('Stripe not initialized');
+      }
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
@@ -716,9 +720,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await storage.updateSellerAnalytics(product.roasterId, today, {
           totalSales: saleAmount.toString(),
-          totalOrders: "1",
-          totalCommissionEarned: roasterEarnings.toString(),
-          averageOrderValue: saleAmount.toString()
+          totalOrders: 1,
+          avgOrderValue: saleAmount.toString()
         });
       }
 
@@ -750,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const payoutResults = [];
 
-      for (const [roasterId, roasterCommissions] of payoutsByRoaster) {
+      for (const [roasterId, roasterCommissions] of Array.from(payoutsByRoaster)) {
         const roaster = await storage.getRoasterByUserId(roasterId.toString());
         if (!roaster) continue;
 
@@ -924,8 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateBulkUploadStatus(uploadId, 'completed', {
         processedRows,
         successfulRows,
-        errors,
-        completedAt: new Date()
+        errors
       });
 
     } catch (error: any) {
@@ -1257,8 +1259,8 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       }
     } catch (error) {
       console.error("Error toggling favorite roaster:", error);
-      console.error("Error stack:", error.stack);
-      res.status(500).json({ message: "Failed to toggle favorite roaster", error: error.message });
+      console.error("Error stack:", (error as Error).stack);
+      res.status(500).json({ message: "Failed to toggle favorite roaster", error: (error as Error).message });
     }
   });
 

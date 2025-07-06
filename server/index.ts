@@ -68,6 +68,10 @@ app.use((req, res, next) => {
     await loadSecrets();
     
     const httpServer = await registerRoutes(app);
+    
+    // Ensure PORT is set in environment for all environments
+    const serverPort = process.env.PORT || 5000;
+    process.env.PORT = serverPort.toString();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
@@ -109,7 +113,7 @@ app.use((req, res, next) => {
 
     // Use the PORT environment variable (Cloud Run provides PORT=8080)
     // Fallback to 5000 for local development
-    const port = process.env.PORT || 5000;
+    const port = serverPort;
     httpServer.listen({
       port,
       host: "0.0.0.0",

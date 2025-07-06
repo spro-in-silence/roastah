@@ -54,9 +54,13 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Set default environment variables early
+    process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+    process.env.PORT = process.env.PORT || '5000';
+    
     console.log('Starting Roastah development server...');
     console.log('Environment:', process.env.NODE_ENV);
-    console.log('Port:', process.env.PORT || 5000);
+    console.log('Port:', process.env.PORT);
     
     // Load secrets from Secret Manager
     await loadSecrets();
@@ -75,8 +79,11 @@ app.use((req, res, next) => {
     // Setup Vite for development
     await setupVite(app, server);
 
-    // Use the PORT environment variable
+    // Use the PORT environment variable - ensure it's set for all environments
     const port = process.env.PORT || 5000;
+    
+    // Ensure PORT is set in environment for Vite client
+    process.env.PORT = port.toString();
     server.listen({
       port,
       host: "0.0.0.0",

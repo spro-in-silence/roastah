@@ -108,8 +108,11 @@ function Router() {
         <Route path="/seller" element={<SellerLayout />}>
           <Route path="dashboard" element={<SellerDashboard />} />
           <Route path="products" element={<SellerProducts />} />
+          <Route path="products/new" element={<SellerProductsNew />} />
+          <Route path="products/edit/:id" element={<SellerProductsEdit />} />
           <Route path="orders" element={<SellerOrders />} />
           <Route path="messages" element={<SellerMessages />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
         
         {/* Fallback Routes */}

@@ -32,16 +32,26 @@ import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
 
+function DevAwareLanding() {
+  const isDev = window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost';
+  
+  if (isDev) {
+    return <DevLogin />;
+  }
+  
+  return (
+    <ProtectedRoute requireAuth={false} redirectTo="/home">
+      <Landing />
+    </ProtectedRoute>
+  );
+}
+
 function Router() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={
-          <ProtectedRoute requireAuth={false} redirectTo="/home">
-            <Landing />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<DevAwareLanding />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/leaderboard" element={<Leaderboard />} />

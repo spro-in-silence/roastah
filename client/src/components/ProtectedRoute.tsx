@@ -38,6 +38,12 @@ export default function ProtectedRoute({
 
   // Redirect unauthenticated users from auth-only pages
   if (!requireAuth && isAuthenticated && redirectTo) {
+    // In development environments, redirect to dev-login first
+    const isDev = window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost';
+    if (isDev && redirectTo === "/home") {
+      return <Navigate to="/dev-login" replace />;
+    }
+    
     // If user is a completed roaster, redirect to seller dashboard instead of home
     if (redirectTo === "/home" && (user as any)?.role === 'roaster' && (user as any)?.isRoasterApproved) {
       return <Navigate to="/seller/dashboard" replace />;

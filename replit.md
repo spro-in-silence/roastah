@@ -1,0 +1,142 @@
+# Roastah - Multi-Vendor Coffee Marketplace
+
+## Overview
+
+Roastah is a comprehensive, Etsy-style multi-vendor marketplace specifically designed for home and micro coffee roasters. The platform combines a custom-built marketplace with MedusaJS integration to provide enterprise-grade e-commerce capabilities while maintaining a user-friendly experience for both roasters and coffee enthusiasts.
+
+## System Architecture
+
+### Frontend Architecture
+- **React 18** with TypeScript for type safety and modern component patterns
+- **Vite** for fast development and optimized builds
+- **Tailwind CSS** with **shadcn/ui** and **Radix UI** for consistent, accessible design
+- **React Router** for client-side routing and navigation
+- **TanStack React Query** for efficient server state management and caching
+- **React Hook Form** with **Zod** for form handling and validation
+
+### Backend Architecture
+- **Node.js** with **Express** for the main application server
+- **MedusaJS** integration for enterprise e-commerce features
+- **PostgreSQL** via **Neon** for primary data storage
+- **Drizzle ORM** for type-safe database operations
+- **Stripe Connect Express** for multi-vendor payment processing
+- **WebSocket** implementation for real-time features
+
+### Hybrid Data Strategy
+The application uses a dual-database approach:
+- **Custom PostgreSQL schema** for core marketplace features (users, products, orders)
+- **MedusaJS database** for advanced e-commerce capabilities
+- **Bridge service** for seamless data synchronization between systems
+
+## Key Components
+
+### Authentication & Authorization
+- **Replit Auth** integration with OpenID Connect
+- **Multi-factor authentication** (MFA) with TOTP and backup codes
+- **Role-based access control** (buyer, roaster, admin)
+- **Session management** with PostgreSQL-backed storage
+
+### Product Management
+- **Multi-state product lifecycle** (draft, pending review, published, archived)
+- **Tag-based filtering** (unlisted, preorder, private, out of stock)
+- **Bulk product upload** with CSV processing
+- **Real-time inventory tracking**
+- **Product recommendations** using similarity algorithms
+
+### Order Processing
+- **Multi-vendor order management**
+- **Real-time order tracking** with WebSocket updates
+- **Commission calculation** for platform fees
+- **Stripe Connect** for direct seller payouts
+
+### Search & Discovery
+- **Advanced product filtering** by origin, roast level, price range
+- **Real-time search** capabilities
+- **Favorite roasters** and **wishlist** functionality
+- **Leaderboard** for top-performing roasters
+
+### Real-time Features
+- **WebSocket-based notifications**
+- **Live order tracking**
+- **Real-time inventory updates**
+- **Instant messaging** between buyers and sellers
+
+## Data Flow
+
+### Product Lifecycle
+1. **Creation**: Roasters create products through the seller dashboard
+2. **Validation**: Products undergo validation and can be saved as drafts
+3. **Publication**: Approved products are published to the marketplace
+4. **Synchronization**: Products are automatically synced to MedusaJS for advanced features
+5. **Discovery**: Published products appear in search results and recommendations
+
+### Order Processing
+1. **Cart Management**: Users add products with customizable options (grind size, quantity)
+2. **Checkout**: Stripe integration handles payment processing
+3. **Order Distribution**: Orders are split by vendor for individual processing
+4. **Tracking**: Real-time updates flow through WebSocket connections
+5. **Commission**: Platform fees are calculated and distributed
+
+### Cache Management
+- **Dual cache strategy** combining immediate updates and invalidation
+- **Optimistic updates** for instant UI feedback
+- **Consistent data synchronization** across all views
+- **Smart cache invalidation** to prevent stale data issues
+
+## External Dependencies
+
+### Payment Processing
+- **Stripe Connect Express** for multi-vendor payments
+- **Stripe API** for subscription management and payment intents
+- **Automatic commission calculation** and distribution
+
+### Cloud Services
+- **Google Cloud Run** for scalable hosting
+- **Google Cloud Storage** for static assets and product images
+- **Google Secret Manager** for secure credential storage
+- **Neon PostgreSQL** for managed database hosting
+
+### Development Tools
+- **Drizzle Kit** for database migrations and schema management
+- **ESBuild** for efficient backend bundling
+- **Docker** for consistent deployment environments
+
+## Deployment Strategy
+
+### Development Environment
+- **Concurrent development servers** for frontend and backend
+- **Hot module replacement** for rapid development
+- **Automated database migrations** during development
+
+### Production Build Process
+1. **Database Migration Generation**: `pnpm run db:generate`
+2. **Application Build**: Separate frontend and backend builds
+3. **Dependency Validation**: Check for development dependencies in production
+4. **Docker Image Creation**: Multi-stage build with production optimizations
+5. **Cloud Run Deployment**: Automatic scaling and health checks
+
+### Security Measures
+- **Content Security Policy** implementation
+- **Rate limiting** on all API endpoints
+- **Input validation** using Zod schemas
+- **SQL injection prevention** through parameterized queries
+- **CSRF protection** with secure session handling
+
+### Monitoring & Analytics
+- **Real-time performance monitoring**
+- **Error tracking** and logging
+- **Business analytics** for seller insights
+- **User behavior tracking** for optimization
+
+## Changelog
+
+```
+Changelog:
+- July 06, 2025. Initial setup
+```
+
+## User Preferences
+
+```
+Preferred communication style: Simple, everyday language.
+```

@@ -178,7 +178,14 @@ export function setupSecurity(app: Express) {
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+        scriptSrc: [
+          "'self'", 
+          "'unsafe-inline'", 
+          "'unsafe-eval'", 
+          "https://js.stripe.com",
+          // Allow Replit scripts only in development
+          ...(process.env.NODE_ENV !== 'production' ? ["https://replit.com"] : [])
+        ],
         connectSrc: ["'self'", "https://api.stripe.com", "https://q.stripe.com", "wss:", "ws:"],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         mediaSrc: ["'self'", "https://ssl.gstatic.com", "data:", "blob:"],
@@ -285,9 +292,9 @@ export function requireRole(role: 'admin' | 'roaster' | 'user') {
 // IP whitelisting for admin functions (optional)
 export function requireWhitelistedIP(allowedIPs: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const clientIP = req.ip;
+    const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
     
-    if (!allowedIPs.includes(clientIP)) {
+    if (!allowedIPs.includes(clientIP as string)) {
       console.warn(`Blocked access from non-whitelisted IP: ${clientIP}`);
       return res.status(403).json({ error: 'Access denied' });
     }

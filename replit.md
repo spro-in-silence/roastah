@@ -133,6 +133,10 @@ The application uses a dual-database approach:
 ```
 Changelog:
 - July 06, 2025. Initial setup
+- July 06, 2025. Added local development support with authentication bypass
+- July 06, 2025. Fixed SPA routing for production deployment outside Replit
+- July 06, 2025. Enhanced Content Security Policy for development environments
+- July 06, 2025. Created comprehensive local setup documentation
 ```
 
 ## User Preferences

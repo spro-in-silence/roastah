@@ -63,6 +63,34 @@ async function upsertUser(
 }
 
 export async function setupAuth(app: Express) {
+  // Check if we're running outside of Replit (for local development)
+  if (!process.env.REPL_ID && process.env.NODE_ENV === 'development') {
+    console.warn('⚠️  Running in development mode without Replit authentication');
+    console.warn('⚠️  Using development authentication bypass');
+    console.warn('⚠️  This is NOT secure and should only be used for local development');
+    
+    // Set up basic session management for development
+    app.set("trust proxy", 1);
+    app.use(getSession());
+    
+    // Create a development user bypass
+    app.use((req, res, next) => {
+      if (!(req.session as any).user) {
+        // Create a mock user for development
+        (req.session as any).user = {
+          id: 'dev-user-123',
+          email: 'dev@localhost',
+          name: 'Development User',
+          picture: null,
+          isAuthenticated: true
+        };
+      }
+      next();
+    });
+    
+    return;
+  }
+  
   // Check for required environment variables after secrets have been loaded
   if (!process.env.REPLIT_DOMAINS) {
     throw new Error("Environment variable REPLIT_DOMAINS not provided");

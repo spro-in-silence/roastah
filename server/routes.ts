@@ -293,12 +293,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      // Try to access Google Cloud credentials
-      const { GoogleAuth } = await import('google-auth-library');
-      const auth = new GoogleAuth();
+      // Use the same SecretManagerServiceClient that's already working
+      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+      const client = new SecretManagerServiceClient();
       
-      // Attempt to get credentials
-      await auth.getCredentials();
+      // Try to access a test secret to verify credentials
+      const testSecretName = `projects/${process.env.GOOGLE_CLOUD_PROJECT || 'roastah-d'}/secrets/DATABASE_URL/versions/latest`;
+      await client.accessSecretVersion({ name: testSecretName });
       
       res.json({ hasCredentials: true });
     } catch (error: any) {

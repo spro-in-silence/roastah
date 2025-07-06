@@ -82,17 +82,29 @@ app.use((req, res, next) => {
     const distPath = path.resolve(__dirname, "../dist/public");
     
     if (fs.existsSync(distPath)) {
+      console.log('✅ Found dist/public directory, serving static files from:', distPath);
       app.use(express.static(distPath));
       
       // Serve index.html for all non-API routes (SPA routing)
-      app.use("*", (req, res, next) => {
-        if (req.path.startsWith('/api')) {
+      app.get("*", (req, res, next) => {
+        // Skip API routes and static assets
+        if (req.path.startsWith('/api') || req.path.includes('.')) {
           return next();
         }
-        res.sendFile(path.resolve(distPath, "index.html"));
+        
+        const indexPath = path.resolve(distPath, "index.html");
+        console.log('📄 Serving SPA route:', req.path, '-> index.html');
+        
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          console.error('❌ index.html not found at:', indexPath);
+          res.status(404).send('index.html not found');
+        }
       });
     } else {
-      console.warn('No dist/public directory found, skipping static file serving');
+      console.warn('❌ No dist/public directory found at:', distPath);
+      console.warn('   Make sure to run "npm run build" first');
     }
 
     // Use the PORT environment variable (Cloud Run provides PORT=8080)

@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
 import { loadSecrets } from "./secrets";
+import { getDb } from "./db";
+import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -26,6 +28,27 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV,
     port: process.env.PORT || 5000
   });
+});
+
+// Database health check endpoint
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const db = getDb();
+    await db.execute(sql`SELECT 1`);
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected'
+    });
+  }
 });
 
 app.use((req, res, next) => {

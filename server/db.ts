@@ -16,7 +16,14 @@ export function getDb() {
       );
     }
     
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    // Enhanced connection configuration for Cloud Run
+    pool = new Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      max: 10, // Limit connections for Cloud Run
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    
     dbInstance = drizzle({ client: pool, schema });
   }
   

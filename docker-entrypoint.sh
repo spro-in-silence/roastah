@@ -10,8 +10,31 @@ echo "🚀 Starting Roastah application..."
 # Function to run database migrations
 run_migrations() {
     echo "📊 Running database migrations..."
+    
+    # Test database connection first
+    echo "🔍 Testing database connection..."
+    if ! node -e "
+        const { Pool } = require('@neondatabase/serverless');
+        const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+        pool.query('SELECT 1').then(() => {
+            console.log('✅ Database connection successful');
+            process.exit(0);
+        }).catch(err => {
+            console.error('❌ Database connection failed:', err.message);
+            process.exit(1);
+        });
+    "; then
+        echo "❌ Database connection failed, cannot run migrations"
+        exit 1
+    fi
+    
+    # Run migrations
     if [ -f "drizzle.config.ts" ]; then
-        npx drizzle-kit migrate
+        echo "🏗️  Running Drizzle migrations..."
+        if ! npx drizzle-kit migrate; then
+            echo "❌ Database migrations failed"
+            exit 1
+        fi
         echo "✅ Database migrations completed"
     else
         echo "⚠️  No drizzle config found, skipping migrations"

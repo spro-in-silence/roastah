@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Coffee, Star, Users, ShoppingBag } from "lucide-react";
 
 export default function AuthPage() {
@@ -11,11 +11,11 @@ export default function AuthPage() {
   // Check if we're in Cloud Run environment
   const isCloudRun = typeof window !== 'undefined' && !window.location.hostname.includes('replit.dev');
 
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   // Redirect if already authenticated
   if (!isLoading && user) {
-    setLocation("/");
+    navigate("/");
     return null;
   }
 

@@ -35,7 +35,7 @@ import AuthPage from "@/pages/auth-page";
 
 function DevAwareLanding() {
   // Only show dev-login in development environments (localhost and Replit)
-  // Production environments should show the auth page for unauthenticated users
+  // Production environments should show the public landing page
   const isDev = window.location.hostname.includes('replit.dev') || 
                 window.location.hostname === 'localhost' ||
                 window.location.hostname.startsWith('127.0.0.1');
@@ -44,12 +44,8 @@ function DevAwareLanding() {
     return <DevLogin />;
   }
   
-  // For production, redirect unauthenticated users to auth page
-  return (
-    <ProtectedRoute requireAuth={false} redirectTo="/auth">
-      <Landing />
-    </ProtectedRoute>
-  );
+  // For production, show public landing page (no auth required)
+  return <Landing />;
 }
 
 function Router() {

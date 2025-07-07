@@ -75,7 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', enhancedAuthCheck, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Check if there's an impersonated user first
+      const userId = req.session.user?.sub || req.user.claims.sub;
       const user = await storage.getUser(userId);
       
       // Get roaster info if user is a roaster

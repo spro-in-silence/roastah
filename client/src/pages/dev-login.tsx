@@ -4,7 +4,7 @@ import { Coffee, ShoppingBag, Package, Terminal, CheckCircle } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function DevLogin() {
   const [hasADC, setHasADC] = useState(false);
@@ -75,6 +75,9 @@ export default function DevLogin() {
       const response = await apiRequest("POST", "/api/dev/impersonate", { userType });
 
       if (response.success) {
+        // Invalidate user cache to force refresh of user data
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        
         toast({
           title: "Success",
           description: `Now impersonating ${userType}`,

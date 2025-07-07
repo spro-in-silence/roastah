@@ -49,13 +49,6 @@ export default function Navbar() {
   useEffect(() => {
     // When impersonating, always use the impersonated user's actual role
     if (user?.id?.startsWith('dev-')) {
-      console.log('Impersonation detected:', {
-        userId: user.id,
-        userRole: user.role,
-        isRoasterApproved: user.isRoasterApproved,
-        contextIsRoaster,
-        currentIsRoaster: isRoaster
-      });
       setIsRoaster(contextIsRoaster);
     }
   }, [user, contextIsRoaster]);
@@ -275,7 +268,6 @@ export default function Navbar() {
               {/* Seller Navigation - Only show in seller mode */}
               {contextIsRoaster && (
                 <>
-                  {console.log('Seller navigation rendering:', { contextIsRoaster, userRole: user?.role, isRoasterApproved: user?.isRoasterApproved })}
                   <div className="border-t my-4"></div>
                   
                   <div className="px-3 py-2">

@@ -75,8 +75,11 @@ export default function DevLogin() {
       const response = await apiRequest("POST", "/api/dev/impersonate", { userType });
 
       if (response.success) {
-        // Invalidate user cache to force refresh of user data
-        await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        // Force complete cache refresh
+        queryClient.clear();
+        
+        // Small delay to ensure cache is cleared
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         toast({
           title: "Success",

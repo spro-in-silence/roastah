@@ -75,7 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', enhancedAuthCheck, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Check if there's an impersonated user first
+      const userId = req.session.user?.sub || req.user.claims.sub;
       const user = await storage.getUser(userId);
       
       // Get roaster info if user is a roaster
@@ -292,6 +293,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: 'Not found' });
     }
 
+    // For localhost, always return true to bypass credentials check
+    if (req.get('host')?.includes('localhost')) {
+      console.log('ADC check: Localhost detected, skipping Google Cloud credentials check');
+      return res.json({ hasCredentials: true });
+    }
+
     try {
       // Use the same SecretManagerServiceClient that's already working
       const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
@@ -330,7 +337,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const devUserData = {
         id: devUserId,
         email: userType === 'seller' ? 'dev-seller@roastah.com' : 'dev-buyer@roastah.com',
-        name: userType === 'seller' ? 'Development Seller' : 'Development Buyer',
+        firstName: userType === 'seller' ? 'Development' : 'Development',
+        lastName: userType === 'seller' ? 'Seller' : 'Buyer',
         role: userType === 'seller' ? 'roaster' : 'user',
         isRoasterApproved: userType === 'seller',
         mfaEnabled: false,
@@ -410,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.user = {
           id: devUserId,
           email: devUserData.email,
-          name: devUserData.name,
+          name: `${devUserData.firstName} ${devUserData.lastName}`,
           sub: devUserId,
         };
         req.session.tokens = {
@@ -421,7 +429,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         success: true, 
-        user: devUserData,
+        user: {
+          ...devUserData,
+          name: `${devUserData.firstName} ${devUserData.lastName}`
+        },
         message: `Successfully impersonating ${userType}` 
       });
     } catch (error) {

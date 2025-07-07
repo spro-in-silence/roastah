@@ -33,16 +33,25 @@ export default function Navbar() {
 
   const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
-  // Only sync with context on initial load if no saved preference
+  // Sync with context when user changes (including impersonation)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('userMode');
-      if (savedMode === null) {
+      // Always update to match the current user's actual role, especially for impersonation
+      if (savedMode === null || user?.id?.startsWith('dev-')) {
         setIsRoaster(contextIsRoaster);
         localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
       }
     }
-  }, [contextIsRoaster]);
+  }, [contextIsRoaster, user?.id]);
+
+  // Additional effect to handle impersonation scenarios
+  useEffect(() => {
+    // When impersonating, always use the impersonated user's actual role
+    if (user?.id?.startsWith('dev-')) {
+      setIsRoaster(contextIsRoaster);
+    }
+  }, [user, contextIsRoaster]);
 
   // Handle mode switching with persistence and navigation
   const handleModeSwitch = () => {
@@ -257,7 +266,7 @@ export default function Navbar() {
               )}
 
               {/* Seller Navigation - Only show in seller mode */}
-              {isRoaster && (
+              {contextIsRoaster && (
                 <>
                   <div className="border-t my-4"></div>
                   

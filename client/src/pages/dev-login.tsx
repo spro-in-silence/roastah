@@ -4,7 +4,7 @@ import { Coffee, ShoppingBag, Package, Terminal, CheckCircle } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function DevLogin() {
   const [hasADC, setHasADC] = useState(false);
@@ -17,15 +17,19 @@ export default function DevLogin() {
     // Small delay to ensure clean render
     const timer = setTimeout(() => {
       const isReplit = window.location.hostname.includes('replit.dev');
-      console.log('DevLogin: Environment check - isReplit:', isReplit, 'hostname:', window.location.hostname);
+      const isLocal = window.location.hostname === 'localhost';
+      console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
       
-      if (isReplit) {
+      if (isReplit && !isLocal) {
         console.log('DevLogin: Replit environment - going directly to impersonation options');
         setHasADC(true); // Skip ADC check and go directly to options
         setIsCheckingADC(false);
-
+      } else if (isLocal) {
+        console.log('DevLogin: Local development - skipping ADC check and going to impersonation options');
+        setHasADC(true); // Skip ADC check for local development
+        setIsCheckingADC(false);
       } else {
-        console.log('DevLogin: Running ADC check for local environment');
+        console.log('DevLogin: Running ADC check for external environment');
         checkADCCredentials();
       }
     }, 100);
@@ -75,6 +79,11 @@ export default function DevLogin() {
       const response = await apiRequest("POST", "/api/dev/impersonate", { userType });
 
       if (response.success) {
+        // Only invalidate user-specific queries, not all data
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+        
         toast({
           title: "Success",
           description: `Now impersonating ${userType}`,

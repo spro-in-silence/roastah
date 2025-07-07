@@ -146,6 +146,7 @@ Changelog:
 - July 07, 2025. Optimized React Query cache invalidation for smooth user switching
 - July 07, 2025. Implemented environment-aware OAuth authentication for Cloud Run deployment
 - July 07, 2025. Completely removed Replit Auth while preserving impersonation system
+- July 07, 2025. Fixed Cloud Run OAuth authentication - added missing /api/login route
 ```
 
 ## User Preferences

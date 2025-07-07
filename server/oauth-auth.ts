@@ -117,6 +117,11 @@ export async function setupOAuth(app: Express) {
         res.redirect('/');
       }
     );
+
+    // Login endpoint that redirects to Google OAuth
+    app.get('/api/login', (req, res) => {
+      res.redirect('/api/auth/google');
+    });
   }
 
   // GitHub OAuth Strategy

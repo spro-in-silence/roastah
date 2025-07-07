@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MFA Security Endpoints
   app.post('/api/auth/mfa/setup', authLimiter, enhancedAuthCheck, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       
       if (!user?.email) {
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/mfa/verify-setup', authLimiter, enhancedAuthCheck, async (req: any, res) => {
     try {
       const { token } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
 
       if (!user?.mfaSecret) {
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/mfa/verify', authLimiter, enhancedAuthCheck, async (req: any, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
 
       if (!user?.mfaEnabled || !user?.mfaSecret) {
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/mfa/disable', authLimiter, enhancedAuthCheck, requireStepUpAuth, async (req: any, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
 
       if (!user?.mfaEnabled) {
@@ -261,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/step-up', authLimiter, enhancedAuthCheck, async (req: any, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
 
       if (user?.mfaEnabled) {
@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Roaster routes
   app.post('/api/roaster/apply', authLimiter, enhancedAuthCheck, validateRoasterApplication, handleValidationErrors, async (req: any, res: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const validatedData = insertRoasterSchema.parse({
         ...req.body,
         userId,
@@ -517,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/roaster/products', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/roaster/products', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
@@ -559,7 +559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/roaster/products/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       
@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/roaster/products/:id', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       
@@ -614,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/roaster/products/:id', authLimiter, enhancedAuthCheck, requireRole('roaster'), async (req: any, res: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       
@@ -656,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { state } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/roaster/products/:id/tags', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
@@ -713,7 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart routes
   app.get('/api/cart', enhancedAuthCheck, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const cartItems = await storage.getCartByUserId(userId);
       res.json(cartItems);
     } catch (error) {
@@ -724,7 +724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/cart', enhancedAuthCheck, validateCartOperation, handleValidationErrors, async (req: any, res: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const validatedData = insertCartItemSchema.parse({
         ...req.body,
         userId,
@@ -772,7 +772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.get('/api/orders', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const orders = await storage.getOrdersByUserId(userId);
       res.json(orders);
     } catch (error) {
@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/roaster/orders', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       
       if (!roaster) {
@@ -994,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bulk product upload with CSV processing
   app.post('/api/roaster/bulk-upload', isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
-      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
       if (!roaster) {
         return res.status(403).json({ message: 'Roaster profile required' });
       }
@@ -1127,7 +1127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get bulk upload status
   app.get('/api/roaster/bulk-uploads', isAuthenticated, async (req: any, res) => {
     try {
-      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
       if (!roaster) {
         return res.status(403).json({ message: 'Roaster profile required' });
       }
@@ -1155,7 +1155,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   app.post('/api/products/:id/reviews', isAuthenticated, async (req: any, res) => {
     try {
       const productId = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const reviewData = { ...req.body, userId, productId };
       
       const review = await storage.createReview(reviewData);
@@ -1180,7 +1180,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Wishlist routes
   app.get('/api/wishlist', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const wishlistItems = await storage.getWishlistByUserId(userId);
       res.json(wishlistItems);
     } catch (error) {
@@ -1191,7 +1191,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.post('/api/wishlist', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const { productId } = req.body;
       
       const wishlistItem = await storage.addToWishlist({ userId, productId });
@@ -1204,7 +1204,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.delete('/api/wishlist/:productId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.productId);
       
       await storage.removeFromWishlist(userId, productId);
@@ -1218,7 +1218,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Notification routes
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const notifications = await storage.getNotificationsByUserId(userId);
       res.json(notifications);
     } catch (error) {
@@ -1406,7 +1406,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Favorites routes - Toggle functionality
   app.post('/api/favorites/roasters/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       
       console.log(`Toggle favorite - User: ${userId}, Roaster: ${roasterId}`);
@@ -1445,7 +1445,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Check if roaster is favorited
   app.get('/api/favorites/roasters/:id/check', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       
       if (!roasterId || isNaN(roasterId)) {
@@ -1462,7 +1462,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.delete('/api/favorites/roasters/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       
       await storage.removeFavoriteRoaster(userId, roasterId);
@@ -1475,7 +1475,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.get('/api/favorites/roasters', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const favorites = await storage.getFavoriteRoastersByUser(userId);
       res.json(favorites);
     } catch (error) {
@@ -1486,7 +1486,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.get('/api/favorites/roasters/:id/check', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       
       const isFavorite = await storage.isFavoriteRoaster(userId, roasterId);
@@ -1551,7 +1551,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Notification routes
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const notifications = await storage.getNotificationsByUserId(userId);
       res.json(notifications);
     } catch (error) {
@@ -1588,7 +1588,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Gift card routes
   app.post('/api/gift-cards', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const giftCardData = {
         ...req.body,
         purchaserId: userId,
@@ -1605,7 +1605,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.get('/api/gift-cards', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const giftCards = await storage.getGiftCardsByPurchaser(userId);
       res.json(giftCards);
     } catch (error) {
@@ -1632,7 +1632,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
 
   app.post('/api/gift-cards/redeem', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const { code, amount } = req.body;
       
       const giftCard = await storage.getGiftCardByCode(code);
@@ -1675,7 +1675,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   app.post('/api/validate-address', isAuthenticated, async (req: any, res) => {
     try {
       const { addressLine1, addressLine2, city, state, zipCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       
       // Basic validation checks
       if (!addressLine1 || !city || !state || !zipCode) {
@@ -1784,7 +1784,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Create a new seller message (seller only)
   app.post('/api/seller/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       
       // Check if user is a roaster
       const roaster = await storage.getRoasterByUserId(userId);
@@ -1850,7 +1850,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Get seller's messages (seller only)
   app.get('/api/seller/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       
       // Check if user is a roaster
       const roaster = await storage.getRoasterByUserId(userId);
@@ -1869,7 +1869,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Get buyer's messages (buyer only)
   app.get('/api/buyer/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       
       // Check if user is a buyer (not a roaster)
       const roaster = await storage.getRoasterByUserId(userId);
@@ -1888,7 +1888,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Get unread message count for notification badge (buyer only)
   app.get('/api/buyer/messages/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       
       // Check if user is a buyer (not a roaster)
       const roaster = await storage.getRoasterByUserId(userId);
@@ -1907,7 +1907,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Mark message as read (buyer only)
   app.post('/api/buyer/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const messageId = parseInt(req.params.messageId);
       
       // Check if user is a buyer (not a roaster)
@@ -1931,7 +1931,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   // Get specific message details (authenticated users only)
   app.get('/api/messages/:messageId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const messageId = parseInt(req.params.messageId);
       
       if (!messageId || isNaN(messageId)) {

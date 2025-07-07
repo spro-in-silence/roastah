@@ -212,8 +212,8 @@ export default function Navbar() {
             </div>
 
             <div className="p-4 space-y-2">
-              {/* Buyer-specific Navigation - Only show for non-roasters */}
-              {!user?.isRoasterApproved && (
+              {/* Buyer-specific Navigation - Only show when not in roaster mode */}
+              {!contextIsRoaster && (
                 <>
                   <Link to="/products" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
@@ -253,8 +253,8 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* Become a Roastah - Only show for non-roasters */}
-              {!user?.isRoasterApproved && (
+              {/* Become a Roastah - Only show when not in roaster mode */}
+              {!contextIsRoaster && (
                 <Link to="/become-roastah" onClick={closeMenu}>
                   <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
                     location.pathname === '/become-roastah' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'

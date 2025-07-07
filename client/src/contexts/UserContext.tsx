@@ -13,7 +13,11 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const { user, isLoading, isAuthenticated } = useAuth();
   
-  const isRoaster = user?.role === 'roaster' && user?.isRoasterApproved;
+  // Handle role detection for both real users and impersonated development users
+  const isRoaster = user?.role === 'roaster' && (
+    user?.isRoasterApproved || 
+    user?.id?.startsWith('dev-seller-') // Development impersonated sellers are always approved
+  );
 
   return (
     <UserContext.Provider value={{ user, isLoading, isAuthenticated, isRoaster }}>

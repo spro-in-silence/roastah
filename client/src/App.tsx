@@ -31,10 +31,11 @@ import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
+import AuthPage from "@/pages/auth-page";
 
 function DevAwareLanding() {
   // Only show dev-login in development environments (Replit and localhost)
-  // Cloud Run environments should show the normal landing page
+  // Cloud Run environments should show the auth page for unauthenticated users
   const isDev = window.location.hostname.includes('replit.dev') || 
                 window.location.hostname === 'localhost' ||
                 window.location.hostname.startsWith('127.0.0.1');
@@ -43,8 +44,9 @@ function DevAwareLanding() {
     return <DevLogin />;
   }
   
+  // For Cloud Run, redirect unauthenticated users to auth page
   return (
-    <ProtectedRoute requireAuth={false} redirectTo="/home">
+    <ProtectedRoute requireAuth={false} redirectTo="/auth">
       <Landing />
     </ProtectedRoute>
   );
@@ -54,6 +56,9 @@ function Router() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Authentication Route */}
+        <Route path="/auth" element={<AuthPage />} />
+        
         {/* Public Routes */}
         <Route path="/" element={<DevAwareLanding />} />
         <Route path="/products" element={<Products />} />

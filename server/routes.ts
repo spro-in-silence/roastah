@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import multer from "multer";
 import * as fs from "fs";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuthentication } from "./auth-router";
 import { getDb } from "./db";
 import { eq, and, gte, desc, asc } from "drizzle-orm";
 import { 
@@ -40,8 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiVersion: "2025-05-28.basil",
   });
   
-  // Auth middleware
-  await setupAuth(app);
+  // Setup authentication (automatically chooses Replit Auth or OAuth based on environment)
+  const { isAuthenticated } = await setupAuthentication(app);
 
   // Configuration endpoint - serves public configuration from GCP Secret Manager
   app.get('/api/config', async (req: any, res: any) => {
@@ -73,10 +73,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   medusaBridge.setupRoutes();
 
   // Auth routes
-  app.get('/api/auth/user', async (req: any, res) => {
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // Check if there's an impersonated user first
-      const userId = req.session.user?.sub || req.user?.claims?.sub;
+      // Check if there's an impersonated user first, then fallback to authenticated user
+      const userId = req.session.user?.sub || req.user?.claims?.sub || req.user?.id;
       
       if (!userId) {
         return res.status(401).json({ message: "Not authenticated" });

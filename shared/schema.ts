@@ -32,6 +32,9 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  name: varchar("name"), // Full name for OAuth providers
+  username: varchar("username"),
+  password: varchar("password"), // For local auth
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("buyer"), // buyer or roaster
   isRoasterApproved: boolean("is_roaster_approved").default(false),
@@ -47,6 +50,10 @@ export const users = pgTable("users", {
   mfaSecret: varchar("mfa_secret"),
   backupCodes: text("backup_codes").array(),
   lastBackupCodeUsed: timestamp("last_backup_code_used"),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  profileComplete: boolean("profile_complete").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

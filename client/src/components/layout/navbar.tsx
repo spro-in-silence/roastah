@@ -15,8 +15,13 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // Initialize mode from localStorage or default to buyer mode
+  // Use context isRoaster directly for impersonated users, otherwise use localStorage
   const [isRoaster, setIsRoaster] = useState(() => {
+    // For development impersonated users, always use the context value
+    if (user?.id?.startsWith('dev-')) {
+      return contextIsRoaster;
+    }
+    
     if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('userMode');
       if (savedMode !== null) {
@@ -35,23 +40,21 @@ export default function Navbar() {
 
   // Sync with context when user changes (including impersonation)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('userMode');
-      // Always update to match the current user's actual role, especially for impersonation
-      if (savedMode === null || user?.id?.startsWith('dev-')) {
+    if (typeof window !== 'undefined' && isAuthenticated && user) {
+      // For impersonated users, always use the context value
+      if (user?.id?.startsWith('dev-')) {
         setIsRoaster(contextIsRoaster);
         localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
+      } else {
+        // For real users, sync if no saved preference exists
+        const savedMode = localStorage.getItem('userMode');
+        if (savedMode === null) {
+          setIsRoaster(contextIsRoaster);
+          localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
+        }
       }
     }
-  }, [contextIsRoaster, user?.id]);
-
-  // Additional effect to handle impersonation scenarios
-  useEffect(() => {
-    // When impersonating, always use the impersonated user's actual role
-    if (user?.id?.startsWith('dev-')) {
-      setIsRoaster(contextIsRoaster);
-    }
-  }, [user, contextIsRoaster]);
+  }, [contextIsRoaster, user?.id, isAuthenticated]);
 
   // Handle mode switching with persistence and navigation
   const handleModeSwitch = () => {

@@ -7,35 +7,32 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function DevLogin() {
-  const [hasADC, setHasADC] = useState(false);
-  const [isCheckingADC, setIsCheckingADC] = useState(true); // Start with true, will be set based on environment
+  // Initialize based on environment detection
+  const isReplit = window.location.hostname.includes('replit.dev');
+  const isLocal = window.location.hostname === 'localhost';
+  const skipADC = isReplit || isLocal;
+  
+  const [hasADC, setHasADC] = useState(skipADC);
+  const [isCheckingADC, setIsCheckingADC] = useState(!skipADC);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Small delay to ensure clean render
-    const timer = setTimeout(() => {
-      const isReplit = window.location.hostname.includes('replit.dev');
-      const isLocal = window.location.hostname === 'localhost';
-      console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
-      
-      if (isReplit && !isLocal) {
-        console.log('DevLogin: Replit environment - going directly to impersonation options');
-        setHasADC(true); // Skip ADC check and go directly to options
-        setIsCheckingADC(false);
-      } else if (isLocal) {
-        console.log('DevLogin: Local development - skipping ADC check and going to impersonation options');
-        setHasADC(true); // Skip ADC check for local development
-        setIsCheckingADC(false);
-      } else {
+    console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
+    
+    if (skipADC) {
+      console.log('DevLogin: Development environment - skipping ADC check');
+    } else {
+      // Small delay for external environments
+      const timer = setTimeout(() => {
         console.log('DevLogin: Running ADC check for external environment');
         checkADCCredentials();
-      }
-    }, 100);
+      }, 100);
 
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearTimeout(timer);
+    }
+  }, [skipADC, isReplit, isLocal]);
 
   const checkADCCredentials = async () => {
     setIsCheckingADC(true);

@@ -150,6 +150,10 @@ Changelog:
 - July 07, 2025. Created comprehensive authentication system with email/password + OAuth options
 - July 07, 2025. Fixed OAuth callback URL configuration for proper Google OAuth integration
 - July 07, 2025. Added proper authentication page with dual authentication methods
+- July 07, 2025. Fixed seller impersonation system - updated UserContext role detection for dev users
+- July 07, 2025. Resolved seller dashboard empty page issue by updating query enabling conditions
+- July 07, 2025. Fixed dev-login page credential checking loop that was blocking access to impersonation
+- July 07, 2025. Updated navbar navigation logic to properly sync with impersonated user context
 ```
 
 ## User Preferences

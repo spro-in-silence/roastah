@@ -43,15 +43,17 @@ export default function SellerDashboard() {
     }
   }, [isAuthenticated, isLoading, isRoaster, toast]);
 
-  // Fetch data
+  // Fetch data - allow for development impersonated users
+  const shouldFetchRoasterData = isAuthenticated && (isRoaster || user?.id?.startsWith('dev-seller-'));
+  
   const { data: products = [], error: productsError } = useQuery({
     queryKey: ['/api/roaster/products'],
-    enabled: isAuthenticated && isRoaster,
+    enabled: shouldFetchRoasterData,
   });
 
   const { data: orders = [], error: ordersError } = useQuery({
     queryKey: ['/api/roaster/orders'],
-    enabled: isAuthenticated && isRoaster,
+    enabled: shouldFetchRoasterData,
   });
 
   // Handle authentication errors
@@ -91,7 +93,8 @@ export default function SellerDashboard() {
     );
   }
 
-  if (!isRoaster) {
+  // Allow access for development impersonated sellers
+  if (!isRoaster && !user?.id?.startsWith('dev-seller-')) {
     return null; // Will redirect in useEffect
   }
 

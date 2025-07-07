@@ -34,8 +34,16 @@ export async function loadSecrets(): Promise<void> {
       'GOOGLE_CLIENT_SECRET'
     ];
     
+    // Optional secrets that may not be available in all environments
+    const optionalSecrets = [
+      'CLOUD_RUN_URL',
+      'GITHUB_CLIENT_ID',
+      'GITHUB_CLIENT_SECRET'
+    ];
+    
     // Load all secrets in parallel
-    const secretPromises = requiredSecrets.map(async (secretName) => {
+    const allSecrets = [...requiredSecrets, ...optionalSecrets];
+    const secretPromises = allSecrets.map(async (secretName) => {
       try {
         const secretValue = await getSecret(secretName);
         if (secretValue) {
@@ -43,12 +51,22 @@ export async function loadSecrets(): Promise<void> {
           console.log(`✅ Loaded ${secretName} from Secret Manager`);
           return { name: secretName, success: true };
         } else {
-          console.warn(`⚠️ Failed to load ${secretName} from Secret Manager`);
-          return { name: secretName, success: false };
+          const isOptional = optionalSecrets.includes(secretName);
+          if (isOptional) {
+            console.log(`ℹ️ Optional secret ${secretName} not found in Secret Manager`);
+          } else {
+            console.warn(`⚠️ Failed to load ${secretName} from Secret Manager`);
+          }
+          return { name: secretName, success: false, optional: isOptional };
         }
       } catch (error) {
-        console.warn(`❌ Error loading ${secretName}:`, error);
-        return { name: secretName, success: false, error };
+        const isOptional = optionalSecrets.includes(secretName);
+        if (isOptional) {
+          console.log(`ℹ️ Optional secret ${secretName} not available:`, error.message);
+        } else {
+          console.warn(`❌ Error loading ${secretName}:`, error);
+        }
+        return { name: secretName, success: false, error, optional: isOptional };
       }
     });
     

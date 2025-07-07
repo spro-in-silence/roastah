@@ -98,9 +98,24 @@ export async function setupOAuth(app: Express) {
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     console.log('🔐 Setting up Google OAuth');
     
-    const callbackURL = isDevelopment 
-      ? `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`
-      : `https://${process.env.CLOUD_RUN_URL}/api/auth/google/callback`;
+    // Determine the correct callback URL based on environment
+    let callbackURL;
+    if (isDevelopment) {
+      callbackURL = `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`;
+    } else if (isCloudRun) {
+      // For Cloud Run, construct URL from K_SERVICE and other Cloud Run env vars
+      const serviceName = process.env.K_SERVICE || 'roastah-d';
+      const region = process.env.K_REVISION?.split('-')[1] || 'us-central1';
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'roastah-d';
+      callbackURL = `https://${serviceName}-${projectId.split('-')[1]}.${region}.run.app/api/auth/google/callback`;
+    } else {
+      // Fallback to provided URL or construct from request
+      callbackURL = process.env.CLOUD_RUN_URL 
+        ? `https://${process.env.CLOUD_RUN_URL}/api/auth/google/callback`
+        : 'https://roastah-d-188956418455.us-central1.run.app/api/auth/google/callback';
+    }
+    
+    console.log('🔐 Google OAuth callback URL:', callbackURL);
 
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
@@ -134,9 +149,24 @@ export async function setupOAuth(app: Express) {
   if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     console.log('🔐 Setting up GitHub OAuth');
     
-    const callbackURL = isDevelopment 
-      ? `http://localhost:${process.env.PORT || 5000}/api/auth/github/callback`
-      : `https://${process.env.CLOUD_RUN_URL}/api/auth/github/callback`;
+    // Determine the correct callback URL based on environment
+    let callbackURL;
+    if (isDevelopment) {
+      callbackURL = `http://localhost:${process.env.PORT || 5000}/api/auth/github/callback`;
+    } else if (isCloudRun) {
+      // For Cloud Run, construct URL from K_SERVICE and other Cloud Run env vars
+      const serviceName = process.env.K_SERVICE || 'roastah-d';
+      const region = process.env.K_REVISION?.split('-')[1] || 'us-central1';
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'roastah-d';
+      callbackURL = `https://${serviceName}-${projectId.split('-')[1]}.${region}.run.app/api/auth/github/callback`;
+    } else {
+      // Fallback to provided URL or construct from request
+      callbackURL = process.env.CLOUD_RUN_URL 
+        ? `https://${process.env.CLOUD_RUN_URL}/api/auth/github/callback`
+        : 'https://roastah-d-188956418455.us-central1.run.app/api/auth/github/callback';
+    }
+    
+    console.log('🔐 GitHub OAuth callback URL:', callbackURL);
 
     passport.use(new GitHubStrategy({
       clientID: process.env.GITHUB_CLIENT_ID,
@@ -171,9 +201,24 @@ export async function setupOAuth(app: Express) {
     try {
       const { Strategy: AppleStrategy } = require('passport-apple');
       
-      const callbackURL = isDevelopment 
-        ? `http://localhost:${process.env.PORT || 5000}/api/auth/apple/callback`
-        : `https://${process.env.CLOUD_RUN_URL}/api/auth/apple/callback`;
+      // Determine the correct callback URL based on environment
+      let callbackURL;
+      if (isDevelopment) {
+        callbackURL = `http://localhost:${process.env.PORT || 5000}/api/auth/apple/callback`;
+      } else if (isCloudRun) {
+        // For Cloud Run, construct URL from K_SERVICE and other Cloud Run env vars
+        const serviceName = process.env.K_SERVICE || 'roastah-d';
+        const region = process.env.K_REVISION?.split('-')[1] || 'us-central1';
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'roastah-d';
+        callbackURL = `https://${serviceName}-${projectId.split('-')[1]}.${region}.run.app/api/auth/apple/callback`;
+      } else {
+        // Fallback to provided URL or construct from request
+        callbackURL = process.env.CLOUD_RUN_URL 
+          ? `https://${process.env.CLOUD_RUN_URL}/api/auth/apple/callback`
+          : 'https://roastah-d-188956418455.us-central1.run.app/api/auth/apple/callback';
+      }
+      
+      console.log('🔐 Apple OAuth callback URL:', callbackURL);
 
       passport.use(new AppleStrategy({
         clientID: process.env.APPLE_CLIENT_ID,

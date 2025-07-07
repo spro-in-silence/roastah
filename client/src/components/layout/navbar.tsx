@@ -273,8 +273,9 @@ export default function Navbar() {
               )}
 
               {/* Seller Navigation - Only show in seller mode */}
-              {isRoaster && (
+              {contextIsRoaster && (
                 <>
+                  {console.log('Seller navigation rendering:', { contextIsRoaster, userRole: user?.role, isRoasterApproved: user?.isRoasterApproved })}
                   <div className="border-t my-4"></div>
                   
                   <div className="px-3 py-2">

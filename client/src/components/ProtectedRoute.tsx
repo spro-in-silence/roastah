@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { UserProvider } from "@/contexts/UserContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,7 +9,7 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-export default function ProtectedRoute({ 
+function ProtectedRouteContent({ 
   children, 
   requireAuth = true, 
   requireRoaster = false,
@@ -52,4 +53,12 @@ export default function ProtectedRoute({
   }
 
   return <>{children}</>;
+}
+
+export default function ProtectedRoute(props: ProtectedRouteProps) {
+  return (
+    <UserProvider>
+      <ProtectedRouteContent {...props} />
+    </UserProvider>
+  );
 }

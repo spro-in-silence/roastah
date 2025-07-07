@@ -7,6 +7,7 @@ export function useAuth() {
     retry: false,
     staleTime: 5000, // Allow user data to be fresh for 5 seconds during impersonation
     refetchOnWindowFocus: true, // Refetch user when window gains focus
+    enabled: true, // Enable the query when this hook is used (in protected routes)
     queryFn: async () => {
       const response = await fetch("/api/auth/user");
       if (response.status === 401) {

@@ -57,14 +57,26 @@ function Router() {
         
         {/* Public Routes */}
         <Route path="/" element={<DevAwareLanding />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
         <Route path="/dev-login" element={<DevLogin />} />
         
         {/* Authentication Required Routes */}
+        <Route path="/products" element={
+          <ProtectedRoute requireAuth>
+            <Products />
+          </ProtectedRoute>
+        } />
+        <Route path="/products/:id" element={
+          <ProtectedRoute requireAuth>
+            <ProductDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/leaderboard" element={
+          <ProtectedRoute requireAuth>
+            <Leaderboard />
+          </ProtectedRoute>
+        } />
         <Route path="/home" element={
           <ProtectedRoute requireAuth>
             <Home />
@@ -143,12 +155,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </UserProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

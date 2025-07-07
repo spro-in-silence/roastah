@@ -142,6 +142,8 @@ Changelog:
 - July 07, 2025. Completed comprehensive Replit dependency analysis
 - July 07, 2025. Fixed seller impersonation in local development (database schema mismatch)
 - July 07, 2025. Enhanced development environment detection and credential bypass
+- July 07, 2025. Fixed hamburger menu role detection for buyer/seller impersonation
+- July 07, 2025. Optimized React Query cache invalidation for smooth user switching
 ```
 
 ## User Preferences

@@ -134,6 +134,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.60.5
         version: 5.81.5(react@18.3.1)
+      '@types/bcrypt':
+        specifier: ^5.0.2
+        version: 5.0.2
       '@types/memoizee':
         specifier: ^0.4.12
         version: 0.4.12
@@ -4353,6 +4356,9 @@ packages:
 
   '@types/base16@1.0.5':
     resolution: {integrity: sha512-OzOWrTluG9cwqidEzC/Q6FAmIPcnZfm8BFRlIx0+UIUqnuAmi5OS88O0RpT3Yz6qdmqObvUhasrbNsCofE4W9A==}
+
+  '@types/bcrypt@5.0.2':
+    resolution: {integrity: sha512-6atioO8Y75fNcbmj0G7UjI9lXN2pQ/IGJ2FWT4a/btd0Lk9lQalHLKhkgKVZ3r+spnmWUKfbMi1GEe9wyHQfNQ==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -14121,6 +14127,10 @@ snapshots:
       '@babel/types': 7.27.7
 
   '@types/base16@1.0.5': {}
+
+  '@types/bcrypt@5.0.2':
+    dependencies:
+      '@types/node': 20.16.11
 
   '@types/body-parser@1.19.6':
     dependencies:

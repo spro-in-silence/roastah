@@ -62,7 +62,7 @@ import {
   type MessageRecipient,
   type InsertMessageRecipient,
 } from "@shared/schema";
-import { db } from "./db";
+import { getDb } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -183,12 +183,12 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await getDb().select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await getDb()
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
@@ -203,7 +203,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserMFA(id: string, mfaData: { mfaEnabled?: boolean; mfaSecret?: string; backupCodes?: string[]; lastBackupCodeUsed?: Date }): Promise<User> {
-    const [user] = await db
+    const [user] = await getDb()
       .update(users)
       .set({
         ...mfaData,
@@ -215,7 +215,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserAddress(id: string, addressData: { addressLine1: string; addressLine2?: string; city: string; state: string; zipCode: string }): Promise<User> {
-    const [user] = await db
+    const [user] = await getDb()
       .update(users)
       .set({
         addressLine1: addressData.addressLine1,
@@ -232,10 +232,10 @@ export class DatabaseStorage implements IStorage {
 
   // Roaster operations
   async createRoaster(roaster: InsertRoaster): Promise<Roaster> {
-    const [newRoaster] = await db.insert(roasters).values(roaster).returning();
+    const [newRoaster] = await getDb().insert(roasters).values(roaster).returning();
     
     // Update user role to roaster
-    await db
+    await getDb()
       .update(users)
       .set({ role: "roaster", isRoasterApproved: true })
       .where(eq(users.id, roaster.userId));
@@ -244,7 +244,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoasterByUserId(userId: string): Promise<Roaster | undefined> {
-    const [roaster] = await db
+    const [roaster] = await getDb()
       .select()
       .from(roasters)
       .where(eq(roasters.userId, userId));
@@ -252,7 +252,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRoasterStatus(userId: string, isApproved: boolean): Promise<void> {
-    await db
+    await getDb()
       .update(users)
       .set({ isRoasterApproved: isApproved })
       .where(eq(users.id, userId));
@@ -260,7 +260,7 @@ export class DatabaseStorage implements IStorage {
 
   // Product operations
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(product).returning();
+    const [newProduct] = await getDb().insert(products).values(product).returning();
     return newProduct;
   }
 
@@ -282,11 +282,11 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    return await db.select().from(products).where(and(...conditions));
+    return await getDb().select().from(products).where(and(...conditions));
   }
 
   async getProductById(id: number): Promise<Product | undefined> {
-    const [product] = await db
+    const [product] = await getDb()
       .select()
       .from(products)
       .where(and(eq(products.id, id), eq(products.isActive, true)));
@@ -294,14 +294,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsByRoaster(roasterId: number): Promise<Product[]> {
-    return await db
+    return await getDb()
       .select()
       .from(products)
       .where(eq(products.roasterId, roasterId));
   }
 
   async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product> {
-    const [updated] = await db
+    const [updated] = await getDb()
       .update(products)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(products.id, id))
@@ -310,7 +310,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteProduct(id: number): Promise<void> {
-    await db
+    await getDb()
       .update(products)
       .set({ isActive: false })
       .where(eq(products.id, id));
@@ -319,7 +319,7 @@ export class DatabaseStorage implements IStorage {
   // Cart operations
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
     // Check if item already exists
-    const [existing] = await db
+    const [existing] = await getDb()
       .select()
       .from(cartItems)
       .where(
@@ -332,7 +332,7 @@ export class DatabaseStorage implements IStorage {
 
     if (existing) {
       // Update quantity
-      const [updated] = await db
+      const [updated] = await getDb()
         .update(cartItems)
         .set({ quantity: existing.quantity + (cartItem.quantity || 1) })
         .where(eq(cartItems.id, existing.id))
@@ -340,17 +340,17 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       // Insert new item
-      const [newItem] = await db.insert(cartItems).values(cartItem).returning();
+      const [newItem] = await getDb().insert(cartItems).values(cartItem).returning();
       return newItem;
     }
   }
 
   async getCartByUserId(userId: string): Promise<CartItem[]> {
-    return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+    return await getDb().select().from(cartItems).where(eq(cartItems.userId, userId));
   }
 
   async updateCartItem(id: number, quantity: number): Promise<CartItem> {
-    const [updated] = await db
+    const [updated] = await getDb()
       .update(cartItems)
       .set({ quantity })
       .where(eq(cartItems.id, id))
@@ -359,26 +359,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeFromCart(id: number): Promise<void> {
-    await db.delete(cartItems).where(eq(cartItems.id, id));
+    await getDb().delete(cartItems).where(eq(cartItems.id, id));
   }
 
   async clearCart(userId: string): Promise<void> {
-    await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    await getDb().delete(cartItems).where(eq(cartItems.userId, userId));
   }
 
   // Order operations
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db.insert(orders).values(order).returning();
+    const [newOrder] = await getDb().insert(orders).values(order).returning();
     return newOrder;
   }
 
   async getOrderById(id: number): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    const [order] = await getDb().select().from(orders).where(eq(orders.id, id));
     return order;
   }
 
   async getOrdersByUserId(userId: string): Promise<Order[]> {
-    return await db
+    return await getDb()
       .select()
       .from(orders)
       .where(eq(orders.userId, userId))
@@ -386,7 +386,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrderItemsByRoaster(roasterId: number): Promise<OrderItem[]> {
-    return await db
+    return await getDb()
       .select()
       .from(orderItems)
       .where(eq(orderItems.roasterId, roasterId))
@@ -394,14 +394,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOrderStatus(id: number, status: string): Promise<void> {
-    await db
+    await getDb()
       .update(orders)
       .set({ status, updatedAt: new Date() })
       .where(eq(orders.id, id));
   }
 
   async updateOrderItemStatus(id: number, status: string): Promise<void> {
-    await db
+    await getDb()
       .update(orderItems)
       .set({ status })
       .where(eq(orderItems.id, id));
@@ -409,7 +409,7 @@ export class DatabaseStorage implements IStorage {
 
   // Review operations
   async createReview(review: InsertReview): Promise<Review> {
-    const [newReview] = await db
+    const [newReview] = await getDb()
       .insert(reviews)
       .values(review)
       .returning();
@@ -417,7 +417,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReviewsByProductId(productId: number): Promise<Review[]> {
-    return await db
+    return await getDb()
       .select({
         id: reviews.id,
         userId: reviews.userId,
@@ -441,7 +441,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateReviewHelpful(id: number): Promise<void> {
-    await db
+    await getDb()
       .update(reviews)
       .set({ helpfulVotes: sql`${reviews.helpfulVotes} + 1` })
       .where(eq(reviews.id, id));
@@ -449,7 +449,7 @@ export class DatabaseStorage implements IStorage {
 
   // Wishlist operations
   async addToWishlist(item: InsertWishlistItem): Promise<WishlistItem> {
-    const [newItem] = await db
+    const [newItem] = await getDb()
       .insert(wishlist)
       .values(item)
       .returning();
@@ -457,7 +457,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWishlistByUserId(userId: string): Promise<WishlistItem[]> {
-    return await db
+    return await getDb()
       .select({
         id: wishlist.id,
         userId: wishlist.userId,
@@ -479,14 +479,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeFromWishlist(userId: string, productId: number): Promise<void> {
-    await db
+    await getDb()
       .delete(wishlist)
       .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
   }
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const [newNotification] = await db
+    const [newNotification] = await getDb()
       .insert(notifications)
       .values(notification)
       .returning();
@@ -494,7 +494,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNotificationsByUserId(userId: string): Promise<Notification[]> {
-    return await db
+    return await getDb()
       .select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
@@ -502,28 +502,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markNotificationAsRead(id: number): Promise<void> {
-    await db
+    await getDb()
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, id));
   }
 
   async markAllNotificationsAsRead(userId: string): Promise<void> {
-    await db
+    await getDb()
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.userId, userId));
   }
 
   async deleteNotification(id: number): Promise<void> {
-    await db
+    await getDb()
       .delete(notifications)
       .where(eq(notifications.id, id));
   }
 
   // Commission operations
   async createCommission(commission: InsertCommission): Promise<Commission> {
-    const [newCommission] = await db
+    const [newCommission] = await getDb()
       .insert(commissions)
       .values(commission)
       .returning();
@@ -531,7 +531,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCommissionsByRoaster(roasterId: number): Promise<Commission[]> {
-    return await db
+    return await getDb()
       .select()
       .from(commissions)
       .where(eq(commissions.roasterId, roasterId))
@@ -539,7 +539,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCommissionStatus(id: number, status: string, paidAt?: Date): Promise<void> {
-    await db
+    await getDb()
       .update(commissions)
       .set({ status, paidAt })
       .where(eq(commissions.id, id));
@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
 
   // Seller analytics operations
   async createSellerAnalytics(analytics: InsertSellerAnalytics): Promise<SellerAnalytics> {
-    const [newAnalytics] = await db
+    const [newAnalytics] = await getDb()
       .insert(sellerAnalytics)
       .values(analytics)
       .returning();
@@ -556,7 +556,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSellerAnalyticsByRoaster(roasterId: number, startDate?: Date, endDate?: Date): Promise<SellerAnalytics[]> {
     if (startDate && endDate) {
-      return await db
+      return await getDb()
         .select()
         .from(sellerAnalytics)
         .where(
@@ -569,7 +569,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${sellerAnalytics.date} desc`);
     }
 
-    return await db
+    return await getDb()
       .select()
       .from(sellerAnalytics)
       .where(eq(sellerAnalytics.roasterId, roasterId))
@@ -577,7 +577,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSellerAnalytics(roasterId: number, date: Date, updates: Partial<InsertSellerAnalytics>): Promise<void> {
-    await db
+    await getDb()
       .update(sellerAnalytics)
       .set(updates)
       .where(
@@ -590,7 +590,7 @@ export class DatabaseStorage implements IStorage {
 
   // Campaign operations
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
-    const [newCampaign] = await db
+    const [newCampaign] = await getDb()
       .insert(campaigns)
       .values(campaign)
       .returning();
@@ -598,7 +598,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaignsByRoaster(roasterId: number): Promise<Campaign[]> {
-    return await db
+    return await getDb()
       .select()
       .from(campaigns)
       .where(eq(campaigns.roasterId, roasterId))
@@ -606,7 +606,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCampaign(id: number, updates: Partial<InsertCampaign>): Promise<Campaign> {
-    const [updatedCampaign] = await db
+    const [updatedCampaign] = await getDb()
       .update(campaigns)
       .set(updates)
       .where(eq(campaigns.id, id))
@@ -615,11 +615,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCampaign(id: number): Promise<void> {
-    await db.delete(campaigns).where(eq(campaigns.id, id));
+    await getDb().delete(campaigns).where(eq(campaigns.id, id));
   }
 
   async incrementCampaignUsage(id: number): Promise<void> {
-    await db
+    await getDb()
       .update(campaigns)
       .set({ usedCount: sql`${campaigns.usedCount} + 1` })
       .where(eq(campaigns.id, id));
@@ -627,7 +627,7 @@ export class DatabaseStorage implements IStorage {
 
   // Bulk upload operations
   async createBulkUpload(upload: InsertBulkUpload): Promise<BulkUpload> {
-    const [newUpload] = await db
+    const [newUpload] = await getDb()
       .insert(bulkUploads)
       .values(upload)
       .returning();
@@ -635,7 +635,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBulkUploadsByRoaster(roasterId: number): Promise<BulkUpload[]> {
-    return await db
+    return await getDb()
       .select()
       .from(bulkUploads)
       .where(eq(bulkUploads.roasterId, roasterId))
@@ -648,7 +648,7 @@ export class DatabaseStorage implements IStorage {
       updateData.completedAt = new Date();
     }
     
-    await db
+    await getDb()
       .update(bulkUploads)
       .set(updateData)
       .where(eq(bulkUploads.id, id));
@@ -656,7 +656,7 @@ export class DatabaseStorage implements IStorage {
 
   // Dispute operations
   async createDispute(dispute: InsertDispute): Promise<Dispute> {
-    const [newDispute] = await db
+    const [newDispute] = await getDb()
       .insert(disputes)
       .values(dispute)
       .returning();
@@ -664,7 +664,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDisputesByRoaster(roasterId: number): Promise<Dispute[]> {
-    return await db
+    return await getDb()
       .select()
       .from(disputes)
       .where(eq(disputes.roasterId, roasterId))
@@ -672,7 +672,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDisputesByCustomer(customerId: string): Promise<Dispute[]> {
-    return await db
+    return await getDb()
       .select()
       .from(disputes)
       .where(eq(disputes.customerId, customerId))
@@ -688,7 +688,7 @@ export class DatabaseStorage implements IStorage {
       updateData.resolvedAt = new Date();
     }
     
-    await db
+    await getDb()
       .update(disputes)
       .set(updateData)
       .where(eq(disputes.id, id));
@@ -696,7 +696,7 @@ export class DatabaseStorage implements IStorage {
 
   // Real-time tracking operations
   async createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking> {
-    const [result] = await db
+    const [result] = await getDb()
       .insert(orderTracking)
       .values(tracking)
       .returning();
@@ -704,7 +704,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrderTracking(orderId: number): Promise<OrderTracking[]> {
-    return await db
+    return await getDb()
       .select()
       .from(orderTracking)
       .where(eq(orderTracking.orderId, orderId))
@@ -712,7 +712,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOrderTracking(id: number, updates: Partial<InsertOrderTracking>): Promise<OrderTracking> {
-    const [result] = await db
+    const [result] = await getDb()
       .update(orderTracking)
       .set(updates)
       .where(eq(orderTracking.id, id))
@@ -722,7 +722,7 @@ export class DatabaseStorage implements IStorage {
 
   // Real-time connection operations
   async createRealtimeConnection(connection: InsertRealtimeConnection): Promise<RealtimeConnection> {
-    const [result] = await db
+    const [result] = await getDb()
       .insert(realtimeConnections)
       .values(connection)
       .returning();
@@ -730,7 +730,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRealtimeConnectionsByUser(userId: string): Promise<RealtimeConnection[]> {
-    return await db
+    return await getDb()
       .select()
       .from(realtimeConnections)
       .where(eq(realtimeConnections.userId, userId))
@@ -738,26 +738,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRealtimeConnection(id: number, updates: Partial<InsertRealtimeConnection>): Promise<void> {
-    await db
+    await getDb()
       .update(realtimeConnections)
       .set(updates)
       .where(eq(realtimeConnections.id, id));
   }
 
   async removeRealtimeConnection(connectionId: string): Promise<void> {
-    await db
+    await getDb()
       .delete(realtimeConnections)
       .where(eq(realtimeConnections.connectionId, connectionId));
   }
 
   // Enhanced order operations for real-time features
   async getRoasterById(id: number): Promise<Roaster | undefined> {
-    const [roaster] = await db.select().from(roasters).where(eq(roasters.id, id));
+    const [roaster] = await getDb().select().from(roasters).where(eq(roasters.id, id));
     return roaster;
   }
 
   async getOrderItemsByOrder(orderId: number): Promise<OrderItem[]> {
-    return await db
+    return await getDb()
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
@@ -796,7 +796,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Get leaderboard with comprehensive metrics
-    const result = await db
+    const result = await getDb()
       .select({
         id: roasters.id,
         userId: roasters.userId,
@@ -829,7 +829,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateRoasterMetrics(roasterId: number): Promise<void> {
     // Calculate average rating and review count
-    const reviewStats = await db
+    const reviewStats = await getDb()
       .select({
         avgRating: sql<number>`COALESCE(AVG(${reviews.rating}::numeric), 0)`,
         reviewCount: sql<number>`COUNT(${reviews.id})`,
@@ -839,7 +839,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(products.roasterId, roasterId));
 
     // Calculate sales metrics
-    const salesStats = await db
+    const salesStats = await getDb()
       .select({
         totalOrders: sql<number>`COUNT(DISTINCT ${orders.id})`,
         totalRevenue: sql<number>`COALESCE(SUM(${orderItems.price} * ${orderItems.quantity}), 0)`,
@@ -861,7 +861,7 @@ export class DatabaseStorage implements IStorage {
     );
 
     // Update roaster metrics
-    await db
+    await getDb()
       .update(roasters)
       .set({
         averageRating: avgRating.toString(),
@@ -875,7 +875,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async calculateLeaderboardScore(roasterId: number): Promise<number> {
-    const [roaster] = await db
+    const [roaster] = await getDb()
       .select({
         averageRating: roasters.averageRating,
         totalReviews: roasters.totalReviews,
@@ -903,7 +903,7 @@ export class DatabaseStorage implements IStorage {
   async addFavoriteRoaster(userId: string, roasterId: number): Promise<FavoriteRoaster> {
     try {
       console.log(`Storage: Adding favorite - userId: ${userId}, roasterId: ${roasterId}`);
-      const [favorite] = await db
+      const [favorite] = await getDb()
         .insert(favoriteRoasters)
         .values({ userId, roasterId })
         .returning();
@@ -916,7 +916,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeFavoriteRoaster(userId: string, roasterId: number): Promise<void> {
-    await db
+    await getDb()
       .delete(favoriteRoasters)
       .where(
         and(
@@ -927,7 +927,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFavoriteRoastersByUser(userId: string): Promise<any[]> {
-    const favorites = await db
+    const favorites = await getDb()
       .select({
         id: favoriteRoasters.id,
         roasterId: favoriteRoasters.roasterId,
@@ -953,7 +953,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isFavoriteRoaster(userId: string, roasterId: number): Promise<boolean> {
-    const [favorite] = await db
+    const [favorite] = await getDb()
       .select({ id: favoriteRoasters.id })
       .from(favoriteRoasters)
       .where(
@@ -976,7 +976,7 @@ export class DatabaseStorage implements IStorage {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     
-    const [giftCard] = await db
+    const [giftCard] = await getDb()
       .insert(giftCards)
       .values({
         ...giftCardData,
@@ -989,17 +989,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGiftCardById(id: number): Promise<GiftCard | undefined> {
-    const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.id, id));
+    const [giftCard] = await getDb().select().from(giftCards).where(eq(giftCards.id, id));
     return giftCard;
   }
 
   async getGiftCardByCode(code: string): Promise<GiftCard | undefined> {
-    const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.code, code));
+    const [giftCard] = await getDb().select().from(giftCards).where(eq(giftCards.code, code));
     return giftCard;
   }
 
   async getGiftCardsByPurchaser(purchaserId: string): Promise<GiftCard[]> {
-    return await db
+    return await getDb()
       .select()
       .from(giftCards)
       .where(eq(giftCards.purchaserId, purchaserId))
@@ -1007,7 +1007,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async redeemGiftCard(code: string, userId: string, amount: number): Promise<GiftCard> {
-    const [giftCard] = await db
+    const [giftCard] = await getDb()
       .update(giftCards)
       .set({
         redeemedBy: userId,
@@ -1022,7 +1022,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGiftCardStatus(id: number, status: string): Promise<void> {
-    await db
+    await getDb()
       .update(giftCards)
       .set({ status, updatedAt: new Date() })
       .where(eq(giftCards.id, id));
@@ -1041,7 +1041,7 @@ export class DatabaseStorage implements IStorage {
 
   // Message Subject operations
   async getAllMessageSubjects(): Promise<MessageSubject[]> {
-    return await db
+    return await getDb()
       .select()
       .from(messageSubjects)
       .where(eq(messageSubjects.isActive, true))
@@ -1049,7 +1049,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessageSubject(subject: InsertMessageSubject): Promise<MessageSubject> {
-    const [newSubject] = await db
+    const [newSubject] = await getDb()
       .insert(messageSubjects)
       .values(subject)
       .returning();
@@ -1058,7 +1058,7 @@ export class DatabaseStorage implements IStorage {
 
   // Seller Message operations
   async createSellerMessage(message: InsertSellerMessage): Promise<SellerMessage> {
-    const [newMessage] = await db
+    const [newMessage] = await getDb()
       .insert(sellerMessages)
       .values(message)
       .returning();
@@ -1066,7 +1066,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSellerMessages(sellerId: number): Promise<any[]> {
-    return await db
+    return await getDb()
       .select({
         id: sellerMessages.id,
         sellerId: sellerMessages.sellerId,
@@ -1088,7 +1088,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSellerMessageById(messageId: number): Promise<any | undefined> {
-    const [message] = await db
+    const [message] = await getDb()
       .select({
         id: sellerMessages.id,
         sellerId: sellerMessages.sellerId,
@@ -1115,14 +1115,14 @@ export class DatabaseStorage implements IStorage {
 
   // Message Recipient operations
   async createMessageRecipients(recipients: InsertMessageRecipient[]): Promise<MessageRecipient[]> {
-    return await db
+    return await getDb()
       .insert(messageRecipients)
       .values(recipients)
       .returning();
   }
 
   async getUserMessages(userId: string): Promise<any[]> {
-    return await db
+    return await getDb()
       .select({
         id: messageRecipients.id,
         messageId: messageRecipients.messageId,
@@ -1152,7 +1152,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnreadMessageCount(userId: string): Promise<number> {
-    const [result] = await db
+    const [result] = await getDb()
       .select({ count: sql<number>`count(*)` })
       .from(messageRecipients)
       .where(
@@ -1165,7 +1165,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markMessageAsRead(userId: string, messageId: number): Promise<void> {
-    await db
+    await getDb()
       .update(messageRecipients)
       .set({ 
         isRead: true, 
@@ -1180,7 +1180,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markEmailAsSent(userId: string, messageId: number): Promise<void> {
-    await db
+    await getDb()
       .update(messageRecipients)
       .set({ 
         emailSent: true, 
@@ -1197,14 +1197,14 @@ export class DatabaseStorage implements IStorage {
   // Get recipients for a seller's message (favorites + past buyers)
   async getMessageRecipients(sellerId: number): Promise<string[]> {
     // Get users who favorited this seller's products
-    const favoriteUsers = await db
+    const favoriteUsers = await getDb()
       .select({ userId: wishlist.userId })
       .from(wishlist)
       .leftJoin(products, eq(wishlist.productId, products.id))
       .where(eq(products.roasterId, sellerId));
 
     // Get users who have purchased from this seller
-    const pastBuyers = await db
+    const pastBuyers = await getDb()
       .select({ userId: orders.userId })
       .from(orders)
       .leftJoin(orderItems, eq(orders.id, orderItems.orderId))

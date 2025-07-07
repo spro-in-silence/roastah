@@ -1,8 +1,10 @@
-import { db } from './server/db';
+import { getDb } from './server/db';
 
 async function fixUserIdColumn() {
   try {
     console.log('Fixing users table ID column from integer to varchar...');
+    
+    const db = getDb();
     
     // Check current data
     const currentData = await db.execute(`

@@ -5,7 +5,7 @@ import multer from "multer";
 import * as fs from "fs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { db } from "./db";
+import { getDb } from "./db";
 import { eq, and, gte, desc, asc } from "drizzle-orm";
 import { 
   authLimiter, paymentLimiter, uploadLimiter, 
@@ -73,11 +73,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   medusaBridge.setupRoutes();
 
   // Auth routes
-  app.get('/api/auth/user', enhancedAuthCheck, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
       // Check if there's an impersonated user first
-      const userId = req.session.user?.sub || req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.claims?.sub;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
       // Get roaster info if user is a roaster
       let roaster = null;
@@ -424,6 +433,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.tokens = {
           accessToken: 'dev-access-token',
           refreshToken: 'dev-refresh-token',
+        };
+        
+        // Set up req.user for enhancedAuthCheck compatibility
+        req.user = {
+          claims: {
+            sub: devUserId,
+            email: devUserData.email,
+            name: `${devUserData.firstName} ${devUserData.lastName}`,
+            role: devUserData.role
+          }
         };
       }
 
@@ -851,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const roasterEarnings = saleAmount - platformFee;
 
         // Create order item
-        const orderItem = await db.insert(orderItems).values({
+        const orderItem = await getDb().insert(orderItems).values({
           orderId: order.id,
           productId: item.productId,
           roasterId: product.roasterId,
@@ -896,7 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/process-payouts', isAuthenticated, async (req, res) => {
     try {
       // Get all pending commissions grouped by roaster
-      const pendingCommissions = await db
+      const pendingCommissions = await getDb()
         .select()
         .from(commissions)
         .where(eq(commissions.status, 'pending'));

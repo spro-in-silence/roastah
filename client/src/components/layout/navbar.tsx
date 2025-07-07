@@ -15,21 +15,8 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // Use context isRoaster directly for impersonated users, otherwise use localStorage
-  const [isRoaster, setIsRoaster] = useState(() => {
-    // For development impersonated users, always use the context value
-    if (user?.id?.startsWith('dev-')) {
-      return contextIsRoaster;
-    }
-    
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('userMode');
-      if (savedMode !== null) {
-        return savedMode === 'seller';
-      }
-    }
-    return contextIsRoaster;
-  });
+  // Initialize with context value, will be updated in useEffect
+  const [isRoaster, setIsRoaster] = useState(contextIsRoaster);
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
@@ -40,21 +27,27 @@ export default function Navbar() {
 
   // Sync with context when user changes (including impersonation)
   useEffect(() => {
-    if (typeof window !== 'undefined' && isAuthenticated && user) {
+    if (typeof window !== 'undefined') {
       // For impersonated users, always use the context value
       if (user?.id?.startsWith('dev-')) {
+        console.log('Navbar: Updating for impersonated user', user.id, 'contextIsRoaster:', contextIsRoaster);
         setIsRoaster(contextIsRoaster);
         localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
-      } else {
-        // For real users, sync if no saved preference exists
+      } else if (isAuthenticated && user) {
+        // For real users, check localStorage first
         const savedMode = localStorage.getItem('userMode');
-        if (savedMode === null) {
+        if (savedMode !== null) {
+          setIsRoaster(savedMode === 'seller');
+        } else {
           setIsRoaster(contextIsRoaster);
           localStorage.setItem('userMode', contextIsRoaster ? 'seller' : 'buyer');
         }
+      } else if (!isAuthenticated) {
+        // Reset to default when not authenticated
+        setIsRoaster(false);
       }
     }
-  }, [contextIsRoaster, user?.id, isAuthenticated]);
+  }, [contextIsRoaster, user?.id, isAuthenticated, user]);
 
   // Handle mode switching with persistence and navigation
   const handleModeSwitch = () => {

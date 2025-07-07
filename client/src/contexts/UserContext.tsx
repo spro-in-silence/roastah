@@ -19,6 +19,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     user?.id?.startsWith('dev-seller-') // Development impersonated sellers are always approved
   );
 
+  // Debug logging for impersonated users
+  if (user?.id?.startsWith('dev-')) {
+    console.log('UserContext: Impersonated user detected', {
+      userId: user.id,
+      role: user.role,
+      isRoasterApproved: user.isRoasterApproved,
+      calculatedIsRoaster: isRoaster
+    });
+  }
+
   return (
     <UserContext.Provider value={{ user, isLoading, isAuthenticated, isRoaster }}>
       {children}

@@ -5,7 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function SellerLayout() {
   return (
-    <ProtectedRoute requireAuth requireRoaster>
+    <ProtectedRoute requireAuth>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <main>

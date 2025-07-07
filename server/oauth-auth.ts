@@ -253,8 +253,8 @@ export async function setupOAuth(app: Express) {
 
   // Get current user endpoint
   app.get('/api/auth/user', (req, res) => {
-    if (isDevelopment && req.session.user?.sub) {
-      // Development impersonation
+    if (isDevelopment && req.session?.user?.sub) {
+      // Development impersonation - return the session user data
       return res.json(req.session.user);
     }
     

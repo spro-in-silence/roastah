@@ -33,7 +33,8 @@ function ProtectedRouteContent({
   }
 
   // Redirect to become-roastah if roaster status required but not approved
-  if (requireRoaster && isAuthenticated && !(user as any)?.isRoasterApproved) {
+  // Skip this check for development impersonated users
+  if (requireRoaster && isAuthenticated && !(user as any)?.isRoasterApproved && !(user as any)?.id?.startsWith('dev-')) {
     return <Navigate to={redirectTo || "/become-roastah"} replace />;
   }
 

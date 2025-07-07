@@ -252,18 +252,42 @@ export async function setupOAuth(app: Express) {
   }
 
   // Get current user endpoint
-  app.get('/api/auth/user', (req, res) => {
-    if (isDevelopment && req.session?.user?.sub) {
-      // Development impersonation - return the session user data
-      return res.json(req.session.user);
+  app.get('/api/auth/user', async (req, res) => {
+    try {
+      if (isDevelopment && req.session?.user?.sub) {
+        // Development impersonation - get full user data from storage
+        const userId = req.session.user.sub;
+        const user = await storage.getUser(userId);
+        
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Get roaster info if user is a roaster
+        let roaster = null;
+        if (user?.role === 'roaster') {
+          roaster = await storage.getRoasterByUserId(userId);
+        }
+        
+        const response = { 
+          ...user, 
+          roaster,
+          mfaRequired: !!(roaster || user?.role === 'admin'),
+        };
+        
+        return res.json(response);
+      }
+      
+      if (req.user?.id) {
+        // Production OAuth
+        return res.json(req.user);
+      }
+      
+      res.status(401).json({ error: 'Not authenticated' });
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(500).json({ error: 'Failed to fetch user' });
     }
-    
-    if (req.user?.id) {
-      // Production OAuth
-      return res.json(req.user);
-    }
-    
-    res.status(401).json({ error: 'Not authenticated' });
   });
 
   // Email/Password authentication endpoints

@@ -25,7 +25,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       userId: user.id,
       role: user.role,
       isRoasterApproved: user.isRoasterApproved,
-      calculatedIsRoaster: isRoaster
+      calculatedIsRoaster: isRoaster,
+      fullUser: user
     });
   }
 

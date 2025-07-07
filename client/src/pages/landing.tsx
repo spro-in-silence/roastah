@@ -24,7 +24,7 @@ export default function Landing() {
                 Top Roasters
               </Link>
               <Button
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/auth'}
                 size="sm"
                 className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500"
               >
@@ -58,7 +58,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/auth'}
                 size="lg"
                 className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold"
               >

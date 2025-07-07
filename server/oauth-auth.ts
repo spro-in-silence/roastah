@@ -266,6 +266,93 @@ export async function setupOAuth(app: Express) {
     res.status(401).json({ error: 'Not authenticated' });
   });
 
+  // Email/Password authentication endpoints
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'User with this email already exists' });
+      }
+
+      // Hash password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create user
+      const user = await storage.upsertUser({
+        id: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        name,
+        username: email.split('@')[0],
+        password: hashedPassword,
+        role: 'user',
+        mfaEnabled: false,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        onboardingCompleted: false,
+        profileComplete: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Log in the user
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to log in after registration' });
+        }
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      // Verify password
+      const bcrypt = require('bcrypt');
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      // Log in the user
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to log in' });
+        }
+        res.json(user);
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Common logout route
   app.post('/api/auth/logout', (req, res) => {
     req.logout(() => {

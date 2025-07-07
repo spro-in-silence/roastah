@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function SellerOrders() {
-  const { isAuthenticated, isLoading, isRoaster } = useUser();
+  const { isAuthenticated, isLoading, isRoaster, user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,7 +38,8 @@ export default function SellerOrders() {
       return;
     }
 
-    if (!isLoading && isAuthenticated && !isRoaster) {
+    // Skip roaster check for development impersonated users
+    if (!isLoading && isAuthenticated && !isRoaster && !user?.id?.startsWith('dev-seller-')) {
       toast({
         title: "Access Denied",
         description: "You need to be a roaster to access this page.",

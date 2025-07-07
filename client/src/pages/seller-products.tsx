@@ -61,7 +61,7 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>;
 
 export default function SellerProducts() {
-  const { isAuthenticated, isLoading, isRoaster } = useUser();
+  const { isAuthenticated, isLoading, isRoaster, user } = useUser();
   const { toast } = useToast();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -94,7 +94,8 @@ export default function SellerProducts() {
       return;
     }
 
-    if (!isLoading && isAuthenticated && !isRoaster) {
+    // Skip roaster check for development impersonated users
+    if (!isLoading && isAuthenticated && !isRoaster && !user?.id?.startsWith('dev-seller-')) {
       toast({
         title: "Access Denied",
         description: "You need to be a roaster to access this page.",

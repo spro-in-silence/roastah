@@ -34,7 +34,7 @@ const productSchema = z.object({
 type ProductForm = z.infer<typeof productSchema>;
 
 export default function SellerProductsNew() {
-  const { isAuthenticated, isLoading, isRoaster } = useUser();
+  const { isAuthenticated, isLoading, isRoaster, user } = useUser();
   const { toast } = useToast();
   const navigate = useLocation();
   const queryClient = useQueryClient();
@@ -68,9 +68,9 @@ export default function SellerProductsNew() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Redirect if not a roaster
+  // Skip roaster check for development impersonated users
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !isRoaster) {
+    if (!isLoading && isAuthenticated && !isRoaster && !user?.id?.startsWith('dev-seller-')) {
       toast({
         title: "Access Denied",
         description: "You need to be a roaster to access this page.",
@@ -80,7 +80,7 @@ export default function SellerProductsNew() {
         window.location.href = "/become-roastah";
       }, 1000);
     }
-  }, [isAuthenticated, isLoading, isRoaster, toast]);
+  }, [isAuthenticated, isLoading, isRoaster, user, toast]);
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductForm) => {

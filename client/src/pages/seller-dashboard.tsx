@@ -13,7 +13,7 @@ import SellerAnalyticsDashboard from "@/components/seller-analytics-dashboard";
 import BulkProductUpload from "@/components/bulk-product-upload";
 
 export default function SellerDashboard() {
-  const { isAuthenticated, isLoading, isRoaster } = useUser();
+  const { isAuthenticated, isLoading, isRoaster, user } = useUser();
   const { toast } = useToast();
 
   // Redirect to login if not authenticated
@@ -30,7 +30,8 @@ export default function SellerDashboard() {
       return;
     }
 
-    if (!isLoading && isAuthenticated && !isRoaster) {
+    // Skip roaster check for development impersonated users
+    if (!isLoading && isAuthenticated && !isRoaster && !user?.id?.startsWith('dev-seller-')) {
       toast({
         title: "Access Denied",
         description: "You need to be a roaster to access this page.",

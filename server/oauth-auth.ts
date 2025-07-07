@@ -85,6 +85,15 @@ export async function setupOAuth(app: Express) {
     }
   });
 
+  // Always provide a login endpoint
+  app.get('/api/login', (req, res) => {
+    if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+      res.redirect('/api/auth/google');
+    } else {
+      res.status(500).json({ error: 'OAuth not configured. Please set up Google OAuth credentials.' });
+    }
+  });
+
   // Google OAuth Strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     console.log('🔐 Setting up Google OAuth');
@@ -117,11 +126,8 @@ export async function setupOAuth(app: Express) {
         res.redirect('/');
       }
     );
-
-    // Login endpoint that redirects to Google OAuth
-    app.get('/api/login', (req, res) => {
-      res.redirect('/api/auth/google');
-    });
+  } else {
+    console.warn('⚠️ Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
   }
 
   // GitHub OAuth Strategy
@@ -199,6 +205,21 @@ export async function setupOAuth(app: Express) {
       console.warn('⚠️ Apple OAuth not available, install passport-apple if needed');
     }
   }
+
+  // Get current user endpoint
+  app.get('/api/auth/user', (req, res) => {
+    if (isDevelopment && req.session.user?.sub) {
+      // Development impersonation
+      return res.json(req.session.user);
+    }
+    
+    if (req.user?.id) {
+      // Production OAuth
+      return res.json(req.user);
+    }
+    
+    res.status(401).json({ error: 'Not authenticated' });
+  });
 
   // Common logout route
   app.post('/api/auth/logout', (req, res) => {

@@ -29,7 +29,9 @@ export async function loadSecrets(): Promise<void> {
     const requiredSecrets = [
       'DATABASE_URL',
       'SESSION_SECRET', 
-      'STRIPE_SECRET_KEY'
+      'STRIPE_SECRET_KEY',
+      'GOOGLE_CLIENT_ID',
+      'GOOGLE_CLIENT_SECRET'
     ];
     
     // Load all secrets in parallel

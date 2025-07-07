@@ -1,25 +1,17 @@
 import type { Express } from "express";
 
 // Environment detection
-const isReplit = process.env.REPL_ID !== undefined;
 const isCloudRun = process.env.K_SERVICE !== undefined;
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-console.log(`🔐 Auth Router: Replit=${isReplit}, CloudRun=${isCloudRun}`);
+console.log(`🔐 Auth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}`);
 
 export async function setupAuthentication(app: Express) {
-  if (isReplit) {
-    // Use Replit Auth in Replit environment
-    console.log('🔐 Loading Replit authentication...');
-    const { setupAuth, isAuthenticated } = await import('./replitAuth');
-    await setupAuth(app);
-    return { isAuthenticated };
-  } else {
-    // Use OAuth in Cloud Run or other environments
-    console.log('🔐 Loading OAuth authentication...');
-    const { setupOAuth, isAuthenticated } = await import('./oauth-auth');
-    await setupOAuth(app);
-    return { isAuthenticated };
-  }
+  // Always use OAuth system - it handles both development and production
+  console.log('🔐 Setting up OAuth authentication system...');
+  const { setupOAuth, isAuthenticated } = await import('./oauth-auth');
+  await setupOAuth(app);
+  return { isAuthenticated };
 }
 
-export { isReplit, isCloudRun };
+export { isCloudRun, isDevelopment };

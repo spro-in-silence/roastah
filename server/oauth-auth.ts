@@ -7,10 +7,10 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 // Environment detection
-const isReplit = process.env.REPL_ID !== undefined;
+const isDevelopment = process.env.NODE_ENV === 'development';
 const isCloudRun = process.env.K_SERVICE !== undefined;
 
-console.log(`🔐 OAuth Environment: Replit=${isReplit}, CloudRun=${isCloudRun}`);
+console.log(`🔐 OAuth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}`);
 
 // Session configuration
 export function getSession() {
@@ -73,9 +73,15 @@ export async function setupOAuth(app: Express) {
   passport.deserializeUser(async (id: string, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (user) {
+        done(null, user);
+      } else {
+        // User not found, clear session
+        done(null, false);
+      }
     } catch (error) {
-      done(error, null);
+      console.warn('Error deserializing user:', error);
+      done(null, false);
     }
   });
 
@@ -83,9 +89,9 @@ export async function setupOAuth(app: Express) {
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     console.log('🔐 Setting up Google OAuth');
     
-    const callbackURL = isCloudRun 
-      ? `https://${process.env.CLOUD_RUN_URL}/api/auth/google/callback`
-      : `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`;
+    const callbackURL = isDevelopment 
+      ? `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`
+      : `https://${process.env.CLOUD_RUN_URL}/api/auth/google/callback`;
 
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
@@ -117,9 +123,9 @@ export async function setupOAuth(app: Express) {
   if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     console.log('🔐 Setting up GitHub OAuth');
     
-    const callbackURL = isCloudRun 
-      ? `https://${process.env.CLOUD_RUN_URL}/api/auth/github/callback`
-      : `http://localhost:${process.env.PORT || 5000}/api/auth/github/callback`;
+    const callbackURL = isDevelopment 
+      ? `http://localhost:${process.env.PORT || 5000}/api/auth/github/callback`
+      : `https://${process.env.CLOUD_RUN_URL}/api/auth/github/callback`;
 
     passport.use(new GitHubStrategy({
       clientID: process.env.GITHUB_CLIENT_ID,
@@ -154,9 +160,9 @@ export async function setupOAuth(app: Express) {
     try {
       const { Strategy: AppleStrategy } = require('passport-apple');
       
-      const callbackURL = isCloudRun 
-        ? `https://${process.env.CLOUD_RUN_URL}/api/auth/apple/callback`
-        : `http://localhost:${process.env.PORT || 5000}/api/auth/apple/callback`;
+      const callbackURL = isDevelopment 
+        ? `http://localhost:${process.env.PORT || 5000}/api/auth/apple/callback`
+        : `https://${process.env.CLOUD_RUN_URL}/api/auth/apple/callback`;
 
       passport.use(new AppleStrategy({
         clientID: process.env.APPLE_CLIENT_ID,
@@ -206,6 +212,12 @@ export async function setupOAuth(app: Express) {
 
 // Authentication middleware
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // In development, allow impersonated users
+  if (isDevelopment && req.session.user?.sub) {
+    return next();
+  }
+  
+  // In production, require OAuth authentication
   if (req.user?.id) {
     return next();
   }
@@ -213,4 +225,4 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   res.status(401).json({ error: "Authentication required" });
 };
 
-export { isReplit, isCloudRun };
+export { isDevelopment, isCloudRun };

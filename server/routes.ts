@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       // Check if there's an impersonated user first, then fallback to authenticated user
-      const userId = req.session.user?.sub || req.user?.claims?.sub || req.user?.id;
+      const userId = req.session.user?.sub || req.user?.id;
       
       if (!userId) {
         return res.status(401).json({ message: "Not authenticated" });

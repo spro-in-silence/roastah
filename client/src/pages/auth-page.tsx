@@ -8,8 +8,9 @@ import { Coffee, Star, Users, ShoppingBag } from "lucide-react";
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
 
-  // Check if we're in Cloud Run environment
-  const isCloudRun = typeof window !== 'undefined' && !window.location.hostname.includes('replit.dev');
+  // Check if we're in production environment (requires real OAuth)
+  const isProduction = process.env.NODE_ENV === 'production' || 
+                      (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('replit.dev'));
 
   const navigate = useNavigate();
 
@@ -48,8 +49,8 @@ export default function AuthPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isCloudRun ? (
-                  // OAuth providers for Cloud Run
+                {isProduction ? (
+                  // OAuth providers for production
                   <>
                     <Button
                       onClick={() => handleOAuthLogin('google')}
@@ -88,13 +89,18 @@ export default function AuthPage() {
                     </Button>
                   </>
                 ) : (
-                  // Replit Auth for Replit environment
-                  <Button
-                    onClick={() => window.location.href = '/api/auth/login'}
-                    className="w-full"
-                  >
-                    Sign in with Replit
-                  </Button>
+                  // Development environment - redirect to dev login
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Development Environment Detected
+                    </p>
+                    <Button
+                      onClick={() => navigate('/dev-login')}
+                      className="w-full"
+                    >
+                      Continue to Development Login
+                    </Button>
+                  </div>
                 )}
 
                 <div className="text-xs text-center text-muted-foreground pt-4">

@@ -29,9 +29,7 @@ export async function loadSecrets(): Promise<void> {
     const requiredSecrets = [
       'DATABASE_URL',
       'SESSION_SECRET', 
-      'STRIPE_SECRET_KEY',
-      'REPL_ID',
-      'REPLIT_DOMAINS'
+      'STRIPE_SECRET_KEY'
     ];
     
     // Load all secrets in parallel

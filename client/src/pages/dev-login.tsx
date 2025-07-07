@@ -40,7 +40,11 @@ export default function DevLogin() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       
-      const response = await fetch('/api/dev/check-adc', {
+      // In development, the frontend runs on port 5173 but backend runs on port 5000
+      const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
+      const apiUrl = isDev ? 'http://localhost:5000/api/dev/check-adc' : '/api/dev/check-adc';
+      
+      const response = await fetch(apiUrl, {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',

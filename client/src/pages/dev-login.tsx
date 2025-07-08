@@ -22,6 +22,18 @@ export default function DevLogin() {
   useEffect(() => {
     console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
     
+    // Check for Google OAuth callback
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const idToken = urlParams.get('id_token');
+    if (idToken) {
+      localStorage.setItem('google_oauth_token', idToken);
+      // Clean the URL
+      window.history.replaceState({}, document.title, '/dev-login');
+      // Restart the ADC check with the new token
+      setTimeout(() => checkADCCredentials(), 100);
+      return;
+    }
+    
     if (skipADC) {
       console.log('DevLogin: Development environment - skipping ADC check');
     } else {
@@ -80,11 +92,22 @@ export default function DevLogin() {
       const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
       const apiUrl = isDev ? 'http://localhost:5000/api/dev/check-adc' : '/api/dev/check-adc';
       
+      // For Cloud Run, try to get Google OAuth token
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Check if we're on Cloud Run and need authentication
+      if (!isLocal && !isReplit) {
+        const googleToken = localStorage.getItem('google_oauth_token');
+        if (googleToken) {
+          headers['Authorization'] = `Bearer ${googleToken}`;
+        }
+      }
+      
       const response = await fetch(apiUrl, {
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
       
       clearTimeout(timeoutId);
@@ -92,6 +115,30 @@ export default function DevLogin() {
       if (response.ok) {
         const data = await response.json();
         console.log('ADC check response:', data);
+        
+        // Handle authorization responses
+        if (data.requiresAuth) {
+          // Need to authenticate with Google
+          initiateGoogleAuth();
+          return;
+        } else if (data.unauthorized) {
+          setHasADC(false);
+          toast({
+            title: "Access Denied",
+            description: "Your email is not authorized for development access",
+            variant: "destructive",
+          });
+          return;
+        } else if (data.authError) {
+          setHasADC(false);
+          toast({
+            title: "Authentication Error", 
+            description: "Please sign in with Google to access development features",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         setHasADC(data.hasCredentials);
       } else {
         console.log('ADC check failed with status:', response.status);
@@ -105,12 +152,67 @@ export default function DevLogin() {
     }
   };
 
+  const initiateGoogleAuth = () => {
+    // Redirect to Google OAuth
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'your-google-client-id';
+    const redirectUri = window.location.origin + '/dev-login';
+    const scope = 'openid email profile';
+    
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=id_token&` +
+      `scope=${encodeURIComponent(scope)}&` +
+      `nonce=${Date.now()}`;
+    
+    window.location.href = authUrl;
+  };
+
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/dev/impersonate", { userType });
+      // For Cloud Run, include auth header if available
+      const googleToken = localStorage.getItem('google_oauth_token');
+      let headers: Record<string, string> = {};
+      
+      if (!isLocal && !isReplit && googleToken) {
+        headers['Authorization'] = `Bearer ${googleToken}`;
+      }
+      
+      const response = await fetch('/api/dev/impersonate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+        body: JSON.stringify({ userType }),
+      });
 
-      if (response.success) {
+      if (response.status === 401) {
+        toast({
+          title: "Authentication Required",
+          description: "Please authenticate with Google to access impersonation",
+          variant: "destructive",
+        });
+        initiateGoogleAuth();
+        return;
+      }
+
+      if (response.status === 403) {
+        toast({
+          title: "Access Denied", 
+          description: "Your email is not authorized for development access",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Impersonation request failed');
+      }
+
+      const data = await response.json();
+      if (data.success) {
         // Only invalidate user-specific queries, not all data
         await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/cart'] });

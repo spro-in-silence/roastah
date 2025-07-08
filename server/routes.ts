@@ -425,6 +425,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ hasCredentials: true });
     }
 
+    // Additional authorization check for Cloud Run dev deployments
+    const isCloudRun = process.env.K_SERVICE !== undefined;
+    if (isCloudRun) {
+      // For Cloud Run, check authorization before proceeding
+      try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return res.json({ hasCredentials: false, requiresAuth: true });
+        }
+
+        const { OAuth2Client } = await import('google-auth-library');
+        const client = new OAuth2Client();
+        const token = authHeader.substring(7);
+        
+        const ticket = await client.verifyIdToken({
+          idToken: token,
+        });
+        
+        const payload = ticket.getPayload();
+        if (!payload) {
+          throw new Error('Invalid token payload');
+        }
+
+        const authorizedEmails = (process.env.DEV_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
+        if (authorizedEmails.length > 0 && !authorizedEmails.includes(payload.email || '')) {
+          return res.json({ hasCredentials: false, unauthorized: true });
+        }
+      } catch (error) {
+        return res.json({ hasCredentials: false, authError: true });
+      }
+    }
+
     try {
       // Use the same SecretManagerServiceClient that's already working
       const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
@@ -441,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Development impersonation endpoint (only for dev environments)
+  // Development impersonation endpoint (only for authorized dev environments)
   app.post('/api/dev/impersonate', async (req: any, res) => {
     // Only allow in development environments
     const isDev = process.env.NODE_ENV !== 'production' && 
@@ -449,6 +481,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!isDev) {
       return res.status(404).json({ error: 'Not found' });
+    }
+
+    // Additional authorization check for Cloud Run dev deployments
+    const isCloudRun = process.env.K_SERVICE !== undefined;
+    if (isCloudRun) {
+      // For Cloud Run, require Google Cloud authentication
+      try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return res.status(401).json({ error: 'Authorization required for Cloud Run access' });
+        }
+
+        // Verify the token using Google OAuth2 library
+        const { OAuth2Client } = await import('google-auth-library');
+        const client = new OAuth2Client();
+        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        
+        const ticket = await client.verifyIdToken({
+          idToken: token,
+          // Allow any audience for dev environments
+        });
+        
+        const payload = ticket.getPayload();
+        if (!payload) {
+          throw new Error('Invalid token payload');
+        }
+
+        // Check if user is authorized (you can customize this logic)
+        const authorizedEmails = (process.env.DEV_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
+        if (authorizedEmails.length > 0 && !authorizedEmails.includes(payload.email || '')) {
+          return res.status(403).json({ error: 'Access denied - unauthorized email' });
+        }
+
+        console.log(`🔐 Authorized impersonation access for: ${payload.email}`);
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).json({ error: 'Invalid authentication token' });
+      }
     }
 
     try {

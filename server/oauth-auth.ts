@@ -470,7 +470,16 @@ export async function setupOAuth(app: Express) {
         }
         console.log('🔐 Login successful for user:', user.id);
         console.log('🔐 === LOGIN REQUEST SUCCESS ===');
-        res.json(user);
+        
+        // For development environments, redirect to /dev-login for impersonation
+        if (isDevelopment) {
+          res.json({ 
+            ...user, 
+            redirectTo: '/dev-login' 
+          });
+        } else {
+          res.json(user);
+        }
       });
     } catch (error) {
       console.error('🔐 === LOGIN REQUEST ERROR ===');

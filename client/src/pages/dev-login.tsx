@@ -4,177 +4,29 @@ import { Coffee, ShoppingBag, Package, Terminal, CheckCircle, Shield } from "luc
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 export default function DevLogin() {
-  // Initialize based on environment detection
+  // Simplified environment detection - all development environments work the same
   const isReplit = window.location.hostname.includes('replit.dev');
   const isLocal = window.location.hostname === 'localhost';
-  // Force development mode in Replit and local environments
-  const isDevelopment = true; // Always enable dev mode for now
-  const skipADC = isDevelopment;
+  const isCloudRunDev = window.location.hostname.includes('run.app');
+  const isDevelopment = isReplit || isLocal || isCloudRunDev;
   
-  const [hasADC, setHasADC] = useState(skipADC);
-  const [isCheckingADC, setIsCheckingADC] = useState(!skipADC);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
-    console.log('DevLogin: import.meta.env.DEV:', import.meta.env.DEV);
-    console.log('DevLogin: process.env.NODE_ENV:', process.env.NODE_ENV);
+    console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'isCloudRunDev:', isCloudRunDev);
     console.log('DevLogin: isDevelopment:', isDevelopment);
     
-    // Check for Google OAuth callback
-    const urlParams = new URLSearchParams(window.location.hash.substring(1));
-    const idToken = urlParams.get('id_token');
-    if (idToken) {
-      localStorage.setItem('google_oauth_token', idToken);
-      // Clean the URL
-      window.history.replaceState({}, document.title, '/dev-login');
-      // Restart the ADC check with the new token
-      setTimeout(() => checkADCCredentials(), 100);
-      return;
+    // Only allow access in development environments
+    if (!isDevelopment) {
+      console.log('DevLogin: Production environment - redirecting to home');
+      navigate('/');
     }
-    
-    if (skipADC) {
-      console.log('DevLogin: Development environment - skipping ADC check');
-    } else {
-      // Small delay for external environments
-      const timer = setTimeout(() => {
-        console.log('DevLogin: Running ADC check for external environment');
-        checkADCCredentials();
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [skipADC, isReplit, isLocal]);
-
-  // Only show impersonation interface in development environments
-  if (!isDevelopment) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">
-              <Shield className="h-8 w-8 mx-auto mb-2" />
-              Development Access Only
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center text-gray-600">
-              <p className="mb-4">
-                This development interface is only available in development environments.
-              </p>
-              <p className="text-sm">
-                Please use the main authentication system in production.
-              </p>
-              <div className="text-xs text-gray-400 mt-4 p-2 bg-gray-50 rounded">
-                Debug: isReplit={isReplit.toString()}, isLocal={isLocal.toString()}, 
-                DEV={import.meta.env.DEV?.toString()}, isDev={isDevelopment.toString()}
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <Button 
-                onClick={() => window.location.href = '/'}
-                variant="outline"
-              >
-                Return to Main Site
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const checkADCCredentials = async () => {
-    setIsCheckingADC(true);
-    try {
-      // Direct fetch with timeout for localhost
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
-      // In development, the frontend runs on port 5173 but backend runs on port 5000
-      const isDev = window.location.hostname === 'localhost' && window.location.port === '5173';
-      const apiUrl = isDev ? 'http://localhost:5000/api/dev/check-adc' : '/api/dev/check-adc';
-      
-      // For Cloud Run, try to get Google OAuth token
-      let headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      // Check if we're on Cloud Run and need authentication
-      if (!isLocal && !isReplit) {
-        const googleToken = localStorage.getItem('google_oauth_token');
-        if (googleToken) {
-          headers['Authorization'] = `Bearer ${googleToken}`;
-        }
-      }
-      
-      const response = await fetch(apiUrl, {
-        signal: controller.signal,
-        headers,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('ADC check response:', data);
-        
-        // Handle authorization responses
-        if (data.requiresAuth) {
-          // Need to authenticate with Google
-          initiateGoogleAuth();
-          return;
-        } else if (data.unauthorized) {
-          setHasADC(false);
-          toast({
-            title: "Access Denied",
-            description: "Your email is not authorized for development access",
-            variant: "destructive",
-          });
-          return;
-        } else if (data.authError) {
-          setHasADC(false);
-          toast({
-            title: "Authentication Error", 
-            description: "Please sign in with Google to access development features",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        setHasADC(data.hasCredentials);
-      } else {
-        console.log('ADC check failed with status:', response.status);
-        setHasADC(false);
-      }
-    } catch (error: any) {
-      console.log('ADC check failed or timed out:', error?.name || error?.message || error);
-      setHasADC(false);
-    } finally {
-      setIsCheckingADC(false);
-    }
-  };
-
-  const initiateGoogleAuth = () => {
-    // Redirect to Google OAuth
-    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'your-google-client-id';
-    const redirectUri = window.location.origin + '/dev-login';
-    const scope = 'openid email profile';
-    
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=id_token&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `nonce=${Date.now()}`;
-    
-    window.location.href = authUrl;
-  };
+  }, [isDevelopment, navigate, isReplit, isLocal, isCloudRunDev]);
 
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
@@ -219,15 +71,20 @@ export default function DevLogin() {
         if (userType === 'seller') {
           navigate('/seller/dashboard');
         } else {
-          navigate('/home');
+          navigate('/');
         }
       } else {
-        throw new Error('Impersonation failed');
+        toast({
+          title: "Error",
+          description: data.message || "Failed to impersonate user",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error('Impersonation error:', error);
       toast({
         title: "Error",
-        description: "Failed to impersonate user",
+        description: "Failed to connect to impersonation service",
         variant: "destructive",
       });
     } finally {
@@ -235,75 +92,20 @@ export default function DevLogin() {
     }
   };
 
-
-
-  if (isCheckingADC) {
+  // Only show impersonation interface in development environments
+  if (!isDevelopment) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-roastah-teal rounded-full flex items-center justify-center mb-4">
-              <Coffee className="h-6 w-6 text-white animate-spin" />
-            </div>
-            <CardTitle className="text-2xl">Checking Credentials</CardTitle>
-            <p className="text-gray-600 dark:text-gray-300">
-              Verifying Google Cloud credentials...
-            </p>
+          <CardHeader>
+            <CardTitle className="text-center">
+              <Shield className="h-8 w-8 mx-auto mb-2" />
+              Development Access Only
+            </CardTitle>
           </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!hasADC) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Card className="w-full max-w-2xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-4">
-              <Terminal className="h-6 w-6 text-white" />
-            </div>
-            <CardTitle className="text-2xl">Google Cloud Credentials Required</CardTitle>
-            <p className="text-gray-600 dark:text-gray-300">
-              Please authenticate with Google Cloud to access development tools
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-              <h3 className="font-semibold mb-3 flex items-center">
-                <Terminal className="h-4 w-4 mr-2" />
-                Required Commands
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                    1. Authenticate your Google Cloud account:
-                  </p>
-                  <code className="block bg-black text-green-400 p-2 rounded text-sm">
-                    gcloud auth login
-                  </code>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                    2. Set up application default credentials:
-                  </p>
-                  <code className="block bg-black text-green-400 p-2 rounded text-sm">
-                    gcloud auth application-default login
-                  </code>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <Button 
-                onClick={checkADCCredentials}
-                className="bg-roastah-teal hover:bg-roastah-dark-teal"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Check Credentials Again
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 text-center">
-              This page is only available in development environments
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              This page is only available in development environments.
             </p>
           </CardContent>
         </Card>
@@ -312,94 +114,120 @@ export default function DevLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-      <div className="w-full max-w-2xl space-y-8">
-        <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-roastah-teal rounded-full flex items-center justify-center mb-6">
-            <Coffee className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Terminal className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Development Console
+              </h1>
+            </div>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Choose your role to access the Roastah marketplace
+            </p>
+            <div className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/50 dark:to-green-900/50 rounded-lg inline-block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Environment: {isReplit ? 'Replit' : isLocal ? 'Local' : 'Cloud Run Dev'}
+              </span>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Roastah Development Portal
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Choose a user type to impersonate for testing
-          </p>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Buyer Impersonation */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-4">
-                <ShoppingBag className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-xl">Test as Buyer</CardTitle>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                Browse products, add to cart, place orders
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-6">
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <strong>Features to test:</strong>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Browse coffee products</li>
-                    <li>Add items to cart</li>
-                    <li>Checkout process</li>
-                    <li>Order tracking</li>
-                    <li>Favorites & wishlist</li>
-                  </ul>
+          {/* Impersonation Options */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Buyer Card */}
+            <Card className="hover:shadow-lg transition-shadow duration-200 border-blue-200 dark:border-blue-800">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                    <ShoppingBag className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </div>
-              </div>
-              <Button 
-                onClick={() => handleImpersonate('buyer')}
-                disabled={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600"
-              >
-                {isLoading ? 'Setting up...' : 'Impersonate Buyer'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Seller Impersonation */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                <Package className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-xl">Test as Seller</CardTitle>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                Manage products, view orders, handle business
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-6">
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  <strong>Features to test:</strong>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Product management</li>
-                    <li>Order processing</li>
-                    <li>Analytics dashboard</li>
-                    <li>Bulk uploads</li>
-                    <li>Customer messages</li>
-                  </ul>
+                <CardTitle className="text-xl text-blue-900 dark:text-blue-100">
+                  Buyer Portal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Experience the marketplace as a coffee enthusiast
+                  </p>
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Browse and purchase coffee</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Manage cart and orders</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Review products and roasters</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <Button 
-                onClick={() => handleImpersonate('seller')}
-                disabled={isLoading}
-                className="w-full bg-green-500 hover:bg-green-600"
-              >
-                {isLoading ? 'Setting up...' : 'Impersonate Seller'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                <Button
+                  onClick={() => handleImpersonate('buyer')}
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isLoading ? 'Switching...' : 'Enter as Buyer'}
+                </Button>
+              </CardContent>
+            </Card>
 
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            Development environment only • Not available in production
-          </p>
+            {/* Seller Card */}
+            <Card className="hover:shadow-lg transition-shadow duration-200 border-green-200 dark:border-green-800">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
+                    <Package className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <CardTitle className="text-xl text-green-900 dark:text-green-100">
+                  Seller Portal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Manage your roastery business and products
+                  </p>
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Manage product catalog</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Process orders and payments</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>View analytics and reports</span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => handleImpersonate('seller')}
+                  disabled={isLoading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isLoading ? 'Switching...' : 'Enter as Seller'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>
+              Development environment active. All data is for testing purposes only.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -167,6 +167,9 @@ Changelog:
 - July 08, 2025. Successfully tested buyer and seller impersonation functionality in development environment
 - July 08, 2025. Simplified Cloud Run dev impersonation to use session-based auth instead of Google OAuth
 - July 08, 2025. Removed Google OAuth requirement for Cloud Run development environment access
+- July 08, 2025. Standardized authentication behavior across Replit, localhost, and GCP dev Cloud Run environments
+- July 08, 2025. Unified development flow: email/password login → /dev-login page → buyer/seller impersonation options
+- July 08, 2025. Created clean, consistent dev-login interface working across all three development environments
 ```
 
 ## User Preferences

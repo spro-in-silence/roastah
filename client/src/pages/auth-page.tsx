@@ -74,10 +74,9 @@ export default function AuthPage() {
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
         
-        // Check if user is a developer (has dev role or specific email pattern)
-        // Navigate to dev-login for development access, otherwise go to home
-        if (isCloudRunDev) {
-          navigate("/dev-login");
+        // Check if server provided a redirectTo field (for development environments)
+        if (user.redirectTo) {
+          navigate(user.redirectTo);
         } else {
           navigate("/");
         }

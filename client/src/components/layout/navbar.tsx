@@ -95,14 +95,15 @@ export default function Navbar() {
             {/* Impersonation Status Indicator */}
             {isImpersonated && (
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  <User className="h-3 w-3 mr-1" />
-                  Impersonating: {user?.name || user?.id}
-                </Badge>
-                {isRoaster && (
+                {isRoaster ? (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     <Coffee className="h-3 w-3 mr-1" />
-                    Seller Mode
+                    Impersonating Seller: {user?.name || user?.id}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <ShoppingBag className="h-3 w-3 mr-1" />
+                    Impersonating Buyer: {user?.name || user?.id}
                   </Badge>
                 )}
               </div>

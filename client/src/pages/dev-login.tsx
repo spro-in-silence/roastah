@@ -10,8 +10,7 @@ export default function DevLogin() {
   // Initialize based on environment detection
   const isReplit = window.location.hostname.includes('replit.dev');
   const isLocal = window.location.hostname === 'localhost';
-  const isCloudRunDev = window.location.hostname.includes('run.app');
-  const isDevelopment = isReplit || isLocal || isCloudRunDev;
+  const isDevelopment = isReplit || isLocal;
   const skipADC = isDevelopment;
   
   const [hasADC, setHasADC] = useState(skipADC);
@@ -21,15 +20,7 @@ export default function DevLogin() {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'isCloudRunDev:', isCloudRunDev, 'hostname:', window.location.hostname);
-    
-    // For Cloud Run dev instances, check if user is authorized via session
-    if (isCloudRunDev) {
-      // User should already be authorized via /api/dev-auth, just proceed
-      setHasADC(true);
-      setIsCheckingADC(false);
-      return;
-    }
+    console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'hostname:', window.location.hostname);
     
     // Check for Google OAuth callback
     const urlParams = new URLSearchParams(window.location.hash.substring(1));

@@ -56,31 +56,6 @@ export default function AuthPage() {
     setIsSubmitting(true);
 
     try {
-      // Special handling for Cloud Run dev instances - email-only validation
-      if (isCloudRunDev) {
-        const response = await fetch('/api/dev-auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Authorization failed');
-        }
-
-        toast({
-          title: "Access granted!",
-          description: "You have been authorized for development access.",
-        });
-
-        // Navigate to dev-login page
-        navigate("/dev-login");
-        return;
-      }
-
-      // Standard authentication flow
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
         ? { email, password }
@@ -98,7 +73,14 @@ export default function AuthPage() {
           title: isLogin ? "Welcome back!" : "Account created!",
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
-        navigate("/");
+        
+        // Check if user is a developer (has dev role or specific email pattern)
+        // Navigate to dev-login for development access, otherwise go to home
+        if (isCloudRunDev) {
+          navigate("/dev-login");
+        } else {
+          navigate("/");
+        }
       } else {
         const error = await response.text();
         toast({
@@ -131,10 +113,7 @@ export default function AuthPage() {
                 </div>
                 <CardTitle className="text-2xl font-bold">Welcome to Roastah</CardTitle>
                 <CardDescription>
-                  {isCloudRunDev 
-                    ? "Enter your authorized email to access development features" 
-                    : "Sign in to discover amazing coffee from local roasters"
-                  }
+                  Sign in to discover amazing coffee from local roasters
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -169,41 +148,36 @@ export default function AuthPage() {
                         />
                       </div>
                       
-                      {/* Hide password field for Cloud Run dev instances */}
-                      {!isCloudRunDev && (
-                        <div className="space-y-2">
-                          <Label htmlFor="password">Password</Label>
-                          <div className="relative">
-                            <Input
-                              id="password"
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Enter your password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              required
-                              minLength={6}
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                          </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
                         </div>
-                      )}
+                      </div>
                       
                       <Button type="submit" className="w-full" disabled={isSubmitting}>
                         {isSubmitting 
                           ? "Please wait..." 
-                          : isCloudRunDev
-                            ? "Access Development Environment"
-                            : isLogin 
-                              ? "Sign In" 
-                              : "Create Account"
+                          : isLogin 
+                            ? "Sign In" 
+                            : "Create Account"
                         }
                       </Button>
                     </form>

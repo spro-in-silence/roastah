@@ -72,51 +72,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const medusaBridge = new MedusaBridge(app);
   medusaBridge.setupRoutes();
 
-  // Development authorization endpoint for Cloud Run dev instances
-  app.post('/api/dev-auth', async (req: any, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-      }
-
-      // Check if this is a development environment
-      const isLocalDev = process.env.NODE_ENV === 'development';
-      const isCloudRunDev = process.env.CLOUD_RUN_URL && process.env.NODE_ENV !== 'production';
-      
-      if (!isLocalDev && !isCloudRunDev) {
-        return res.status(403).json({ error: 'Development authorization only available in development environments' });
-      }
-
-      // Load authorized emails from Secret Manager
-      const { getSecret } = await import('./secrets');
-      const authorizedEmailsStr = await getSecret('DEV_AUTHORIZED_EMAILS');
-      
-      if (!authorizedEmailsStr) {
-        console.error('DEV_AUTHORIZED_EMAILS not found in Secret Manager');
-        return res.status(500).json({ error: 'Development authorization not configured' });
-      }
-
-      const authorizedEmails = authorizedEmailsStr.split(',').map(email => email.trim().toLowerCase());
-      const userEmail = email.toLowerCase();
-
-      if (!authorizedEmails.includes(userEmail)) {
-        console.log(`Unauthorized development access attempt: ${userEmail}`);
-        return res.status(403).json({ error: 'Email not authorized for development access' });
-      }
-
-      // Set a temporary session flag for development access
-      req.session.devAuthorized = true;
-      req.session.devEmail = userEmail;
-
-      console.log(`Development access granted to: ${userEmail}`);
-      res.json({ success: true, message: 'Development access granted' });
-    } catch (error) {
-      console.error('Error in dev-auth:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
 
   // Auth routes
   app.post('/api/auth/register', async (req: any, res) => {

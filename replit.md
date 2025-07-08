@@ -159,6 +159,7 @@ Changelog:
 - July 08, 2025. Updated impersonation banners to use blue/green color coding (blue for buyer, green for seller)
 - July 08, 2025. Modified DEV SANDBOX banner to dynamically change colors based on impersonation mode
 - July 08, 2025. Restricted signup functionality on Cloud Run dev instances to login-only for authorized users
+- July 08, 2025. Simplified Cloud Run dev flow: standard email+password auth redirects to /dev-login for impersonation access
 ```
 
 ## User Preferences

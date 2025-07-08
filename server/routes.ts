@@ -376,42 +376,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: 'Not found' });
     }
 
-    // Additional authorization check for Cloud Run dev deployments
+    // For Cloud Run dev environments, check if user is authenticated through standard login
     const isCloudRun = process.env.K_SERVICE !== undefined;
     if (isCloudRun) {
-      // For Cloud Run, require Google Cloud authentication
-      try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return res.status(401).json({ error: 'Authorization required for Cloud Run access' });
-        }
-
-        // Verify the token using Google OAuth2 library
-        const { OAuth2Client } = await import('google-auth-library');
-        const client = new OAuth2Client();
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-        
-        const ticket = await client.verifyIdToken({
-          idToken: token,
-          // Allow any audience for dev environments
-        });
-        
-        const payload = ticket.getPayload();
-        if (!payload) {
-          throw new Error('Invalid token payload');
-        }
-
-        // Check if user is authorized using emails from Secret Manager
-        const authorizedEmails = (process.env.DEV_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
-        if (authorizedEmails.length > 0 && !authorizedEmails.includes(payload.email || '')) {
-          return res.status(403).json({ error: 'Access denied - unauthorized email' });
-        }
-
-        console.log(`🔐 Authorized impersonation access for: ${payload.email}`);
-      } catch (error) {
-        console.error('Token verification failed:', error);
-        return res.status(401).json({ error: 'Invalid authentication token' });
+      // Check if user is authenticated through standard session-based auth
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ error: 'Please log in first to access impersonation features' });
       }
+      
+      console.log(`🔐 Authenticated user accessing impersonation: ${req.session.user.email}`);
     }
 
     try {

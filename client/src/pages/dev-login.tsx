@@ -179,39 +179,23 @@ export default function DevLogin() {
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
     try {
-      // For Cloud Run, include auth header if available
-      const googleToken = localStorage.getItem('google_oauth_token');
-      let headers: Record<string, string> = {};
-      
-      if (!isLocal && !isReplit && googleToken) {
-        headers['Authorization'] = `Bearer ${googleToken}`;
-      }
-      
+      // Use standard session-based authentication for all environments
       const response = await fetch('/api/dev/impersonate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...headers,
         },
+        credentials: 'include', // Include session cookies
         body: JSON.stringify({ userType }),
       });
 
       if (response.status === 401) {
         toast({
           title: "Authentication Required",
-          description: "Please authenticate with Google to access impersonation",
+          description: "Please log in first to access impersonation features",
           variant: "destructive",
         });
-        initiateGoogleAuth();
-        return;
-      }
-
-      if (response.status === 403) {
-        toast({
-          title: "Access Denied", 
-          description: "Your email is not authorized for development access",
-          variant: "destructive",
-        });
+        navigate('/auth');
         return;
       }
 

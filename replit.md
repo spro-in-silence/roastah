@@ -165,6 +165,8 @@ Changelog:
 - July 08, 2025. Resolved /dev-login page environment detection to enable impersonation access for authenticated users
 - July 08, 2025. Fixed impersonation API endpoint environment detection for Cloud Run development instances
 - July 08, 2025. Successfully tested buyer and seller impersonation functionality in development environment
+- July 08, 2025. Simplified Cloud Run dev impersonation to use session-based auth instead of Google OAuth
+- July 08, 2025. Removed Google OAuth requirement for Cloud Run development environment access
 ```
 
 ## User Preferences

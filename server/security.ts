@@ -7,17 +7,21 @@ import type { Request, Response, NextFunction, Express } from 'express';
 // Rate limiting configurations
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 200, // Increased limit for development
   message: {
     error: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for auth endpoints in development
+    return process.env.NODE_ENV === 'development' && req.path.includes('/auth/');
+  }
 });
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts per windowMs
+  max: process.env.NODE_ENV === 'development' ? 50 : 5, // More lenient in development
   message: {
     error: 'Too many login attempts, please try again later.'
   },
@@ -236,14 +240,18 @@ export const sessionSecurityConfig = {
 // Enhanced authentication check with security logging
 export function enhancedAuthCheck(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
-    // Log failed authentication attempts
-    console.warn(`Unauthorized access attempt from IP: ${req.ip} to ${req.path}`);
+    // Log failed authentication attempts only for non-auth routes to reduce noise
+    if (!req.path.includes('/auth/')) {
+      console.warn(`Unauthorized access attempt from IP: ${req.ip} to ${req.path}`);
+    }
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  // Check for session tampering
+  // Check for valid user data - support both OAuth and local auth formats
   const user = req.user as any;
-  if (!user?.claims?.sub) {
+  const hasValidUser = user?.id || user?.claims?.sub || user?.sub;
+  
+  if (!hasValidUser) {
     console.warn(`Invalid session data from IP: ${req.ip}`);
     req.logout((err) => {
       if (err) console.error('Logout error:', err);

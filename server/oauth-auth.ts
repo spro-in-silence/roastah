@@ -417,59 +417,36 @@ export async function setupOAuth(app: Express) {
   });
 
   app.post('/api/auth/login', async (req, res) => {
-    console.log('🔐 === LOGIN REQUEST START ===');
     try {
       const { email, password } = req.body;
-      console.log('🔐 Login attempt for email:', email);
-      console.log('🔐 Password provided:', !!password);
-      console.log('🔐 Request session exists:', !!req.session);
 
       if (!email || !password) {
-        console.log('🔐 Missing email or password');
         return res.status(400).json({ error: 'Email and password are required' });
       }
 
-      console.log('🔐 Attempting to find user by email...');
       // Find user by email
       const user = await storage.getUserByEmail(email);
-      console.log('🔐 User lookup complete. Found:', user ? 'Yes' : 'No');
-      
-      if (user) {
-        console.log('🔐 User details:', { 
-          id: user.id, 
-          email: user.email, 
-          hasPassword: !!user.password,
-          passwordLength: user.password ? user.password.length : 0
-        });
-      }
       
       if (!user || !user.password) {
-        console.log('🔐 Login failed: User not found or no password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      console.log('🔐 Loading bcrypt module...');
       // Verify password
       const bcrypt = await import('bcrypt');
-      console.log('🔐 About to compare password...');
       const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log('🔐 Password comparison complete. Valid:', isValidPassword);
       
       if (!isValidPassword) {
-        console.log('🔐 Login failed: Invalid password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      console.log('🔐 Password verified. Attempting passport login...');
       // Log in the user using passport
       req.login(user, (err) => {
         if (err) {
-          console.error('🔐 Passport login error:', err);
-          console.error('🔐 Error stack:', err.stack);
-          return res.status(500).json({ error: 'Failed to log in', details: err.message });
+          console.error('🔐 Login error:', err.message);
+          return res.status(500).json({ error: 'Failed to log in' });
         }
+        
         console.log('🔐 Login successful for user:', user.id);
-        console.log('🔐 === LOGIN REQUEST SUCCESS ===');
         
         // For development environments, redirect to /dev-login for impersonation
         if (isDevelopment) {
@@ -482,14 +459,10 @@ export async function setupOAuth(app: Express) {
         }
       });
     } catch (error) {
-      console.error('🔐 === LOGIN REQUEST ERROR ===');
-      console.error('🔐 Error message:', error.message);
-      console.error('🔐 Error stack:', error.stack);
-      console.error('🔐 Error details:', error);
+      console.error('🔐 Login error:', error.message);
       res.status(500).json({ 
         error: 'Internal server error', 
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: error.message
       });
     }
   });

@@ -78,8 +78,6 @@ export default function AuthPage() {
 
       if (response.ok) {
         const user = await response.json();
-        console.log('Login successful, user:', user);
-        console.log('isDevelopmentEnv:', isDevelopmentEnv);
         
         toast({
           title: isLogin ? "Welcome back!" : "Account created!",
@@ -90,13 +88,11 @@ export default function AuthPage() {
         setTimeout(() => {
           // Development environments redirect to /dev-login for impersonation
           if (isDevelopmentEnv) {
-            console.log('Redirecting to /dev-login');
             navigate("/dev-login");
           } else {
-            console.log('Redirecting to home');
             navigate("/");
           }
-        }, 200);
+        }, 150);
       } else {
         const error = await response.text();
         toast({

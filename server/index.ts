@@ -12,6 +12,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Configure trust proxy for rate limiting and security
+app.set('trust proxy', 1);
+
 // Setup security middleware first
 setupSecurity(app);
 

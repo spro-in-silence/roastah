@@ -298,9 +298,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Development ADC check endpoint (only for dev environments)
   app.get('/api/dev/check-adc', async (req: any, res) => {
-    // Only allow in development environments
-    const isDev = process.env.NODE_ENV !== 'production' && 
-                  (process.env.REPL_ID || req.get('host')?.includes('localhost'));
+    // Allow in development environments: localhost, Replit, or Cloud Run dev instances
+    const isLocal = req.get('host')?.includes('localhost');
+    const isReplit = process.env.REPL_ID !== undefined;
+    const isCloudRunDev = process.env.K_SERVICE !== undefined && req.get('host')?.includes('roastah-d');
+    const isDev = isLocal || isReplit || isCloudRunDev;
     
     if (!isDev) {
       return res.status(404).json({ error: 'Not found' });
@@ -362,9 +364,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Development impersonation endpoint (only for authorized dev environments)
   app.post('/api/dev/impersonate', async (req: any, res) => {
-    // Only allow in development environments
-    const isDev = process.env.NODE_ENV !== 'production' && 
-                  (process.env.REPL_ID || req.get('host')?.includes('localhost'));
+    // Allow in development environments: localhost, Replit, or Cloud Run dev instances
+    const isLocal = req.get('host')?.includes('localhost');
+    const isReplit = process.env.REPL_ID !== undefined;
+    const isCloudRunDev = process.env.K_SERVICE !== undefined && req.get('host')?.includes('roastah-d');
+    const isDev = isLocal || isReplit || isCloudRunDev;
+    
+    console.log('🔧 Impersonation request - isLocal:', isLocal, 'isReplit:', isReplit, 'isCloudRunDev:', isCloudRunDev, 'isDev:', isDev);
     
     if (!isDev) {
       return res.status(404).json({ error: 'Not found' });

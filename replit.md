@@ -154,6 +154,11 @@ Changelog:
 - July 07, 2025. Resolved seller dashboard empty page issue by updating query enabling conditions
 - July 07, 2025. Fixed dev-login page credential checking loop that was blocking access to impersonation
 - July 07, 2025. Updated navbar navigation logic to properly sync with impersonated user context
+- July 08, 2025. Implemented secure Cloud Run development authorization using DEV_AUTHORIZED_EMAILS from Secret Manager
+- July 08, 2025. Added Google OAuth token verification for authorized personnel access to impersonation features
+- July 08, 2025. Updated impersonation banners to use blue/green color coding (blue for buyer, green for seller)
+- July 08, 2025. Modified DEV SANDBOX banner to dynamically change colors based on impersonation mode
+- July 08, 2025. Restricted signup functionality on Cloud Run dev instances to login-only for authorized users
 ```
 
 ## User Preferences

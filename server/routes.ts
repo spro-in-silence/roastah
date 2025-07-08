@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw new Error('Invalid token payload');
         }
 
-        // Check if user is authorized (you can customize this logic)
+        // Check if user is authorized using emails from Secret Manager
         const authorizedEmails = (process.env.DEV_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
         if (authorizedEmails.length > 0 && !authorizedEmails.includes(payload.email || '')) {
           return res.status(403).json({ error: 'Access denied - unauthorized email' });

@@ -11,6 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
+  
+  // Check if we're on Cloud Run dev instance (should hide signup)
+  const isCloudRunDev = typeof window !== 'undefined' && 
+                       !window.location.hostname.includes('localhost') && 
+                       !window.location.hostname.includes('replit.dev') &&
+                       (window.location.hostname.includes('run.app') || process.env.NODE_ENV !== 'production');
+  
+  // Force login mode for Cloud Run dev instances
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -167,24 +175,26 @@ export default function AuthPage() {
                       </Button>
                     </form>
 
-                    {/* Toggle between Login/Register */}
-                    <div className="text-center">
-                      <Button
-                        variant="link"
-                        onClick={() => {
-                          setIsLogin(!isLogin);
-                          setEmail("");
-                          setPassword("");
-                          setName("");
-                        }}
-                        className="text-sm"
-                      >
-                        {isLogin 
-                          ? "Don't have an account? Sign up" 
-                          : "Already have an account? Sign in"
-                        }
-                      </Button>
-                    </div>
+                    {/* Toggle between Login/Register - Hide signup for Cloud Run dev */}
+                    {!isCloudRunDev && (
+                      <div className="text-center">
+                        <Button
+                          variant="link"
+                          onClick={() => {
+                            setIsLogin(!isLogin);
+                            setEmail("");
+                            setPassword("");
+                            setName("");
+                          }}
+                          className="text-sm"
+                        >
+                          {isLogin 
+                            ? "Don't have an account? Sign up" 
+                            : "Already have an account? Sign in"
+                          }
+                        </Button>
+                      </div>
+                    )}
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">

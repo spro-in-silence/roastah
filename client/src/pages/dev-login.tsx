@@ -32,10 +32,12 @@ export default function DevLogin() {
     
     // Require authentication to access dev-login
     if (!authLoading && !user) {
-      console.log('DevLogin: Not authenticated - redirecting to auth');
+      console.log('DevLogin: Not authenticated - redirecting to auth', { user, authLoading });
       navigate('/auth');
       return;
     }
+    
+    console.log('DevLogin: User state:', { user: user?.id, authLoading });
   }, [isDevelopment, navigate, isReplit, isLocal, isCloudRunDev, authLoading, user]);
 
   // Show loading while checking authentication
@@ -46,6 +48,16 @@ export default function DevLogin() {
       </div>
     );
   }
+
+  // Add logout function for testing
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
@@ -245,6 +257,21 @@ export default function DevLogin() {
           <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             <p>
               Development environment active. All data is for testing purposes only.
+            </p>
+          </div>
+          
+          {/* Debug/Logout Section */}
+          <div className="mt-8 text-center">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 hover:text-gray-800"
+            >
+              Logout (for testing auth protection)
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              Current user: {user?.id || 'None'}
             </p>
           </div>
         </div>

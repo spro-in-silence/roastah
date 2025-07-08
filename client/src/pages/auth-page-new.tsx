@@ -32,12 +32,24 @@ export default function AuthPage() {
 
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - but only after initial load
   useEffect(() => {
     if (!isLoading && user) {
-      navigate("/");
+      // Small delay to prevent immediate redirect during page load
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     }
   }, [isLoading, user, navigate]);
+
+  // Don't render anything while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const handleOAuthLogin = (provider: string) => {
     window.location.href = `/api/auth/${provider}`;

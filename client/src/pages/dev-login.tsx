@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Coffee, ShoppingBag, Package, Terminal, CheckCircle } from "lucide-react";
+import { Coffee, ShoppingBag, Package, Terminal, CheckCircle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +10,8 @@ export default function DevLogin() {
   // Initialize based on environment detection
   const isReplit = window.location.hostname.includes('replit.dev');
   const isLocal = window.location.hostname === 'localhost';
-  const skipADC = isReplit || isLocal;
+  const isDevelopment = isReplit || isLocal;
+  const skipADC = isDevelopment;
   
   const [hasADC, setHasADC] = useState(skipADC);
   const [isCheckingADC, setIsCheckingADC] = useState(!skipADC);
@@ -33,6 +34,40 @@ export default function DevLogin() {
       return () => clearTimeout(timer);
     }
   }, [skipADC, isReplit, isLocal]);
+
+  // Only show impersonation interface in development environments
+  if (!isDevelopment) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">
+              <Shield className="h-8 w-8 mx-auto mb-2" />
+              Development Access Only
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center text-gray-600">
+              <p className="mb-4">
+                This development interface is only available in development environments.
+              </p>
+              <p className="text-sm">
+                Please use the main authentication system in production.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => window.location.href = '/'}
+                variant="outline"
+              >
+                Return to Main Site
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const checkADCCredentials = async () => {
     setIsCheckingADC(true);

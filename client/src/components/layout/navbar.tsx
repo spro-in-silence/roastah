@@ -17,6 +17,12 @@ export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   // Initialize with context value, will be updated in useEffect
   const [isRoaster, setIsRoaster] = useState(contextIsRoaster);
+  
+  // Environment detection - use existing logic
+  const isReplit = window.location.hostname.includes('replit.dev');
+  const isLocal = window.location.hostname === 'localhost';
+  const isDevelopment = isReplit || isLocal;
+  const isImpersonated = user?.id?.startsWith('dev-');
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
@@ -77,6 +83,34 @@ export default function Navbar() {
 
   return (
     <>
+      {/* DEV SANDBOX Banner - only show in development environments */}
+      {isDevelopment && (
+        <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-800">DEV SANDBOX</span>
+              <span className="text-xs text-yellow-600">Development Environment</span>
+            </div>
+            {/* Impersonation Status Indicator */}
+            {isImpersonated && (
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <User className="h-3 w-3 mr-1" />
+                  Impersonating: {user?.name || user?.id}
+                </Badge>
+                {isRoaster && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Coffee className="h-3 w-3 mr-1" />
+                    Seller Mode
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">

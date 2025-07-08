@@ -85,12 +85,31 @@ export default function Navbar() {
     <>
       {/* DEV SANDBOX Banner - only show in development environments */}
       {isDevelopment && (
-        <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-2">
+        <div className={`border-b px-4 py-2 ${
+          isImpersonated 
+            ? (isRoaster 
+                ? 'bg-green-100 border-green-200' 
+                : 'bg-blue-100 border-blue-200'
+              )
+            : 'bg-yellow-100 border-yellow-200'
+        }`}>
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Shield className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-800">DEV SANDBOX</span>
-              <span className="text-xs text-yellow-600">Development Environment</span>
+              <Shield className={`h-4 w-4 ${
+                isImpersonated 
+                  ? (isRoaster ? 'text-green-600' : 'text-blue-600')
+                  : 'text-yellow-600'
+              }`} />
+              <span className={`text-sm font-medium ${
+                isImpersonated 
+                  ? (isRoaster ? 'text-green-800' : 'text-blue-800')
+                  : 'text-yellow-800'
+              }`}>DEV SANDBOX</span>
+              <span className={`text-xs ${
+                isImpersonated 
+                  ? (isRoaster ? 'text-green-600' : 'text-blue-600')
+                  : 'text-yellow-600'
+              }`}>Development Environment</span>
             </div>
             {/* Impersonation Status Indicator */}
             {isImpersonated && (

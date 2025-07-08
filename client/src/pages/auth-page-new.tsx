@@ -78,17 +78,25 @@ export default function AuthPage() {
 
       if (response.ok) {
         const user = await response.json();
+        console.log('Login successful, user:', user);
+        console.log('isDevelopmentEnv:', isDevelopmentEnv);
+        
         toast({
           title: isLogin ? "Welcome back!" : "Account created!",
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
         
-        // Development environments redirect to /dev-login for impersonation
-        if (isDevelopmentEnv) {
-          navigate("/dev-login");
-        } else {
-          navigate("/");
-        }
+        // Small delay to ensure authentication state is updated
+        setTimeout(() => {
+          // Development environments redirect to /dev-login for impersonation
+          if (isDevelopmentEnv) {
+            console.log('Redirecting to /dev-login');
+            navigate("/dev-login");
+          } else {
+            console.log('Redirecting to home');
+            navigate("/");
+          }
+        }, 200);
       } else {
         const error = await response.text();
         toast({

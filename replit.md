@@ -161,6 +161,8 @@ Changelog:
 - July 08, 2025. Restricted signup functionality on Cloud Run dev instances to login-only for authorized users
 - July 08, 2025. Simplified Cloud Run dev flow: standard email+password auth redirects to /dev-login for impersonation access
 - July 08, 2025. Created 3 manual user accounts in database due to login endpoint issues in Cloud Run environment
+- July 08, 2025. Fixed authentication system ES module imports for bcrypt compatibility
+- July 08, 2025. Resolved /dev-login page environment detection to enable impersonation access for authenticated users
 ```
 
 ## User Preferences

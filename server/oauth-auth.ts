@@ -346,6 +346,7 @@ export async function setupOAuth(app: Express) {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log('🔐 Login attempt for email:', email);
 
       if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required' });
@@ -353,26 +354,53 @@ export async function setupOAuth(app: Express) {
 
       // Find user by email
       const user = await storage.getUserByEmail(email);
+      console.log('🔐 User found:', user ? 'Yes' : 'No');
+      
       if (!user || !user.password) {
+        console.log('🔐 Login failed: User not found or no password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
       // Verify password
       const bcrypt = require('bcrypt');
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('🔐 Password valid:', isValidPassword);
+      
       if (!isValidPassword) {
+        console.log('🔐 Login failed: Invalid password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      // Log in the user
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to log in' });
+      // Simple session-based login without passport
+      console.log('🔐 Setting up simple session for user:', user.id);
+      try {
+        if (req.session) {
+          // Store user info directly in session
+          req.session.user = {
+            id: user.id,
+            email: user.email,
+            sub: user.id,
+            name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name,
+          };
+          
+          req.session.save((err) => {
+            if (err) {
+              console.error('🔐 Session save error:', err);
+              return res.status(500).json({ error: 'Failed to save session' });
+            }
+            console.log('🔐 Login successful for user:', user.id);
+            res.json(user);
+          });
+        } else {
+          console.error('🔐 No session available');
+          res.status(500).json({ error: 'Session not available' });
         }
-        res.json(user);
-      });
+      } catch (sessionError) {
+        console.error('🔐 Session save error:', sessionError);
+        res.status(500).json({ error: 'Failed to save session' });
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('🔐 Login error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });

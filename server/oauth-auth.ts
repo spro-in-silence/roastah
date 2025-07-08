@@ -15,24 +15,49 @@ console.log(`🔐 OAuth Environment: Development=${isDevelopment}, CloudRun=${is
 // Session configuration
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
-  return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: sessionTtl,
-    },
-  });
+  
+  try {
+    console.log('🔐 Setting up session store with DATABASE_URL:', process.env.DATABASE_URL ? 'Present' : 'Missing');
+    console.log('🔐 SESSION_SECRET:', process.env.SESSION_SECRET ? 'Present' : 'Missing');
+    
+    const pgStore = connectPg(session);
+    const sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true, // Create sessions table if missing
+      ttl: sessionTtl,
+      tableName: "sessions",
+    });
+    
+    console.log('🔐 Session store created successfully');
+    
+    return session({
+      secret: process.env.SESSION_SECRET!,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: sessionTtl,
+        sameSite: 'lax', // Add sameSite for better compatibility
+      },
+    });
+  } catch (error) {
+    console.error('🔐 Session setup error:', error);
+    // Fallback to memory store in case of database issues
+    console.log('🔐 Falling back to memory store');
+    return session({
+      secret: process.env.SESSION_SECRET!,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: sessionTtl,
+        sameSite: 'lax',
+      },
+    });
+  }
 }
 
 // User creation/update helper
@@ -310,7 +335,7 @@ export async function setupOAuth(app: Express) {
       }
 
       // Hash password
-      const bcrypt = require('bcrypt');
+      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash(password, 12);
 
       // Create user
@@ -343,65 +368,120 @@ export async function setupOAuth(app: Express) {
     }
   });
 
+  // Test endpoint to verify database connection
+  app.get('/api/auth/test-db', async (req, res) => {
+    try {
+      console.log('🔧 Testing database connection...');
+      const user = await storage.getUserByEmail('saasna@roastah.com');
+      console.log('🔧 Test user found:', user ? 'Yes' : 'No');
+      res.json({ 
+        dbConnection: 'working', 
+        userFound: !!user,
+        userDetails: user ? { id: user.id, email: user.email, hasPassword: !!user.password } : null
+      });
+    } catch (error) {
+      console.error('🔧 Database test error:', error);
+      res.status(500).json({ error: 'Database connection failed', details: error.message });
+    }
+  });
+
+  // Simple login endpoint without passport - for testing
+  app.post('/api/auth/simple-login', async (req, res) => {
+    console.log('🔧 === SIMPLE LOGIN TEST START ===');
+    try {
+      const { email, password } = req.body;
+      console.log('🔧 Simple login attempt for:', email);
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const bcrypt = await import('bcrypt');
+      const isValid = await bcrypt.compare(password, user.password);
+      
+      if (isValid) {
+        console.log('🔧 Simple login successful');
+        res.json({ success: true, user: { id: user.id, email: user.email } });
+      } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+      }
+    } catch (error) {
+      console.error('🔧 Simple login error:', error);
+      res.status(500).json({ error: 'Simple login failed', details: error.message });
+    }
+  });
+
   app.post('/api/auth/login', async (req, res) => {
+    console.log('🔐 === LOGIN REQUEST START ===');
     try {
       const { email, password } = req.body;
       console.log('🔐 Login attempt for email:', email);
+      console.log('🔐 Password provided:', !!password);
+      console.log('🔐 Request session exists:', !!req.session);
 
       if (!email || !password) {
+        console.log('🔐 Missing email or password');
         return res.status(400).json({ error: 'Email and password are required' });
       }
 
+      console.log('🔐 Attempting to find user by email...');
       // Find user by email
       const user = await storage.getUserByEmail(email);
-      console.log('🔐 User found:', user ? 'Yes' : 'No');
+      console.log('🔐 User lookup complete. Found:', user ? 'Yes' : 'No');
+      
+      if (user) {
+        console.log('🔐 User details:', { 
+          id: user.id, 
+          email: user.email, 
+          hasPassword: !!user.password,
+          passwordLength: user.password ? user.password.length : 0
+        });
+      }
       
       if (!user || !user.password) {
         console.log('🔐 Login failed: User not found or no password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
+      console.log('🔐 Loading bcrypt module...');
       // Verify password
-      const bcrypt = require('bcrypt');
+      const bcrypt = await import('bcrypt');
+      console.log('🔐 About to compare password...');
       const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log('🔐 Password valid:', isValidPassword);
+      console.log('🔐 Password comparison complete. Valid:', isValidPassword);
       
       if (!isValidPassword) {
         console.log('🔐 Login failed: Invalid password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      // Simple session-based login without passport
-      console.log('🔐 Setting up simple session for user:', user.id);
-      try {
-        if (req.session) {
-          // Store user info directly in session
-          req.session.user = {
-            id: user.id,
-            email: user.email,
-            sub: user.id,
-            name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name,
-          };
-          
-          req.session.save((err) => {
-            if (err) {
-              console.error('🔐 Session save error:', err);
-              return res.status(500).json({ error: 'Failed to save session' });
-            }
-            console.log('🔐 Login successful for user:', user.id);
-            res.json(user);
-          });
-        } else {
-          console.error('🔐 No session available');
-          res.status(500).json({ error: 'Session not available' });
+      console.log('🔐 Password verified. Attempting passport login...');
+      // Log in the user using passport
+      req.login(user, (err) => {
+        if (err) {
+          console.error('🔐 Passport login error:', err);
+          console.error('🔐 Error stack:', err.stack);
+          return res.status(500).json({ error: 'Failed to log in', details: err.message });
         }
-      } catch (sessionError) {
-        console.error('🔐 Session save error:', sessionError);
-        res.status(500).json({ error: 'Failed to save session' });
-      }
+        console.log('🔐 Login successful for user:', user.id);
+        console.log('🔐 === LOGIN REQUEST SUCCESS ===');
+        res.json(user);
+      });
     } catch (error) {
-      console.error('🔐 Login error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('🔐 === LOGIN REQUEST ERROR ===');
+      console.error('🔐 Error message:', error.message);
+      console.error('🔐 Error stack:', error.stack);
+      console.error('🔐 Error details:', error);
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 

@@ -31,20 +31,10 @@ import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
-import AuthPage from "@/pages/auth-page";
+import AuthPage from "@/pages/auth-page-new";
 
-function DevAwareLanding() {
-  // Only show dev-login in development environments (localhost and Replit)
-  // Production environments should show the public landing page
-  const isDev = window.location.hostname.includes('replit.dev') || 
-                window.location.hostname === 'localhost' ||
-                window.location.hostname.startsWith('127.0.0.1');
-  
-  if (isDev) {
-    return <DevLogin />;
-  }
-  
-  // For production, show public landing page (no auth required)
+// All environments should show the standard landing page by default
+function StandardLanding() {
   return <Landing />;
 }
 
@@ -56,7 +46,7 @@ function Router() {
         <Route path="/auth" element={<AuthPage />} />
         
         {/* Public Routes */}
-        <Route path="/" element={<DevAwareLanding />} />
+        <Route path="/" element={<StandardLanding />} />
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
         <Route path="/dev-login" element={<DevLogin />} />

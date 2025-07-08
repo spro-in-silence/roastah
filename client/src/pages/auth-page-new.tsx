@@ -38,14 +38,6 @@ export default function AuthPage() {
     return null;
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   const handleOAuthLogin = (provider: string) => {
     window.location.href = `/api/auth/${provider}`;
   };
@@ -115,92 +107,95 @@ export default function AuthPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isProduction ? (
-                  // Production: Email/Password + OAuth
-                  <>
-                    {/* Email/Password Form */}
-                    <form onSubmit={handleEmailAuth} className="space-y-4">
-                      {!isLogin && (
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            type="text"
-                            placeholder="Enter your full name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting 
-                          ? "Please wait..." 
-                          : isLogin 
-                            ? "Sign In" 
-                            : "Create Account"
-                        }
+                {/* Email/Password Form - Available in all environments */}
+                <form onSubmit={handleEmailAuth} className="space-y-4">
+                  {!isLogin && isProduction && (
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
-                    </form>
-
-                    {/* Toggle between Login/Register - Only show signup in production */}
-                    {isProduction && (
-                      <div className="text-center">
-                        <Button
-                          variant="link"
-                          onClick={() => {
-                            setIsLogin(!isLogin);
-                            setEmail("");
-                            setPassword("");
-                            setName("");
-                          }}
-                          className="text-sm"
-                        >
-                          {isLogin 
-                            ? "Don't have an account? Sign up" 
-                            : "Already have an account? Sign in"
-                          }
-                        </Button>
-                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>Loading...</>
+                    ) : (
+                      isLogin ? "Sign In" : "Create Account"
                     )}
+                  </Button>
+                </form>
 
+                {/* Toggle between Login/Register - Only show signup in production */}
+                {isProduction && (
+                  <div className="text-center">
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        setEmail("");
+                        setPassword("");
+                        setName("");
+                      }}
+                      className="text-sm"
+                    >
+                      {isLogin 
+                        ? "Don't have an account? Sign up" 
+                        : "Already have an account? Sign in"
+                      }
+                    </Button>
+                  </div>
+                )}
+
+                {/* Show OAuth only in production */}
+                {isProduction && (
+                  <>
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <Separator className="w-full" />
@@ -236,18 +231,14 @@ export default function AuthPage() {
                       GitHub
                     </Button>
                   </>
-                ) : (
-                  // Development environment - redirect to dev login
+                )}
+
+                {/* Development Environment Notice */}
+                {isDevelopmentEnv && (
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Development Environment Detected
+                    <p className="text-xs text-muted-foreground">
+                      Development environment - Login to access impersonation options
                     </p>
-                    <Button
-                      onClick={() => navigate('/dev-login')}
-                      className="w-full"
-                    >
-                      Continue to Development Login
-                    </Button>
                   </div>
                 )}
 
@@ -270,56 +261,47 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              {/* Feature highlights */}
+              <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Coffee className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Fresh Roasted</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Direct from local roasters</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Star className="h-6 w-6 text-primary" />
+                  <div className="flex-shrink-0 w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center">
+                    <Coffee className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Premium Quality</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Curated selection</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Freshly roasted coffee from artisan roasters</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Users className="h-6 w-6 text-primary" />
+                  <div className="flex-shrink-0 w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                    <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Community</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Connect with roasters</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Local Roasters</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Support small businesses in your community</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <ShoppingBag className="h-6 w-6 text-primary" />
+                  <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 dark:bg-yellow-900/50 rounded-full flex items-center justify-center">
+                    <Star className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Curated Selection</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Hand-picked beans from around the world</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Easy Ordering</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Simple checkout</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Simple checkout and fast delivery</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-white/50 dark:bg-gray-800/50 p-6 rounded-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">For Roasters</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-3">
-                  Join our marketplace to reach coffee lovers nationwide. Set up your shop and start selling today.
-                </p>
-                <Button variant="outline" size="sm">
-                  Learn More
-                </Button>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DevLogin() {
   // Simplified environment detection - all development environments work the same
@@ -16,6 +17,7 @@ export default function DevLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     console.log('DevLogin: Environment check - isReplit:', isReplit, 'isLocal:', isLocal, 'isCloudRunDev:', isCloudRunDev);
@@ -25,8 +27,25 @@ export default function DevLogin() {
     if (!isDevelopment) {
       console.log('DevLogin: Production environment - redirecting to home');
       navigate('/');
+      return;
     }
-  }, [isDevelopment, navigate, isReplit, isLocal, isCloudRunDev]);
+    
+    // Require authentication to access dev-login
+    if (!authLoading && !user) {
+      console.log('DevLogin: Not authenticated - redirecting to auth');
+      navigate('/auth');
+      return;
+    }
+  }, [isDevelopment, navigate, isReplit, isLocal, isCloudRunDev, authLoading, user]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
@@ -71,7 +90,7 @@ export default function DevLogin() {
         if (userType === 'seller') {
           navigate('/seller/dashboard');
         } else {
-          navigate('/');
+          navigate('/home'); // Navigate to buyer home instead of landing page
         }
       } else {
         toast({

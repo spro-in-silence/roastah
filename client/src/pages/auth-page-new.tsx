@@ -33,10 +33,11 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   // Redirect if already authenticated
-  if (!isLoading && user) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate("/");
+    }
+  }, [isLoading, user, navigate]);
 
   const handleOAuthLogin = (provider: string) => {
     window.location.href = `/api/auth/${provider}`;

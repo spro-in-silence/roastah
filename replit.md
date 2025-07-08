@@ -170,6 +170,10 @@ Changelog:
 - July 08, 2025. Standardized authentication behavior across Replit, localhost, and GCP dev Cloud Run environments
 - July 08, 2025. Unified development flow: email/password login → /dev-login page → buyer/seller impersonation options
 - July 08, 2025. Created clean, consistent dev-login interface working across all three development environments
+- July 08, 2025. Fixed unified auth page for all 4 environments - development shows login-only, production shows login+signup
+- July 08, 2025. Added authentication protection to /dev-login route - now requires login before accessing impersonation
+- July 08, 2025. Fixed React state update warning in auth page redirect logic
+- July 08, 2025. Updated buyer impersonation to navigate to /home instead of landing page
 ```
 
 ## User Preferences

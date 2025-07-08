@@ -173,6 +173,7 @@ Changelog:
 - July 08, 2025. Fixed unified auth page for all 4 environments - development shows login-only, production shows login+signup
 - July 08, 2025. Added authentication protection to /dev-login route - now requires login before accessing impersonation
 - July 08, 2025. Fixed React state update warning in auth page redirect logic
+- July 08, 2025. Fixed authentication flow to automatically redirect to /dev-login after successful login in development environments
 - July 08, 2025. Updated buyer impersonation to navigate to /home instead of landing page
 ```
 

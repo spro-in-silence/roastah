@@ -37,10 +37,15 @@ export default function AuthPage() {
     if (!isLoading && user) {
       // Small delay to prevent immediate redirect during page load
       setTimeout(() => {
-        navigate("/");
+        // Development environments redirect to /dev-login for impersonation
+        if (isDevelopmentEnv) {
+          navigate("/dev-login");
+        } else {
+          navigate("/");
+        }
       }, 100);
     }
-  }, [isLoading, user, navigate]);
+  }, [isLoading, user, navigate, isDevelopmentEnv]);
 
   // Don't render anything while checking authentication
   if (isLoading) {
@@ -78,9 +83,9 @@ export default function AuthPage() {
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
         
-        // Check if server provided a redirectTo field (for development environments)
-        if (user.redirectTo) {
-          navigate(user.redirectTo);
+        // Development environments redirect to /dev-login for impersonation
+        if (isDevelopmentEnv) {
+          navigate("/dev-login");
         } else {
           navigate("/");
         }

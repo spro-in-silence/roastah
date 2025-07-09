@@ -17,9 +17,22 @@ export default function AuthPage() {
   const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const isCloudRunDev = typeof window !== 'undefined' && 
                         window.location.hostname.includes('run.app') && 
-                        process.env.NODE_ENV === 'development';
+                        !window.location.hostname.includes('roastah.com'); // Exclude production domain
   const isDevelopmentEnv = isReplit || isLocal || isCloudRunDev;
   const isProduction = !isDevelopmentEnv;
+  
+  // Debug environment detection for Cloud Run
+  useEffect(() => {
+    console.log('🔍 Auth Page Environment Detection:', {
+      hostname: window.location.hostname,
+      isReplit,
+      isLocal,
+      isCloudRunDev,
+      isDevelopmentEnv,
+      isProduction,
+      nodeEnv: process.env.NODE_ENV
+    });
+  }, []);
   
   // Development environments: login only, Production: login + signup
   const [isLogin, setIsLogin] = useState(true);

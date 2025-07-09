@@ -17,7 +17,6 @@ import Profile from "@/pages/profile";
 import BecomeRoastah from "@/pages/become-roastah";
 import SellerDashboard from "@/pages/seller-dashboard";
 import SellerProducts from "@/pages/seller-products";
-import SellerProductsNew from "@/pages/seller-products-new";
 import SellerProductsEdit from "@/pages/seller-products-edit";
 import SellerOrders from "@/pages/seller-orders";
 import SellerMessages from "@/pages/seller-messages";

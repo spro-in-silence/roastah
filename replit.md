@@ -176,6 +176,7 @@ Changelog:
 - July 08, 2025. Fixed authentication flow to automatically redirect to /dev-login after successful login in development environments
 - July 08, 2025. Fixed major performance issues: rate limiting errors, verbose logging, and authentication middleware optimization
 - July 08, 2025. Updated buyer impersonation to navigate to /home instead of landing page
+- July 08, 2025. Consolidated auth pages into single auth-page.tsx with conditional signup visibility based on environment
 ```
 
 ## User Preferences

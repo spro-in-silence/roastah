@@ -17,9 +17,22 @@ export default function AuthPage() {
   const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const isCloudRunDev = typeof window !== 'undefined' && 
                         window.location.hostname.includes('run.app') && 
-                        process.env.NODE_ENV === 'development';
+                        !window.location.hostname.includes('roastah.com'); // Exclude production domain
   const isDevelopmentEnv = isReplit || isLocal || isCloudRunDev;
   const isProduction = !isDevelopmentEnv;
+  
+  // Debug environment detection for Cloud Run
+  useEffect(() => {
+    console.log('🔍 Auth Page Environment Detection:', {
+      hostname: window.location.hostname,
+      isReplit,
+      isLocal,
+      isCloudRunDev,
+      isDevelopmentEnv,
+      isProduction,
+      nodeEnv: process.env.NODE_ENV
+    });
+  }, []);
   
   // Development environments: login only, Production: login + signup
   const [isLogin, setIsLogin] = useState(true);
@@ -32,11 +45,20 @@ export default function AuthPage() {
 
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
-  if (!isLoading && user) {
-    navigate("/");
-    return null;
-  }
+  // Redirect if already authenticated - but only after initial load
+  useEffect(() => {
+    if (!isLoading && user) {
+      // Small delay to prevent immediate redirect during page load
+      setTimeout(() => {
+        // Development environments redirect to /dev-login for impersonation
+        if (isDevelopmentEnv) {
+          navigate("/dev-login");
+        } else {
+          navigate("/");
+        }
+      }, 100);
+    }
+  }, [isLoading, user, navigate, isDevelopmentEnv]);
 
   if (isLoading) {
     return (
@@ -73,12 +95,15 @@ export default function AuthPage() {
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
         
-        // Check if server provided a redirectTo field (for development environments)
-        if (user.redirectTo) {
-          navigate(user.redirectTo);
-        } else {
-          navigate("/");
-        }
+        // Small delay to ensure authentication state is updated
+        setTimeout(() => {
+          // Development environments redirect to /dev-login for impersonation
+          if (isDevelopmentEnv) {
+            navigate("/dev-login");
+          } else {
+            navigate("/");
+          }
+        }, 150);
       } else {
         const error = await response.text();
         toast({
@@ -115,19 +140,16 @@ export default function AuthPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isProduction ? (
-                  // Production: Email/Password + OAuth
-                  <>
-                    {/* Email/Password Form */}
-                    <form onSubmit={handleEmailAuth} className="space-y-4">
-                      {!isLogin && (
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            type="text"
-                            placeholder="Enter your full name"
-                            value={name}
+                {/* Email/Password Form - Available in all environments */}
+                <form onSubmit={handleEmailAuth} className="space-y-4">
+                  {!isLogin && isProduction && (
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
                           />

@@ -31,7 +31,7 @@ import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
-import AuthPage from "@/pages/auth-page-new";
+import AuthPage from "@/pages/auth-page";
 
 // All environments should show the standard landing page by default
 function StandardLanding() {

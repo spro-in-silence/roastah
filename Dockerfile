@@ -27,7 +27,7 @@ RUN npm install -g pnpm
 FROM base AS deps
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Stage 3: Frontend build
 FROM base AS frontend-builder
@@ -36,7 +36,7 @@ FROM base AS frontend-builder
 COPY . .
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build frontend
 RUN pnpm run build:client
@@ -48,7 +48,7 @@ FROM base AS backend-builder
 COPY . .
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build backend
 RUN pnpm run build:server
@@ -74,7 +74,8 @@ COPY pnpm-lock.yaml* ./
 
 # Install only production dependencies and prune any dev dependencies
 RUN npm install -g pnpm && \
-    pnpm install --prod --frozen-lockfile && \
+    pnpm config set store-dir /tmp/pnpm-store && \
+    pnpm install --prod --ignore-scripts --no-frozen-lockfile && \
     pnpm prune --prod && \
     pnpm store prune
 

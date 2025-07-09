@@ -8,6 +8,13 @@
       "when": 1751139666091,
       "tag": "0000_small_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752026876968,
+      "tag": "0001_gorgeous_gauntlet",
+      "breakpoints": true
     }
   ]
 }

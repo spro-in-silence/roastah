@@ -1,5 +1,11 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -109,6 +115,11 @@ var init_schema = __esm({
       email: varchar("email").unique(),
       firstName: varchar("first_name"),
       lastName: varchar("last_name"),
+      name: varchar("name"),
+      // Full name for OAuth providers
+      username: varchar("username"),
+      password: varchar("password"),
+      // For local auth
       profileImageUrl: varchar("profile_image_url"),
       role: varchar("role").notNull().default("buyer"),
       // buyer or roaster
@@ -125,6 +136,10 @@ var init_schema = __esm({
       mfaSecret: varchar("mfa_secret"),
       backupCodes: text("backup_codes").array(),
       lastBackupCodeUsed: timestamp("last_backup_code_used"),
+      emailVerified: boolean("email_verified").default(false),
+      emailVerifiedAt: timestamp("email_verified_at"),
+      onboardingCompleted: boolean("onboarding_completed").default(false),
+      profileComplete: boolean("profile_complete").default(false),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -695,19 +710,26 @@ var init_schema = __esm({
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-var pool, db;
-var init_db = __esm({
-  "server/db.ts"() {
-    "use strict";
-    init_schema();
-    neonConfig.webSocketConstructor = ws;
+function getDb() {
+  if (!dbInstance) {
     if (!process.env.DATABASE_URL) {
       throw new Error(
         "DATABASE_URL must be set. Did you forget to provision a database?"
       );
     }
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    db = drizzle({ client: pool, schema: schema_exports });
+    dbInstance = drizzle({ client: pool, schema: schema_exports });
+  }
+  return dbInstance;
+}
+var pool, dbInstance;
+var init_db = __esm({
+  "server/db.ts"() {
+    "use strict";
+    init_schema();
+    neonConfig.webSocketConstructor = ws;
+    pool = null;
+    dbInstance = null;
   }
 });
 
@@ -727,11 +749,15 @@ var init_storage = __esm({
     DatabaseStorage = class {
       // User operations
       async getUser(id) {
-        const [user] = await db.select().from(users).where(eq(users.id, id));
+        const [user] = await getDb().select().from(users).where(eq(users.id, id));
+        return user;
+      }
+      async getUserByEmail(email) {
+        const [user] = await getDb().select().from(users).where(eq(users.email, email));
         return user;
       }
       async upsertUser(userData) {
-        const [user] = await db.insert(users).values(userData).onConflictDoUpdate({
+        const [user] = await getDb().insert(users).values(userData).onConflictDoUpdate({
           target: users.id,
           set: {
             ...userData,
@@ -741,14 +767,14 @@ var init_storage = __esm({
         return user;
       }
       async updateUserMFA(id, mfaData) {
-        const [user] = await db.update(users).set({
+        const [user] = await getDb().update(users).set({
           ...mfaData,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, id)).returning();
         return user;
       }
       async updateUserAddress(id, addressData) {
-        const [user] = await db.update(users).set({
+        const [user] = await getDb().update(users).set({
           addressLine1: addressData.addressLine1,
           addressLine2: addressData.addressLine2 || "",
           city: addressData.city,
@@ -760,20 +786,20 @@ var init_storage = __esm({
       }
       // Roaster operations
       async createRoaster(roaster) {
-        const [newRoaster] = await db.insert(roasters).values(roaster).returning();
-        await db.update(users).set({ role: "roaster", isRoasterApproved: true }).where(eq(users.id, roaster.userId));
+        const [newRoaster] = await getDb().insert(roasters).values(roaster).returning();
+        await getDb().update(users).set({ role: "roaster", isRoasterApproved: true }).where(eq(users.id, roaster.userId));
         return newRoaster;
       }
       async getRoasterByUserId(userId) {
-        const [roaster] = await db.select().from(roasters).where(eq(roasters.userId, userId));
+        const [roaster] = await getDb().select().from(roasters).where(eq(roasters.userId, userId));
         return roaster;
       }
       async updateRoasterStatus(userId, isApproved) {
-        await db.update(users).set({ isRoasterApproved: isApproved }).where(eq(users.id, userId));
+        await getDb().update(users).set({ isRoasterApproved: isApproved }).where(eq(users.id, userId));
       }
       // Product operations
       async createProduct(product) {
-        const [newProduct] = await db.insert(products).values(product).returning();
+        const [newProduct] = await getDb().insert(products).values(product).returning();
         return newProduct;
       }
       async getProducts(filters) {
@@ -792,25 +818,25 @@ var init_storage = __esm({
             conditions.push(sql`${products.price} <= ${filters.maxPrice}`);
           }
         }
-        return await db.select().from(products).where(and(...conditions));
+        return await getDb().select().from(products).where(and(...conditions));
       }
       async getProductById(id) {
-        const [product] = await db.select().from(products).where(and(eq(products.id, id), eq(products.isActive, true)));
+        const [product] = await getDb().select().from(products).where(and(eq(products.id, id), eq(products.isActive, true)));
         return product;
       }
       async getProductsByRoaster(roasterId) {
-        return await db.select().from(products).where(eq(products.roasterId, roasterId));
+        return await getDb().select().from(products).where(eq(products.roasterId, roasterId));
       }
       async updateProduct(id, updates) {
-        const [updated] = await db.update(products).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(products.id, id)).returning();
+        const [updated] = await getDb().update(products).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(products.id, id)).returning();
         return updated;
       }
       async deleteProduct(id) {
-        await db.update(products).set({ isActive: false }).where(eq(products.id, id));
+        await getDb().update(products).set({ isActive: false }).where(eq(products.id, id));
       }
       // Cart operations
       async addToCart(cartItem) {
-        const [existing] = await db.select().from(cartItems).where(
+        const [existing] = await getDb().select().from(cartItems).where(
           and(
             eq(cartItems.userId, cartItem.userId),
             eq(cartItems.productId, cartItem.productId),
@@ -818,54 +844,54 @@ var init_storage = __esm({
           )
         );
         if (existing) {
-          const [updated] = await db.update(cartItems).set({ quantity: existing.quantity + (cartItem.quantity || 1) }).where(eq(cartItems.id, existing.id)).returning();
+          const [updated] = await getDb().update(cartItems).set({ quantity: existing.quantity + (cartItem.quantity || 1) }).where(eq(cartItems.id, existing.id)).returning();
           return updated;
         } else {
-          const [newItem] = await db.insert(cartItems).values(cartItem).returning();
+          const [newItem] = await getDb().insert(cartItems).values(cartItem).returning();
           return newItem;
         }
       }
       async getCartByUserId(userId) {
-        return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+        return await getDb().select().from(cartItems).where(eq(cartItems.userId, userId));
       }
       async updateCartItem(id, quantity) {
-        const [updated] = await db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
+        const [updated] = await getDb().update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
         return updated;
       }
       async removeFromCart(id) {
-        await db.delete(cartItems).where(eq(cartItems.id, id));
+        await getDb().delete(cartItems).where(eq(cartItems.id, id));
       }
       async clearCart(userId) {
-        await db.delete(cartItems).where(eq(cartItems.userId, userId));
+        await getDb().delete(cartItems).where(eq(cartItems.userId, userId));
       }
       // Order operations
       async createOrder(order) {
-        const [newOrder] = await db.insert(orders).values(order).returning();
+        const [newOrder] = await getDb().insert(orders).values(order).returning();
         return newOrder;
       }
       async getOrderById(id) {
-        const [order] = await db.select().from(orders).where(eq(orders.id, id));
+        const [order] = await getDb().select().from(orders).where(eq(orders.id, id));
         return order;
       }
       async getOrdersByUserId(userId) {
-        return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(sql`${orders.createdAt} DESC`);
+        return await getDb().select().from(orders).where(eq(orders.userId, userId)).orderBy(sql`${orders.createdAt} DESC`);
       }
       async getOrderItemsByRoaster(roasterId) {
-        return await db.select().from(orderItems).where(eq(orderItems.roasterId, roasterId)).orderBy(sql`${orderItems.createdAt} DESC`);
+        return await getDb().select().from(orderItems).where(eq(orderItems.roasterId, roasterId)).orderBy(sql`${orderItems.createdAt} DESC`);
       }
       async updateOrderStatus(id, status) {
-        await db.update(orders).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orders.id, id));
+        await getDb().update(orders).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orders.id, id));
       }
       async updateOrderItemStatus(id, status) {
-        await db.update(orderItems).set({ status }).where(eq(orderItems.id, id));
+        await getDb().update(orderItems).set({ status }).where(eq(orderItems.id, id));
       }
       // Review operations
       async createReview(review) {
-        const [newReview] = await db.insert(reviews).values(review).returning();
+        const [newReview] = await getDb().insert(reviews).values(review).returning();
         return newReview;
       }
       async getReviewsByProductId(productId) {
-        return await db.select({
+        return await getDb().select({
           id: reviews.id,
           userId: reviews.userId,
           productId: reviews.productId,
@@ -883,15 +909,15 @@ var init_storage = __esm({
         }).from(reviews).leftJoin(users, eq(reviews.userId, users.id)).where(eq(reviews.productId, productId)).orderBy(desc(reviews.createdAt));
       }
       async updateReviewHelpful(id) {
-        await db.update(reviews).set({ helpfulVotes: sql`${reviews.helpfulVotes} + 1` }).where(eq(reviews.id, id));
+        await getDb().update(reviews).set({ helpfulVotes: sql`${reviews.helpfulVotes} + 1` }).where(eq(reviews.id, id));
       }
       // Wishlist operations
       async addToWishlist(item) {
-        const [newItem] = await db.insert(wishlist).values(item).returning();
+        const [newItem] = await getDb().insert(wishlist).values(item).returning();
         return newItem;
       }
       async getWishlistByUserId(userId) {
-        return await db.select({
+        return await getDb().select({
           id: wishlist.id,
           userId: wishlist.userId,
           productId: wishlist.productId,
@@ -907,44 +933,44 @@ var init_storage = __esm({
         }).from(wishlist).leftJoin(products, eq(wishlist.productId, products.id)).where(eq(wishlist.userId, userId)).orderBy(desc(wishlist.createdAt));
       }
       async removeFromWishlist(userId, productId) {
-        await db.delete(wishlist).where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+        await getDb().delete(wishlist).where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
       }
       // Notification operations
       async createNotification(notification) {
-        const [newNotification] = await db.insert(notifications).values(notification).returning();
+        const [newNotification] = await getDb().insert(notifications).values(notification).returning();
         return newNotification;
       }
       async getNotificationsByUserId(userId) {
-        return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+        return await getDb().select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
       }
       async markNotificationAsRead(id) {
-        await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+        await getDb().update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
       }
       async markAllNotificationsAsRead(userId) {
-        await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+        await getDb().update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
       }
       async deleteNotification(id) {
-        await db.delete(notifications).where(eq(notifications.id, id));
+        await getDb().delete(notifications).where(eq(notifications.id, id));
       }
       // Commission operations
       async createCommission(commission) {
-        const [newCommission] = await db.insert(commissions).values(commission).returning();
+        const [newCommission] = await getDb().insert(commissions).values(commission).returning();
         return newCommission;
       }
       async getCommissionsByRoaster(roasterId) {
-        return await db.select().from(commissions).where(eq(commissions.roasterId, roasterId)).orderBy(sql`${commissions.createdAt} desc`);
+        return await getDb().select().from(commissions).where(eq(commissions.roasterId, roasterId)).orderBy(sql`${commissions.createdAt} desc`);
       }
       async updateCommissionStatus(id, status, paidAt) {
-        await db.update(commissions).set({ status, paidAt }).where(eq(commissions.id, id));
+        await getDb().update(commissions).set({ status, paidAt }).where(eq(commissions.id, id));
       }
       // Seller analytics operations
       async createSellerAnalytics(analytics) {
-        const [newAnalytics] = await db.insert(sellerAnalytics).values(analytics).returning();
+        const [newAnalytics] = await getDb().insert(sellerAnalytics).values(analytics).returning();
         return newAnalytics;
       }
       async getSellerAnalyticsByRoaster(roasterId, startDate, endDate) {
         if (startDate && endDate) {
-          return await db.select().from(sellerAnalytics).where(
+          return await getDb().select().from(sellerAnalytics).where(
             and(
               eq(sellerAnalytics.roasterId, roasterId),
               sql`${sellerAnalytics.date} >= ${startDate.toISOString().split("T")[0]}`,
@@ -952,10 +978,10 @@ var init_storage = __esm({
             )
           ).orderBy(sql`${sellerAnalytics.date} desc`);
         }
-        return await db.select().from(sellerAnalytics).where(eq(sellerAnalytics.roasterId, roasterId)).orderBy(sql`${sellerAnalytics.date} desc`);
+        return await getDb().select().from(sellerAnalytics).where(eq(sellerAnalytics.roasterId, roasterId)).orderBy(sql`${sellerAnalytics.date} desc`);
       }
       async updateSellerAnalytics(roasterId, date2, updates) {
-        await db.update(sellerAnalytics).set(updates).where(
+        await getDb().update(sellerAnalytics).set(updates).where(
           and(
             eq(sellerAnalytics.roasterId, roasterId),
             sql`${sellerAnalytics.date} = ${date2.toISOString().split("T")[0]}`
@@ -964,47 +990,47 @@ var init_storage = __esm({
       }
       // Campaign operations
       async createCampaign(campaign) {
-        const [newCampaign] = await db.insert(campaigns).values(campaign).returning();
+        const [newCampaign] = await getDb().insert(campaigns).values(campaign).returning();
         return newCampaign;
       }
       async getCampaignsByRoaster(roasterId) {
-        return await db.select().from(campaigns).where(eq(campaigns.roasterId, roasterId)).orderBy(sql`${campaigns.createdAt} desc`);
+        return await getDb().select().from(campaigns).where(eq(campaigns.roasterId, roasterId)).orderBy(sql`${campaigns.createdAt} desc`);
       }
       async updateCampaign(id, updates) {
-        const [updatedCampaign] = await db.update(campaigns).set(updates).where(eq(campaigns.id, id)).returning();
+        const [updatedCampaign] = await getDb().update(campaigns).set(updates).where(eq(campaigns.id, id)).returning();
         return updatedCampaign;
       }
       async deleteCampaign(id) {
-        await db.delete(campaigns).where(eq(campaigns.id, id));
+        await getDb().delete(campaigns).where(eq(campaigns.id, id));
       }
       async incrementCampaignUsage(id) {
-        await db.update(campaigns).set({ usedCount: sql`${campaigns.usedCount} + 1` }).where(eq(campaigns.id, id));
+        await getDb().update(campaigns).set({ usedCount: sql`${campaigns.usedCount} + 1` }).where(eq(campaigns.id, id));
       }
       // Bulk upload operations
       async createBulkUpload(upload) {
-        const [newUpload] = await db.insert(bulkUploads).values(upload).returning();
+        const [newUpload] = await getDb().insert(bulkUploads).values(upload).returning();
         return newUpload;
       }
       async getBulkUploadsByRoaster(roasterId) {
-        return await db.select().from(bulkUploads).where(eq(bulkUploads.roasterId, roasterId)).orderBy(sql`${bulkUploads.createdAt} desc`);
+        return await getDb().select().from(bulkUploads).where(eq(bulkUploads.roasterId, roasterId)).orderBy(sql`${bulkUploads.createdAt} desc`);
       }
       async updateBulkUploadStatus(id, status, updates) {
         const updateData = { status, ...updates };
         if (status === "completed" || status === "failed") {
           updateData.completedAt = /* @__PURE__ */ new Date();
         }
-        await db.update(bulkUploads).set(updateData).where(eq(bulkUploads.id, id));
+        await getDb().update(bulkUploads).set(updateData).where(eq(bulkUploads.id, id));
       }
       // Dispute operations
       async createDispute(dispute) {
-        const [newDispute] = await db.insert(disputes).values(dispute).returning();
+        const [newDispute] = await getDb().insert(disputes).values(dispute).returning();
         return newDispute;
       }
       async getDisputesByRoaster(roasterId) {
-        return await db.select().from(disputes).where(eq(disputes.roasterId, roasterId)).orderBy(sql`${disputes.createdAt} desc`);
+        return await getDb().select().from(disputes).where(eq(disputes.roasterId, roasterId)).orderBy(sql`${disputes.createdAt} desc`);
       }
       async getDisputesByCustomer(customerId) {
-        return await db.select().from(disputes).where(eq(disputes.customerId, customerId)).orderBy(sql`${disputes.createdAt} desc`);
+        return await getDb().select().from(disputes).where(eq(disputes.customerId, customerId)).orderBy(sql`${disputes.createdAt} desc`);
       }
       async updateDisputeStatus(id, status, resolution) {
         const updateData = { status };
@@ -1014,41 +1040,41 @@ var init_storage = __esm({
         if (status === "resolved" || status === "closed") {
           updateData.resolvedAt = /* @__PURE__ */ new Date();
         }
-        await db.update(disputes).set(updateData).where(eq(disputes.id, id));
+        await getDb().update(disputes).set(updateData).where(eq(disputes.id, id));
       }
       // Real-time tracking operations
       async createOrderTracking(tracking) {
-        const [result] = await db.insert(orderTracking).values(tracking).returning();
+        const [result] = await getDb().insert(orderTracking).values(tracking).returning();
         return result;
       }
       async getOrderTracking(orderId) {
-        return await db.select().from(orderTracking).where(eq(orderTracking.orderId, orderId)).orderBy(desc(orderTracking.createdAt));
+        return await getDb().select().from(orderTracking).where(eq(orderTracking.orderId, orderId)).orderBy(desc(orderTracking.createdAt));
       }
       async updateOrderTracking(id, updates) {
-        const [result] = await db.update(orderTracking).set(updates).where(eq(orderTracking.id, id)).returning();
+        const [result] = await getDb().update(orderTracking).set(updates).where(eq(orderTracking.id, id)).returning();
         return result;
       }
       // Real-time connection operations
       async createRealtimeConnection(connection) {
-        const [result] = await db.insert(realtimeConnections).values(connection).returning();
+        const [result] = await getDb().insert(realtimeConnections).values(connection).returning();
         return result;
       }
       async getRealtimeConnectionsByUser(userId) {
-        return await db.select().from(realtimeConnections).where(eq(realtimeConnections.userId, userId)).orderBy(desc(realtimeConnections.createdAt));
+        return await getDb().select().from(realtimeConnections).where(eq(realtimeConnections.userId, userId)).orderBy(desc(realtimeConnections.createdAt));
       }
       async updateRealtimeConnection(id, updates) {
-        await db.update(realtimeConnections).set(updates).where(eq(realtimeConnections.id, id));
+        await getDb().update(realtimeConnections).set(updates).where(eq(realtimeConnections.id, id));
       }
       async removeRealtimeConnection(connectionId) {
-        await db.delete(realtimeConnections).where(eq(realtimeConnections.connectionId, connectionId));
+        await getDb().delete(realtimeConnections).where(eq(realtimeConnections.connectionId, connectionId));
       }
       // Enhanced order operations for real-time features
       async getRoasterById(id) {
-        const [roaster] = await db.select().from(roasters).where(eq(roasters.id, id));
+        const [roaster] = await getDb().select().from(roasters).where(eq(roasters.id, id));
         return roaster;
       }
       async getOrderItemsByOrder(orderId) {
-        return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+        return await getDb().select().from(orderItems).where(eq(orderItems.orderId, orderId));
       }
       // Leaderboard operations
       async getLeaderboard(dateRange, limit = 10) {
@@ -1079,7 +1105,7 @@ var init_storage = __esm({
           default:
             startDate = new Date(2020, 0, 1);
         }
-        const result = await db.select({
+        const result = await getDb().select({
           id: roasters.id,
           userId: roasters.userId,
           businessName: roasters.businessName,
@@ -1102,18 +1128,18 @@ var init_storage = __esm({
         }));
       }
       async updateRoasterMetrics(roasterId) {
-        const reviewStats = await db.select({
+        const reviewStats = await getDb().select({
           avgRating: sql`COALESCE(AVG(${reviews.rating}::numeric), 0)`,
           reviewCount: sql`COUNT(${reviews.id})`
         }).from(reviews).leftJoin(products, eq(reviews.productId, products.id)).where(eq(products.roasterId, roasterId));
-        const salesStats = await db.select({
+        const salesStats = await getDb().select({
           totalOrders: sql`COUNT(DISTINCT ${orders.id})`,
           totalRevenue: sql`COALESCE(SUM(${orderItems.price} * ${orderItems.quantity}), 0)`
         }).from(orderItems).leftJoin(products, eq(orderItems.productId, products.id)).leftJoin(orders, eq(orderItems.orderId, orders.id)).where(eq(products.roasterId, roasterId));
         const { avgRating, reviewCount } = reviewStats[0] || { avgRating: 0, reviewCount: 0 };
         const { totalOrders, totalRevenue } = salesStats[0] || { totalOrders: 0, totalRevenue: 0 };
         const score = Number(avgRating) / 5 * 40 + Math.min(Number(reviewCount) / 50, 1) * 30 + Math.min(Number(totalOrders) / 20, 1) * 20 + 100 / 100 * 10;
-        await db.update(roasters).set({
+        await getDb().update(roasters).set({
           averageRating: avgRating.toString(),
           totalReviews: Number(reviewCount),
           totalSales: Number(totalOrders),
@@ -1123,7 +1149,7 @@ var init_storage = __esm({
         }).where(eq(roasters.id, roasterId));
       }
       async calculateLeaderboardScore(roasterId) {
-        const [roaster] = await db.select({
+        const [roaster] = await getDb().select({
           averageRating: roasters.averageRating,
           totalReviews: roasters.totalReviews
         }).from(roasters).where(eq(roasters.id, roasterId));
@@ -1139,7 +1165,7 @@ var init_storage = __esm({
       async addFavoriteRoaster(userId, roasterId) {
         try {
           console.log(`Storage: Adding favorite - userId: ${userId}, roasterId: ${roasterId}`);
-          const [favorite] = await db.insert(favoriteRoasters).values({ userId, roasterId }).returning();
+          const [favorite] = await getDb().insert(favoriteRoasters).values({ userId, roasterId }).returning();
           console.log(`Storage: Favorite added successfully:`, favorite);
           return favorite;
         } catch (error) {
@@ -1148,7 +1174,7 @@ var init_storage = __esm({
         }
       }
       async removeFavoriteRoaster(userId, roasterId) {
-        await db.delete(favoriteRoasters).where(
+        await getDb().delete(favoriteRoasters).where(
           and(
             eq(favoriteRoasters.userId, userId),
             eq(favoriteRoasters.roasterId, roasterId)
@@ -1156,7 +1182,7 @@ var init_storage = __esm({
         );
       }
       async getFavoriteRoastersByUser(userId) {
-        const favorites = await db.select({
+        const favorites = await getDb().select({
           id: favoriteRoasters.id,
           roasterId: favoriteRoasters.roasterId,
           createdAt: favoriteRoasters.createdAt,
@@ -1174,7 +1200,7 @@ var init_storage = __esm({
         return favorites;
       }
       async isFavoriteRoaster(userId, roasterId) {
-        const [favorite] = await db.select({ id: favoriteRoasters.id }).from(favoriteRoasters).where(
+        const [favorite] = await getDb().select({ id: favoriteRoasters.id }).from(favoriteRoasters).where(
           and(
             eq(favoriteRoasters.userId, userId),
             eq(favoriteRoasters.roasterId, roasterId)
@@ -1187,7 +1213,7 @@ var init_storage = __esm({
         const code = this.generateGiftCardCode();
         const expiresAt = /* @__PURE__ */ new Date();
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-        const [giftCard] = await db.insert(giftCards).values({
+        const [giftCard] = await getDb().insert(giftCards).values({
           ...giftCardData,
           code,
           expiresAt,
@@ -1196,18 +1222,18 @@ var init_storage = __esm({
         return giftCard;
       }
       async getGiftCardById(id) {
-        const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.id, id));
+        const [giftCard] = await getDb().select().from(giftCards).where(eq(giftCards.id, id));
         return giftCard;
       }
       async getGiftCardByCode(code) {
-        const [giftCard] = await db.select().from(giftCards).where(eq(giftCards.code, code));
+        const [giftCard] = await getDb().select().from(giftCards).where(eq(giftCards.code, code));
         return giftCard;
       }
       async getGiftCardsByPurchaser(purchaserId) {
-        return await db.select().from(giftCards).where(eq(giftCards.purchaserId, purchaserId)).orderBy(desc(giftCards.createdAt));
+        return await getDb().select().from(giftCards).where(eq(giftCards.purchaserId, purchaserId)).orderBy(desc(giftCards.createdAt));
       }
       async redeemGiftCard(code, userId, amount) {
-        const [giftCard] = await db.update(giftCards).set({
+        const [giftCard] = await getDb().update(giftCards).set({
           redeemedBy: userId,
           redeemedAt: /* @__PURE__ */ new Date(),
           remainingBalance: sql`${giftCards.remainingBalance} - ${amount}`,
@@ -1217,7 +1243,7 @@ var init_storage = __esm({
         return giftCard;
       }
       async updateGiftCardStatus(id, status) {
-        await db.update(giftCards).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(giftCards.id, id));
+        await getDb().update(giftCards).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(giftCards.id, id));
       }
       generateGiftCardCode() {
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -1229,19 +1255,19 @@ var init_storage = __esm({
       }
       // Message Subject operations
       async getAllMessageSubjects() {
-        return await db.select().from(messageSubjects).where(eq(messageSubjects.isActive, true)).orderBy(messageSubjects.name);
+        return await getDb().select().from(messageSubjects).where(eq(messageSubjects.isActive, true)).orderBy(messageSubjects.name);
       }
       async createMessageSubject(subject) {
-        const [newSubject] = await db.insert(messageSubjects).values(subject).returning();
+        const [newSubject] = await getDb().insert(messageSubjects).values(subject).returning();
         return newSubject;
       }
       // Seller Message operations
       async createSellerMessage(message) {
-        const [newMessage] = await db.insert(sellerMessages).values(message).returning();
+        const [newMessage] = await getDb().insert(sellerMessages).values(message).returning();
         return newMessage;
       }
       async getSellerMessages(sellerId) {
-        return await db.select({
+        return await getDb().select({
           id: sellerMessages.id,
           sellerId: sellerMessages.sellerId,
           subjectId: sellerMessages.subjectId,
@@ -1257,7 +1283,7 @@ var init_storage = __esm({
         }).from(sellerMessages).leftJoin(messageSubjects, eq(sellerMessages.subjectId, messageSubjects.id)).where(eq(sellerMessages.sellerId, sellerId)).orderBy(sql`${sellerMessages.publishedAt} desc`);
       }
       async getSellerMessageById(messageId) {
-        const [message] = await db.select({
+        const [message] = await getDb().select({
           id: sellerMessages.id,
           sellerId: sellerMessages.sellerId,
           subjectId: sellerMessages.subjectId,
@@ -1278,10 +1304,10 @@ var init_storage = __esm({
       }
       // Message Recipient operations
       async createMessageRecipients(recipients) {
-        return await db.insert(messageRecipients).values(recipients).returning();
+        return await getDb().insert(messageRecipients).values(recipients).returning();
       }
       async getUserMessages(userId) {
-        return await db.select({
+        return await getDb().select({
           id: messageRecipients.id,
           messageId: messageRecipients.messageId,
           userId: messageRecipients.userId,
@@ -1303,7 +1329,7 @@ var init_storage = __esm({
         }).from(messageRecipients).leftJoin(sellerMessages, eq(messageRecipients.messageId, sellerMessages.id)).leftJoin(roasters, eq(sellerMessages.sellerId, roasters.id)).leftJoin(messageSubjects, eq(sellerMessages.subjectId, messageSubjects.id)).where(eq(messageRecipients.userId, userId)).orderBy(sql`${sellerMessages.publishedAt} desc`);
       }
       async getUnreadMessageCount(userId) {
-        const [result] = await db.select({ count: sql`count(*)` }).from(messageRecipients).where(
+        const [result] = await getDb().select({ count: sql`count(*)` }).from(messageRecipients).where(
           and(
             eq(messageRecipients.userId, userId),
             eq(messageRecipients.isRead, false)
@@ -1312,7 +1338,7 @@ var init_storage = __esm({
         return result.count;
       }
       async markMessageAsRead(userId, messageId) {
-        await db.update(messageRecipients).set({
+        await getDb().update(messageRecipients).set({
           isRead: true,
           readAt: /* @__PURE__ */ new Date()
         }).where(
@@ -1323,7 +1349,7 @@ var init_storage = __esm({
         );
       }
       async markEmailAsSent(userId, messageId) {
-        await db.update(messageRecipients).set({
+        await getDb().update(messageRecipients).set({
           emailSent: true,
           emailSentAt: /* @__PURE__ */ new Date()
         }).where(
@@ -1335,8 +1361,8 @@ var init_storage = __esm({
       }
       // Get recipients for a seller's message (favorites + past buyers)
       async getMessageRecipients(sellerId) {
-        const favoriteUsers = await db.select({ userId: wishlist.userId }).from(wishlist).leftJoin(products, eq(wishlist.productId, products.id)).where(eq(products.roasterId, sellerId));
-        const pastBuyers = await db.select({ userId: orders.userId }).from(orders).leftJoin(orderItems, eq(orders.id, orderItems.orderId)).where(eq(orderItems.roasterId, sellerId));
+        const favoriteUsers = await getDb().select({ userId: wishlist.userId }).from(wishlist).leftJoin(products, eq(wishlist.productId, products.id)).where(eq(products.roasterId, sellerId));
+        const pastBuyers = await getDb().select({ userId: orders.userId }).from(orders).leftJoin(orderItems, eq(orders.id, orderItems.orderId)).where(eq(orderItems.roasterId, sellerId));
         const allRecipients = /* @__PURE__ */ new Set();
         favoriteUsers.forEach((user) => allRecipients.add(user.userId));
         pastBuyers.forEach((user) => allRecipients.add(user.userId));
@@ -1344,6 +1370,493 @@ var init_storage = __esm({
       }
     };
     storage = new DatabaseStorage();
+  }
+});
+
+// server/oauth-auth.ts
+var oauth_auth_exports = {};
+__export(oauth_auth_exports, {
+  getSession: () => getSession,
+  isAuthenticated: () => isAuthenticated,
+  isCloudRun: () => isCloudRun,
+  isDevelopment: () => isDevelopment,
+  setupOAuth: () => setupOAuth
+});
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy } from "passport-github2";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+function getSession() {
+  const sessionTtl = 7 * 24 * 60 * 60 * 1e3;
+  try {
+    console.log("\u{1F510} Setting up session store with DATABASE_URL:", process.env.DATABASE_URL ? "Present" : "Missing");
+    console.log("\u{1F510} SESSION_SECRET:", process.env.SESSION_SECRET ? "Present" : "Missing");
+    const pgStore = connectPg(session);
+    const sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+      // Create sessions table if missing
+      ttl: sessionTtl,
+      tableName: "sessions"
+    });
+    console.log("\u{1F510} Session store created successfully");
+    return session({
+      secret: process.env.SESSION_SECRET,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: sessionTtl,
+        sameSite: "lax"
+        // Add sameSite for better compatibility
+      }
+    });
+  } catch (error) {
+    console.error("\u{1F510} Session setup error:", error);
+    console.log("\u{1F510} Falling back to memory store");
+    return session({
+      secret: process.env.SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: sessionTtl,
+        sameSite: "lax"
+      }
+    });
+  }
+}
+async function upsertUserFromOAuth(profile, provider) {
+  const userId = `${provider}-${profile.id}`;
+  const email = profile.emails?.[0]?.value || `${userId}@${provider}.com`;
+  const user = await storage.upsertUser({
+    id: userId,
+    email,
+    name: profile.displayName || profile.name?.givenName || profile.username,
+    username: profile.username || email.split("@")[0],
+    role: "user",
+    mfaEnabled: false,
+    emailVerified: true,
+    emailVerifiedAt: /* @__PURE__ */ new Date(),
+    onboardingCompleted: false,
+    profileComplete: false,
+    createdAt: /* @__PURE__ */ new Date(),
+    updatedAt: /* @__PURE__ */ new Date()
+  });
+  return user;
+}
+async function setupOAuth(app2) {
+  const sessionMiddleware = getSession();
+  app2.use(sessionMiddleware);
+  app2.use(passport.initialize());
+  app2.use(passport.session());
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+  passport.deserializeUser(async (id, done) => {
+    try {
+      const user = await storage.getUser(id);
+      if (user) {
+        done(null, user);
+      } else {
+        done(null, false);
+      }
+    } catch (error) {
+      console.warn("Error deserializing user:", error);
+      done(null, false);
+    }
+  });
+  app2.get("/api/login", (req, res) => {
+    if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+      res.redirect("/api/auth/google");
+    } else {
+      res.status(500).json({ error: "OAuth not configured. Please set up Google OAuth credentials." });
+    }
+  });
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    console.log("\u{1F510} Setting up Google OAuth");
+    let callbackURL;
+    if (isDevelopment) {
+      callbackURL = `http://localhost:${process.env.PORT || 5e3}/api/auth/google/callback`;
+    } else if (isCloudRun) {
+      const serviceName = process.env.K_SERVICE || "roastah-d";
+      const region = process.env.K_REVISION?.split("-")[1] || "us-central1";
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || "roastah-d";
+      callbackURL = `https://${serviceName}-${projectId.split("-")[1]}.${region}.run.app/api/auth/google/callback`;
+    } else {
+      callbackURL = process.env.CLOUD_RUN_URL ? `https://${process.env.CLOUD_RUN_URL}/api/auth/google/callback` : "https://roastah-d-188956418455.us-central1.run.app/api/auth/google/callback";
+    }
+    console.log("\u{1F510} Google OAuth callback URL:", callbackURL);
+    passport.use(new GoogleStrategy({
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL
+    }, async (accessToken, refreshToken, profile, done) => {
+      try {
+        const user = await upsertUserFromOAuth(profile, "google");
+        done(null, user);
+      } catch (error) {
+        done(error, null);
+      }
+    }));
+    app2.get(
+      "/api/auth/google",
+      passport.authenticate("google", { scope: ["profile", "email"] })
+    );
+    app2.get(
+      "/api/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/auth/error" }),
+      (req, res) => {
+        res.redirect("/");
+      }
+    );
+  } else {
+    console.warn("\u26A0\uFE0F Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
+  }
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    console.log("\u{1F510} Setting up GitHub OAuth");
+    let callbackURL;
+    if (isDevelopment) {
+      callbackURL = `http://localhost:${process.env.PORT || 5e3}/api/auth/github/callback`;
+    } else if (isCloudRun) {
+      const serviceName = process.env.K_SERVICE || "roastah-d";
+      const region = process.env.K_REVISION?.split("-")[1] || "us-central1";
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || "roastah-d";
+      callbackURL = `https://${serviceName}-${projectId.split("-")[1]}.${region}.run.app/api/auth/github/callback`;
+    } else {
+      callbackURL = process.env.CLOUD_RUN_URL ? `https://${process.env.CLOUD_RUN_URL}/api/auth/github/callback` : "https://roastah-d-188956418455.us-central1.run.app/api/auth/github/callback";
+    }
+    console.log("\u{1F510} GitHub OAuth callback URL:", callbackURL);
+    passport.use(new GitHubStrategy({
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL
+    }, async (accessToken, refreshToken, profile, done) => {
+      try {
+        const user = await upsertUserFromOAuth(profile, "github");
+        done(null, user);
+      } catch (error) {
+        done(error, null);
+      }
+    }));
+    app2.get(
+      "/api/auth/github",
+      passport.authenticate("github", { scope: ["user:email"] })
+    );
+    app2.get(
+      "/api/auth/github/callback",
+      passport.authenticate("github", { failureRedirect: "/auth/error" }),
+      (req, res) => {
+        res.redirect("/");
+      }
+    );
+  }
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID) {
+    console.log("\u{1F510} Setting up Apple OAuth");
+    try {
+      const { Strategy: AppleStrategy } = __require("passport-apple");
+      let callbackURL;
+      if (isDevelopment) {
+        callbackURL = `http://localhost:${process.env.PORT || 5e3}/api/auth/apple/callback`;
+      } else if (isCloudRun) {
+        const serviceName = process.env.K_SERVICE || "roastah-d";
+        const region = process.env.K_REVISION?.split("-")[1] || "us-central1";
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT || "roastah-d";
+        callbackURL = `https://${serviceName}-${projectId.split("-")[1]}.${region}.run.app/api/auth/apple/callback`;
+      } else {
+        callbackURL = process.env.CLOUD_RUN_URL ? `https://${process.env.CLOUD_RUN_URL}/api/auth/apple/callback` : "https://roastah-d-188956418455.us-central1.run.app/api/auth/apple/callback";
+      }
+      console.log("\u{1F510} Apple OAuth callback URL:", callbackURL);
+      passport.use(new AppleStrategy({
+        clientID: process.env.APPLE_CLIENT_ID,
+        teamID: process.env.APPLE_TEAM_ID,
+        keyID: process.env.APPLE_KEY_ID,
+        privateKeyString: process.env.APPLE_PRIVATE_KEY,
+        callbackURL
+      }, async (accessToken, refreshToken, profile, done) => {
+        try {
+          const user = await upsertUserFromOAuth(profile, "apple");
+          done(null, user);
+        } catch (error) {
+          done(error, null);
+        }
+      }));
+      app2.get(
+        "/api/auth/apple",
+        passport.authenticate("apple", { scope: ["name", "email"] })
+      );
+      app2.get(
+        "/api/auth/apple/callback",
+        passport.authenticate("apple", { failureRedirect: "/auth/error" }),
+        (req, res) => {
+          res.redirect("/");
+        }
+      );
+    } catch (error) {
+      console.warn("\u26A0\uFE0F Apple OAuth not available, install passport-apple if needed");
+    }
+  }
+  app2.get("/api/auth/user", async (req, res) => {
+    try {
+      if (isDevelopment && req.session?.user?.sub) {
+        const userId = req.session.user.sub;
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        let roaster = null;
+        if (user?.role === "roaster") {
+          roaster = await storage.getRoasterByUserId(userId);
+        }
+        const response = {
+          ...user,
+          roaster,
+          mfaRequired: !!(roaster || user?.role === "admin")
+        };
+        return res.json(response);
+      }
+      if (req.user?.id) {
+        return res.json(req.user);
+      }
+      res.status(401).json({ error: "Not authenticated" });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+  app2.post("/api/auth/register", async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Name, email, and password are required" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User with this email already exists" });
+      }
+      const bcrypt = await import("bcrypt");
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = await storage.upsertUser({
+        id: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        name,
+        username: email.split("@")[0],
+        password: hashedPassword,
+        role: "user",
+        mfaEnabled: false,
+        emailVerified: true,
+        emailVerifiedAt: /* @__PURE__ */ new Date(),
+        onboardingCompleted: false,
+        profileComplete: false,
+        createdAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      });
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Failed to log in after registration" });
+        }
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  app2.get("/api/auth/test-db", async (req, res) => {
+    try {
+      console.log("\u{1F527} Testing database connection...");
+      const user = await storage.getUserByEmail("saasna@roastah.com");
+      console.log("\u{1F527} Test user found:", user ? "Yes" : "No");
+      res.json({
+        dbConnection: "working",
+        userFound: !!user,
+        userDetails: user ? { id: user.id, email: user.email, hasPassword: !!user.password } : null
+      });
+    } catch (error) {
+      console.error("\u{1F527} Database test error:", error);
+      res.status(500).json({ error: "Database connection failed", details: error.message });
+    }
+  });
+  app2.post("/api/auth/simple-login", async (req, res) => {
+    console.log("\u{1F527} === SIMPLE LOGIN TEST START ===");
+    try {
+      const { email, password } = req.body;
+      console.log("\u{1F527} Simple login attempt for:", email);
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password required" });
+      }
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const bcrypt = await import("bcrypt");
+      const isValid = await bcrypt.compare(password, user.password);
+      if (isValid) {
+        console.log("\u{1F527} Simple login successful");
+        res.json({ success: true, user: { id: user.id, email: user.email } });
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    } catch (error) {
+      console.error("\u{1F527} Simple login error:", error);
+      res.status(500).json({ error: "Simple login failed", details: error.message });
+    }
+  });
+  app2.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+      const bcrypt = await import("bcrypt");
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          console.error("\u{1F510} Login error:", err.message);
+          return res.status(500).json({ error: "Failed to log in" });
+        }
+        console.log("\u{1F510} Login successful for user:", user.id);
+        if (isDevelopment) {
+          res.json({
+            ...user,
+            redirectTo: "/dev-login"
+          });
+        } else {
+          res.json(user);
+        }
+      });
+    } catch (error) {
+      console.error("\u{1F510} Login error:", error.message);
+      res.status(500).json({
+        error: "Internal server error",
+        details: error.message
+      });
+    }
+  });
+  app2.post("/api/auth/logout", (req, res) => {
+    req.logout(() => {
+      res.json({ message: "Logout successful" });
+    });
+  });
+  app2.get("/auth/error", (req, res) => {
+    res.status(401).json({ error: "Authentication failed" });
+  });
+  console.log("\u{1F510} OAuth authentication setup complete");
+}
+var isDevelopment, isCloudRun, isAuthenticated;
+var init_oauth_auth = __esm({
+  "server/oauth-auth.ts"() {
+    "use strict";
+    init_storage();
+    isDevelopment = process.env.NODE_ENV === "development";
+    isCloudRun = process.env.K_SERVICE !== void 0;
+    console.log(`\u{1F510} OAuth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}`);
+    isAuthenticated = async (req, res, next) => {
+      if (isDevelopment && req.session.user?.sub) {
+        return next();
+      }
+      if (req.user?.id) {
+        return next();
+      }
+      res.status(401).json({ error: "Authentication required" });
+    };
+  }
+});
+
+// server/secrets.ts
+var secrets_exports = {};
+__export(secrets_exports, {
+  getSecret: () => getSecret,
+  loadSecrets: () => loadSecrets
+});
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+async function getSecret(secretName) {
+  try {
+    const name = `projects/${process.env.GOOGLE_CLOUD_PROJECT || "roastah-d"}/secrets/${secretName}/versions/latest`;
+    const [version] = await client.accessSecretVersion({ name });
+    return version.payload?.data?.toString() || "";
+  } catch (error) {
+    console.warn(`Failed to load secret ${secretName} from Secret Manager:`, error);
+    return process.env[secretName] || "";
+  }
+}
+async function loadSecrets() {
+  console.log("\u{1F510} Starting loadSecrets...");
+  console.log("GOOGLE_CLOUD_PROJECT:", process.env.GOOGLE_CLOUD_PROJECT);
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("PORT:", process.env.PORT);
+  try {
+    console.log("Loading secrets from GCP Secret Manager...");
+    const requiredSecrets = [
+      "DATABASE_URL",
+      "SESSION_SECRET",
+      "STRIPE_SECRET_KEY",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET"
+    ];
+    const optionalSecrets = [
+      "CLOUD_RUN_URL",
+      "GITHUB_CLIENT_ID",
+      "GITHUB_CLIENT_SECRET"
+    ];
+    const allSecrets = [...requiredSecrets, ...optionalSecrets];
+    const secretPromises = allSecrets.map(async (secretName) => {
+      try {
+        const secretValue = await getSecret(secretName);
+        if (secretValue) {
+          process.env[secretName] = secretValue;
+          console.log(`\u2705 Loaded ${secretName} from Secret Manager`);
+          return { name: secretName, success: true };
+        } else {
+          const isOptional = optionalSecrets.includes(secretName);
+          if (isOptional) {
+            console.log(`\u2139\uFE0F Optional secret ${secretName} not found in Secret Manager`);
+          } else {
+            console.warn(`\u26A0\uFE0F Failed to load ${secretName} from Secret Manager`);
+          }
+          return { name: secretName, success: false, optional: isOptional };
+        }
+      } catch (error) {
+        const isOptional = optionalSecrets.includes(secretName);
+        if (isOptional) {
+          console.log(`\u2139\uFE0F Optional secret ${secretName} not available:`, error.message);
+        } else {
+          console.warn(`\u274C Error loading ${secretName}:`, error);
+        }
+        return { name: secretName, success: false, error, optional: isOptional };
+      }
+    });
+    const results = await Promise.all(secretPromises);
+    const successful = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
+    console.log(`\u{1F4CA} Secret loading complete: ${successful.length} successful, ${failed.length} failed`);
+    if (failed.length > 0) {
+      console.warn("Failed secrets:", failed.map((f) => f.name));
+    }
+  } catch (error) {
+    console.error("\u274C Failed to load secrets from Secret Manager:", error);
+    throw error;
+  }
+}
+var client;
+var init_secrets = __esm({
+  "server/secrets.ts"() {
+    "use strict";
+    client = new SecretManagerServiceClient();
   }
 });
 
@@ -1357,161 +1870,24 @@ import Stripe from "stripe";
 import multer from "multer";
 import * as fs from "fs";
 
-// server/replitAuth.ts
-init_storage();
-import * as client from "openid-client";
-import { Strategy } from "openid-client/passport";
-import passport from "passport";
-import session from "express-session";
-import memoize from "memoizee";
-import connectPg from "connect-pg-simple";
-var getOidcConfig = memoize(
-  async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID
-    );
-  },
-  { maxAge: 3600 * 1e3 }
-);
-function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1e3;
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions"
-  });
-  return session({
-    secret: process.env.SESSION_SECRET,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      // Only use secure cookies in production
-      maxAge: sessionTtl
-    }
-  });
-}
-function updateUserSession(user, tokens) {
-  user.claims = tokens.claims();
-  user.access_token = tokens.access_token;
-  user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp;
-}
-async function upsertUser(claims) {
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"]
-  });
-}
-async function setupAuth(app2) {
-  if (!process.env.REPLIT_DOMAINS) {
-    throw new Error("Environment variable REPLIT_DOMAINS not provided");
-  }
-  if (!process.env.REPL_ID) {
-    throw new Error("Environment variable REPL_ID not provided");
-  }
-  app2.set("trust proxy", 1);
-  app2.use(getSession());
-  app2.use(passport.initialize());
-  app2.use(passport.session());
-  const config = await getOidcConfig();
-  const verify = async (tokens, verified) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
-  };
-  for (const domain of process.env.REPLIT_DOMAINS.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`
-      },
-      verify
-    );
-    passport.use(strategy);
-  }
-  passport.serializeUser((user, cb) => cb(null, user));
-  passport.deserializeUser((user, cb) => cb(null, user));
-  app2.get("/api/login", (req, res, next) => {
-    if (req.hostname === "localhost") {
-      const mockUser = {
-        claims: {
-          sub: "local-dev-user",
-          email: "dev@localhost",
-          first_name: "Local",
-          last_name: "Developer",
-          profile_image_url: "https://via.placeholder.com/150",
-          exp: Math.floor(Date.now() / 1e3) + 3600
-        },
-        access_token: "mock-access-token",
-        refresh_token: "mock-refresh-token",
-        expires_at: Math.floor(Date.now() / 1e3) + 3600
-      };
-      req.login(mockUser, (err) => {
-        if (err) {
-          return res.status(500).json({ error: "Login failed" });
-        }
-        res.redirect("/");
-      });
-      return;
-    }
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"]
-    })(req, res, next);
-  });
-  app2.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login"
-    })(req, res, next);
-  });
-  app2.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`
-        }).href
-      );
-    });
-  });
-}
-var isAuthenticated = async (req, res, next) => {
-  const user = req.user;
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  const now = Math.floor(Date.now() / 1e3);
-  if (now <= user.expires_at) {
-    return next();
-  }
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+// server/auth-router.ts
+var isCloudRun2 = process.env.K_SERVICE !== void 0;
+var isDevelopment2 = process.env.NODE_ENV === "development";
+console.log(`\u{1F510} Auth Environment: Development=${isDevelopment2}, CloudRun=${isCloudRun2}`);
+async function setupAuthentication(app2) {
+  console.log("\u{1F510} Setting up OAuth authentication system...");
   try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
+    const { setupOAuth: setupOAuth2, isAuthenticated: isAuthenticated2 } = await Promise.resolve().then(() => (init_oauth_auth(), oauth_auth_exports));
+    console.log("\u{1F510} OAuth module imported successfully");
+    await setupOAuth2(app2);
+    console.log("\u{1F510} OAuth authentication setup complete");
+    return { isAuthenticated: isAuthenticated2 };
   } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    console.error("\u{1F510} CRITICAL: Authentication setup failed:", error);
+    console.error("\u{1F510} Error stack:", error.stack);
+    throw error;
   }
-};
+}
 
 // server/routes.ts
 init_db();
@@ -1525,19 +1901,22 @@ import mongoSanitize from "express-mongo-sanitize";
 var generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1e3,
   // 15 minutes
-  max: 100,
-  // Limit each IP to 100 requests per windowMs
+  max: 200,
+  // Increased limit for development
   message: {
     error: "Too many requests from this IP, please try again later."
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => {
+    return process.env.NODE_ENV === "development" && req.path.includes("/auth/");
+  }
 });
 var authLimiter = rateLimit({
   windowMs: 15 * 60 * 1e3,
   // 15 minutes
-  max: 5,
-  // Limit each IP to 5 login attempts per windowMs
+  max: process.env.NODE_ENV === "development" ? 50 : 5,
+  // More lenient in development
   message: {
     error: "Too many login attempts, please try again later."
   },
@@ -1614,7 +1993,14 @@ function setupSecurity(app2) {
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+          "https://js.stripe.com",
+          // Allow Replit scripts only in development
+          ...process.env.NODE_ENV !== "production" ? ["https://replit.com"] : []
+        ],
         connectSrc: ["'self'", "https://api.stripe.com", "https://q.stripe.com", "wss:", "ws:"],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         mediaSrc: ["'self'", "https://ssl.gstatic.com", "data:", "blob:"]
@@ -1657,11 +2043,14 @@ var sessionSecurityConfig = {
 };
 function enhancedAuthCheck(req, res, next) {
   if (!req.isAuthenticated()) {
-    console.warn(`Unauthorized access attempt from IP: ${req.ip} to ${req.path}`);
+    if (!req.path.includes("/auth/")) {
+      console.warn(`Unauthorized access attempt from IP: ${req.ip} to ${req.path}`);
+    }
     return res.status(401).json({ error: "Authentication required" });
   }
   const user = req.user;
-  if (!user?.claims?.sub) {
+  const hasValidUser = user?.id || user?.claims?.sub || user?.sub;
+  if (!hasValidUser) {
     console.warn(`Invalid session data from IP: ${req.ip}`);
     req.logout((err) => {
       if (err) console.error("Logout error:", err);
@@ -2147,20 +2536,45 @@ var realtimeService = new RealtimeService();
 // server/routes.ts
 init_schema();
 import { z as z2 } from "zod";
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
-}
-var stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-05-28.basil"
-});
+var stripe = null;
 async function registerRoutes(app2) {
-  await setupAuth(app2);
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
+  }
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-05-28.basil"
+  });
+  const { isAuthenticated: isAuthenticated2 } = await setupAuthentication(app2);
+  app2.get("/api/config", async (req, res) => {
+    try {
+      const { getSecret: getSecret2 } = await Promise.resolve().then(() => (init_secrets(), secrets_exports));
+      const stripePublicKey = await getSecret2("VITE_STRIPE_PUBLIC_KEY");
+      if (!stripePublicKey) {
+        console.error("VITE_STRIPE_PUBLIC_KEY not found in secrets");
+        return res.status(500).json({ error: "Stripe configuration not available" });
+      }
+      res.json({
+        stripe: {
+          publicKey: stripePublicKey
+        }
+      });
+    } catch (error) {
+      console.error("Error loading configuration:", error);
+      res.status(500).json({ error: "Failed to load configuration" });
+    }
+  });
   const medusaBridge = new MedusaBridge(app2);
   medusaBridge.setupRoutes();
-  app2.get("/api/auth/user", enhancedAuthCheck, async (req, res) => {
+  app2.get("/api/auth/user", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session?.user?.sub || req.user?.id || req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
       const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       let roaster = null;
       if (user?.role === "roaster") {
         roaster = await storage.getRoasterByUserId(userId);
@@ -2180,7 +2594,7 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/auth/mfa/setup", authLimiter, enhancedAuthCheck, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       if (!user?.email) {
         return res.status(400).json({ error: "Email required for MFA setup" });
@@ -2208,7 +2622,7 @@ async function registerRoutes(app2) {
   app2.post("/api/auth/mfa/verify-setup", authLimiter, enhancedAuthCheck, async (req, res) => {
     try {
       const { token } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       if (!user?.mfaSecret) {
         return res.status(400).json({ error: "MFA setup not initiated" });
@@ -2228,7 +2642,7 @@ async function registerRoutes(app2) {
   app2.post("/api/auth/mfa/verify", authLimiter, enhancedAuthCheck, async (req, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       if (!user?.mfaEnabled || !user?.mfaSecret) {
         return res.status(400).json({ error: "MFA not enabled" });
@@ -2259,7 +2673,7 @@ async function registerRoutes(app2) {
   app2.post("/api/auth/mfa/disable", authLimiter, enhancedAuthCheck, requireStepUpAuth, async (req, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       if (!user?.mfaEnabled) {
         return res.status(400).json({ error: "MFA not enabled" });
@@ -2292,7 +2706,7 @@ async function registerRoutes(app2) {
   app2.post("/api/auth/step-up", authLimiter, enhancedAuthCheck, async (req, res) => {
     try {
       const { token, backupCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       if (user?.mfaEnabled) {
         let verified = false;
@@ -2313,6 +2727,182 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Step-up auth error:", error);
       res.status(500).json({ error: "Failed to verify step-up authentication" });
+    }
+  });
+  app2.get("/api/dev/check-adc", async (req, res) => {
+    const isLocal = req.get("host")?.includes("localhost");
+    const isReplit = process.env.REPL_ID !== void 0;
+    const isCloudRunDev = process.env.K_SERVICE !== void 0 && req.get("host")?.includes("roastah-d");
+    const isDev = isLocal || isReplit || isCloudRunDev;
+    if (!isDev) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    if (req.get("host")?.includes("localhost")) {
+      console.log("ADC check: Localhost detected, skipping Google Cloud credentials check");
+      return res.json({ hasCredentials: true });
+    }
+    const isCloudRun3 = process.env.K_SERVICE !== void 0;
+    if (isCloudRun3) {
+      try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return res.json({ hasCredentials: false, requiresAuth: true });
+        }
+        const { OAuth2Client } = await import("google-auth-library");
+        const client2 = new OAuth2Client();
+        const token = authHeader.substring(7);
+        const ticket = await client2.verifyIdToken({
+          idToken: token
+        });
+        const payload = ticket.getPayload();
+        if (!payload) {
+          throw new Error("Invalid token payload");
+        }
+        const authorizedEmails = (process.env.DEV_AUTHORIZED_EMAILS || "").split(",").map((e) => e.trim());
+        if (authorizedEmails.length > 0 && !authorizedEmails.includes(payload.email || "")) {
+          return res.json({ hasCredentials: false, unauthorized: true });
+        }
+      } catch (error) {
+        return res.json({ hasCredentials: false, authError: true });
+      }
+    }
+    try {
+      const { SecretManagerServiceClient: SecretManagerServiceClient2 } = await import("@google-cloud/secret-manager");
+      const client2 = new SecretManagerServiceClient2();
+      const testSecretName = `projects/${process.env.GOOGLE_CLOUD_PROJECT || "roastah-d"}/secrets/DATABASE_URL/versions/latest`;
+      await client2.accessSecretVersion({ name: testSecretName });
+      res.json({ hasCredentials: true });
+    } catch (error) {
+      console.log("ADC check failed:", error?.message || String(error));
+      res.json({ hasCredentials: false });
+    }
+  });
+  app2.post("/api/dev/impersonate", async (req, res) => {
+    const isLocal = req.get("host")?.includes("localhost");
+    const isReplit = process.env.REPL_ID !== void 0;
+    const isCloudRunDev = process.env.K_SERVICE !== void 0 && req.get("host")?.includes("roastah-d");
+    const isDev = isLocal || isReplit || isCloudRunDev;
+    console.log("\u{1F527} Impersonation request - isLocal:", isLocal, "isReplit:", isReplit, "isCloudRunDev:", isCloudRunDev, "isDev:", isDev);
+    if (!isDev) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const isCloudRun3 = process.env.K_SERVICE !== void 0;
+    if (isCloudRun3) {
+      const isAuthenticated3 = req.user?.id || req.session?.user?.sub || req.session?.passport?.user;
+      if (!isAuthenticated3) {
+        return res.status(401).json({ error: "Please log in first to access impersonation features" });
+      }
+      const userInfo = req.user?.email || req.session?.user?.email || "authenticated user";
+      console.log(`\u{1F510} Authenticated user accessing impersonation: ${userInfo}`);
+    }
+    try {
+      const { userType } = req.body;
+      if (!["buyer", "seller"].includes(userType)) {
+        return res.status(400).json({ error: "Invalid user type" });
+      }
+      const devUserId = userType === "seller" ? "dev-seller-001" : "dev-buyer-001";
+      const devUserData = {
+        id: devUserId,
+        email: userType === "seller" ? "dev-seller@roastah.com" : "dev-buyer@roastah.com",
+        firstName: userType === "seller" ? "Development" : "Development",
+        lastName: userType === "seller" ? "Seller" : "Buyer",
+        role: userType === "seller" ? "roaster" : "user",
+        isRoasterApproved: userType === "seller",
+        mfaEnabled: false
+      };
+      await storage.upsertUser(devUserData);
+      if (userType === "seller") {
+        const existingRoaster = await storage.getRoasterByUserId(devUserId);
+        if (!existingRoaster) {
+          const roaster = await storage.createRoaster({
+            userId: devUserId,
+            businessName: "Development Coffee Roasters",
+            businessType: "home_roaster",
+            description: "A development roastery for testing purposes"
+          });
+          const sampleProducts = [
+            {
+              roasterId: roaster.id,
+              name: "Ethiopia Yirgacheffe",
+              description: "Bright and floral with notes of lemon and tea",
+              price: "18.99",
+              stockQuantity: 100,
+              origin: "Ethiopia",
+              roastLevel: "Light",
+              process: "Washed",
+              altitude: "1700-2100m",
+              varietal: "Heirloom",
+              tastingNotes: "Lemon, bergamot, floral, tea-like",
+              state: "published",
+              images: ["/images/sample-coffee-1.jpg"]
+            },
+            {
+              roasterId: roaster.id,
+              name: "Colombia Huila",
+              description: "Sweet and balanced with chocolate notes",
+              price: "16.99",
+              stockQuantity: 85,
+              origin: "Colombia",
+              roastLevel: "Medium",
+              process: "Washed",
+              altitude: "1200-1800m",
+              varietal: "Caturra, Typica",
+              tastingNotes: "Milk chocolate, caramel, orange",
+              state: "published",
+              images: ["/images/sample-coffee-2.jpg"]
+            },
+            {
+              roasterId: roaster.id,
+              name: "Guatemala Antigua",
+              description: "Full-bodied with smoky undertones",
+              price: "17.99",
+              stockQuantity: 60,
+              origin: "Guatemala",
+              roastLevel: "Dark",
+              process: "Washed",
+              altitude: "1500-1700m",
+              varietal: "Bourbon, Typica",
+              tastingNotes: "Dark chocolate, smoke, spice",
+              state: "published",
+              images: ["/images/sample-coffee-3.jpg"]
+            }
+          ];
+          for (const product of sampleProducts) {
+            await storage.createProduct(product);
+          }
+        }
+      }
+      if (req.session) {
+        req.session.user = {
+          id: devUserId,
+          email: devUserData.email,
+          name: `${devUserData.firstName} ${devUserData.lastName}`,
+          sub: devUserId
+        };
+        req.session.tokens = {
+          accessToken: "dev-access-token",
+          refreshToken: "dev-refresh-token"
+        };
+        req.user = {
+          claims: {
+            sub: devUserId,
+            email: devUserData.email,
+            name: `${devUserData.firstName} ${devUserData.lastName}`,
+            role: devUserData.role
+          }
+        };
+      }
+      res.json({
+        success: true,
+        user: {
+          ...devUserData,
+          name: `${devUserData.firstName} ${devUserData.lastName}`
+        },
+        message: `Successfully impersonating ${userType}`
+      });
+    } catch (error) {
+      console.error("Impersonation error:", error);
+      res.status(500).json({ error: "Failed to impersonate user" });
     }
   });
   app2.get("/api/products", async (req, res) => {
@@ -2345,7 +2935,7 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/roaster/apply", authLimiter, enhancedAuthCheck, validateRoasterApplication, handleValidationErrors, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const validatedData = insertRoasterSchema.parse({
         ...req.body,
         userId
@@ -2360,9 +2950,9 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create roaster application" });
     }
   });
-  app2.get("/api/roaster/products", isAuthenticated, async (req, res) => {
+  app2.get("/api/roaster/products", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
@@ -2376,7 +2966,7 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/roaster/products", authLimiter, enhancedAuthCheck, requireRole("roaster"), validateProductCreation, handleValidationErrors, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
@@ -2395,9 +2985,9 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create product" });
     }
   });
-  app2.get("/api/roaster/products/:id", isAuthenticated, async (req, res) => {
+  app2.get("/api/roaster/products/:id", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
@@ -2415,7 +3005,7 @@ async function registerRoutes(app2) {
   });
   app2.put("/api/roaster/products/:id", authLimiter, enhancedAuthCheck, requireRole("roaster"), validateProductCreation, handleValidationErrors, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
@@ -2441,7 +3031,7 @@ async function registerRoutes(app2) {
   });
   app2.patch("/api/roaster/products/:id", authLimiter, enhancedAuthCheck, requireRole("roaster"), async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.id);
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
@@ -2462,7 +3052,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update product" });
     }
   });
-  app2.delete("/api/roaster/products/:id", isAuthenticated, async (req, res) => {
+  app2.delete("/api/roaster/products/:id", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteProduct(id);
@@ -2472,11 +3062,11 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to delete product" });
     }
   });
-  app2.patch("/api/roaster/products/:id/state", isAuthenticated, async (req, res) => {
+  app2.patch("/api/roaster/products/:id/state", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { state } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
@@ -2492,10 +3082,10 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update product state" });
     }
   });
-  app2.patch("/api/roaster/products/:id/tags", isAuthenticated, async (req, res) => {
+  app2.patch("/api/roaster/products/:id/tags", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
@@ -2519,7 +3109,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/cart", enhancedAuthCheck, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const cartItems3 = await storage.getCartByUserId(userId);
       res.json(cartItems3);
     } catch (error) {
@@ -2529,7 +3119,7 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/cart", enhancedAuthCheck, validateCartOperation, handleValidationErrors, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const validatedData = insertCartItemSchema.parse({
         ...req.body,
         userId
@@ -2544,7 +3134,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to add to cart" });
     }
   });
-  app2.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app2.put("/api/cart/:id", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
@@ -2558,7 +3148,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update cart item" });
     }
   });
-  app2.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app2.delete("/api/cart/:id", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.removeFromCart(id);
@@ -2568,9 +3158,9 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to remove from cart" });
     }
   });
-  app2.get("/api/orders", isAuthenticated, async (req, res) => {
+  app2.get("/api/orders", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const orders3 = await storage.getOrdersByUserId(userId);
       res.json(orders3);
     } catch (error) {
@@ -2578,9 +3168,9 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch orders" });
     }
   });
-  app2.get("/api/roaster/orders", isAuthenticated, async (req, res) => {
+  app2.get("/api/roaster/orders", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(404).json({ message: "Roaster not found" });
@@ -2595,6 +3185,9 @@ async function registerRoutes(app2) {
   app2.post("/api/create-payment-intent", paymentLimiter, enhancedAuthCheck, validatePaymentIntent, handleValidationErrors, async (req, res) => {
     try {
       const { amount, cartItems: cartItems3, metadata = {} } = req.body;
+      if (!stripe) {
+        throw new Error("Stripe not initialized");
+      }
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100),
         // Convert to cents
@@ -2643,7 +3236,7 @@ async function registerRoutes(app2) {
         const commissionAmount = saleAmount * commissionRate;
         const platformFee = commissionAmount;
         const roasterEarnings = saleAmount - platformFee;
-        const orderItem = await db.insert(orderItems).values({
+        const orderItem = await getDb().insert(orderItems).values({
           orderId: order.id,
           productId: item.productId,
           roasterId: product.roasterId,
@@ -2666,9 +3259,8 @@ async function registerRoutes(app2) {
         today.setHours(0, 0, 0, 0);
         await storage.updateSellerAnalytics(product.roasterId, today, {
           totalSales: saleAmount.toString(),
-          totalOrders: "1",
-          totalCommissionEarned: roasterEarnings.toString(),
-          averageOrderValue: saleAmount.toString()
+          totalOrders: 1,
+          avgOrderValue: saleAmount.toString()
         });
       }
       await storage.clearCart(userId);
@@ -2676,9 +3268,9 @@ async function registerRoutes(app2) {
       console.error("Error processing commissions:", error);
     }
   }
-  app2.post("/api/admin/process-payouts", isAuthenticated, async (req, res) => {
+  app2.post("/api/admin/process-payouts", isAuthenticated2, async (req, res) => {
     try {
-      const pendingCommissions = await db.select().from(commissions).where(eq2(commissions.status, "pending"));
+      const pendingCommissions = await getDb().select().from(commissions).where(eq2(commissions.status, "pending"));
       const payoutsByRoaster = /* @__PURE__ */ new Map();
       for (const commission of pendingCommissions) {
         if (!payoutsByRoaster.has(commission.roasterId)) {
@@ -2687,7 +3279,7 @@ async function registerRoutes(app2) {
         payoutsByRoaster.get(commission.roasterId).push(commission);
       }
       const payoutResults = [];
-      for (const [roasterId, roasterCommissions] of payoutsByRoaster) {
+      for (const [roasterId, roasterCommissions] of Array.from(payoutsByRoaster)) {
         const roaster = await storage.getRoasterByUserId(roasterId.toString());
         if (!roaster) continue;
         const totalPayout = roasterCommissions.reduce((sum, c) => sum + parseFloat(c.roasterEarnings), 0);
@@ -2735,9 +3327,9 @@ async function registerRoutes(app2) {
       }
     }
   });
-  app2.post("/api/roaster/bulk-upload", isAuthenticated, upload.single("file"), async (req, res) => {
+  app2.post("/api/roaster/bulk-upload", isAuthenticated2, upload.single("file"), async (req, res) => {
     try {
-      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
       if (!roaster) {
         return res.status(403).json({ message: "Roaster profile required" });
       }
@@ -2822,8 +3414,7 @@ async function registerRoutes(app2) {
       await storage.updateBulkUploadStatus(uploadId, "completed", {
         processedRows,
         successfulRows,
-        errors,
-        completedAt: /* @__PURE__ */ new Date()
+        errors
       });
     } catch (error) {
       await storage.updateBulkUploadStatus(uploadId, "failed", {
@@ -2839,9 +3430,9 @@ async function registerRoutes(app2) {
       }
     }
   }
-  app2.get("/api/roaster/bulk-uploads", isAuthenticated, async (req, res) => {
+  app2.get("/api/roaster/bulk-uploads", isAuthenticated2, async (req, res) => {
     try {
-      const roaster = await storage.getRoasterByUserId(req.user.claims.sub);
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
       if (!roaster) {
         return res.status(403).json({ message: "Roaster profile required" });
       }
@@ -2860,10 +3451,10 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     res.setHeader("Content-Disposition", "attachment; filename=bulk-upload-template.csv");
     res.send(csvTemplate);
   });
-  app2.post("/api/products/:id/reviews", isAuthenticated, async (req, res) => {
+  app2.post("/api/products/:id/reviews", isAuthenticated2, async (req, res) => {
     try {
       const productId = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const reviewData = { ...req.body, userId, productId };
       const review = await storage.createReview(reviewData);
       res.json(review);
@@ -2882,9 +3473,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch reviews" });
     }
   });
-  app2.get("/api/wishlist", isAuthenticated, async (req, res) => {
+  app2.get("/api/wishlist", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const wishlistItems = await storage.getWishlistByUserId(userId);
       res.json(wishlistItems);
     } catch (error) {
@@ -2892,9 +3483,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch wishlist" });
     }
   });
-  app2.post("/api/wishlist", isAuthenticated, async (req, res) => {
+  app2.post("/api/wishlist", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const { productId } = req.body;
       const wishlistItem = await storage.addToWishlist({ userId, productId });
       res.json(wishlistItem);
@@ -2903,9 +3494,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to add to wishlist" });
     }
   });
-  app2.delete("/api/wishlist/:productId", isAuthenticated, async (req, res) => {
+  app2.delete("/api/wishlist/:productId", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const productId = parseInt(req.params.productId);
       await storage.removeFromWishlist(userId, productId);
       res.json({ success: true });
@@ -2914,9 +3505,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to remove from wishlist" });
     }
   });
-  app2.get("/api/notifications", isAuthenticated, async (req, res) => {
+  app2.get("/api/notifications", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const notifications3 = await storage.getNotificationsByUserId(userId);
       res.json(notifications3);
     } catch (error) {
@@ -2924,7 +3515,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
-  app2.get("/api/analytics/:roasterId", isAuthenticated, async (req, res) => {
+  app2.get("/api/analytics/:roasterId", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const { startDate, endDate } = req.query;
@@ -2937,7 +3528,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
-  app2.get("/api/commissions/:roasterId", isAuthenticated, async (req, res) => {
+  app2.get("/api/commissions/:roasterId", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const commissions2 = await storage.getCommissionsByRoaster(roasterId);
@@ -2947,7 +3538,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch commissions" });
     }
   });
-  app2.post("/api/commissions", isAuthenticated, async (req, res) => {
+  app2.post("/api/commissions", isAuthenticated2, async (req, res) => {
     try {
       const commission = await storage.createCommission(req.body);
       res.json(commission);
@@ -2956,7 +3547,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create commission" });
     }
   });
-  app2.get("/api/campaigns/:roasterId", isAuthenticated, async (req, res) => {
+  app2.get("/api/campaigns/:roasterId", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const campaigns3 = await storage.getCampaignsByRoaster(roasterId);
@@ -2966,7 +3557,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch campaigns" });
     }
   });
-  app2.post("/api/campaigns", isAuthenticated, async (req, res) => {
+  app2.post("/api/campaigns", isAuthenticated2, async (req, res) => {
     try {
       const campaign = await storage.createCampaign(req.body);
       res.json(campaign);
@@ -2975,7 +3566,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create campaign" });
     }
   });
-  app2.put("/api/campaigns/:id", isAuthenticated, async (req, res) => {
+  app2.put("/api/campaigns/:id", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const campaign = await storage.updateCampaign(id, req.body);
@@ -2985,7 +3576,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to update campaign" });
     }
   });
-  app2.get("/api/bulk-uploads/:roasterId", isAuthenticated, async (req, res) => {
+  app2.get("/api/bulk-uploads/:roasterId", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const uploads = await storage.getBulkUploadsByRoaster(roasterId);
@@ -2995,7 +3586,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch bulk uploads" });
     }
   });
-  app2.post("/api/bulk-upload", isAuthenticated, async (req, res) => {
+  app2.post("/api/bulk-upload", isAuthenticated2, async (req, res) => {
     try {
       const upload2 = await storage.createBulkUpload({
         roasterId: parseInt(req.body.roasterId),
@@ -3011,7 +3602,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create bulk upload" });
     }
   });
-  app2.get("/api/disputes/roaster/:roasterId", isAuthenticated, async (req, res) => {
+  app2.get("/api/disputes/roaster/:roasterId", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const disputes3 = await storage.getDisputesByRoaster(roasterId);
@@ -3021,7 +3612,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch disputes" });
     }
   });
-  app2.get("/api/disputes/customer/:customerId", isAuthenticated, async (req, res) => {
+  app2.get("/api/disputes/customer/:customerId", isAuthenticated2, async (req, res) => {
     try {
       const customerId = req.params.customerId;
       const disputes3 = await storage.getDisputesByCustomer(customerId);
@@ -3031,7 +3622,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch customer disputes" });
     }
   });
-  app2.post("/api/disputes", isAuthenticated, async (req, res) => {
+  app2.post("/api/disputes", isAuthenticated2, async (req, res) => {
     try {
       const dispute = await storage.createDispute(req.body);
       res.json(dispute);
@@ -3040,7 +3631,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create dispute" });
     }
   });
-  app2.put("/api/disputes/:id/status", isAuthenticated, async (req, res) => {
+  app2.put("/api/disputes/:id/status", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { status, resolution } = req.body;
@@ -3064,7 +3655,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch leaderboard" });
     }
   });
-  app2.post("/api/roasters/:id/update-metrics", isAuthenticated, async (req, res) => {
+  app2.post("/api/roasters/:id/update-metrics", isAuthenticated2, async (req, res) => {
     try {
       const roasterId = parseInt(req.params.id);
       await storage.updateRoasterMetrics(roasterId);
@@ -3075,9 +3666,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to update metrics" });
     }
   });
-  app2.post("/api/favorites/roasters/:id", isAuthenticated, async (req, res) => {
+  app2.post("/api/favorites/roasters/:id", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       console.log(`Toggle favorite - User: ${userId}, Roaster: ${roasterId}`);
       if (!roasterId || isNaN(roasterId)) {
@@ -3103,9 +3694,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to toggle favorite roaster", error: error.message });
     }
   });
-  app2.get("/api/favorites/roasters/:id/check", isAuthenticated, async (req, res) => {
+  app2.get("/api/favorites/roasters/:id/check", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       if (!roasterId || isNaN(roasterId)) {
         return res.status(400).json({ message: "Invalid roaster ID" });
@@ -3117,9 +3708,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to check favorite roaster" });
     }
   });
-  app2.delete("/api/favorites/roasters/:id", isAuthenticated, async (req, res) => {
+  app2.delete("/api/favorites/roasters/:id", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       await storage.removeFavoriteRoaster(userId, roasterId);
       res.json({ success: true });
@@ -3128,9 +3719,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to remove favorite roaster" });
     }
   });
-  app2.get("/api/favorites/roasters", isAuthenticated, async (req, res) => {
+  app2.get("/api/favorites/roasters", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const favorites = await storage.getFavoriteRoastersByUser(userId);
       res.json(favorites);
     } catch (error) {
@@ -3138,9 +3729,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch favorite roasters" });
     }
   });
-  app2.get("/api/favorites/roasters/:id/check", isAuthenticated, async (req, res) => {
+  app2.get("/api/favorites/roasters/:id/check", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roasterId = parseInt(req.params.id);
       const isFavorite = await storage.isFavoriteRoaster(userId, roasterId);
       res.json({ isFavorite });
@@ -3149,7 +3740,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to check favorite status" });
     }
   });
-  app2.get("/api/orders/:id/tracking", isAuthenticated, async (req, res) => {
+  app2.get("/api/orders/:id/tracking", isAuthenticated2, async (req, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const tracking = await storage.getOrderTracking(orderId);
@@ -3159,7 +3750,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch order tracking" });
     }
   });
-  app2.post("/api/orders/:id/tracking", isAuthenticated, async (req, res) => {
+  app2.post("/api/orders/:id/tracking", isAuthenticated2, async (req, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const trackingData = { ...req.body, orderId };
@@ -3171,7 +3762,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create order tracking" });
     }
   });
-  app2.put("/api/orders/:id/status", isAuthenticated, async (req, res) => {
+  app2.put("/api/orders/:id/status", isAuthenticated2, async (req, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const { status } = req.body;
@@ -3187,9 +3778,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to update order status" });
     }
   });
-  app2.get("/api/notifications", isAuthenticated, async (req, res) => {
+  app2.get("/api/notifications", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const notifications3 = await storage.getNotificationsByUserId(userId);
       res.json(notifications3);
     } catch (error) {
@@ -3197,7 +3788,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
-  app2.post("/api/notifications", isAuthenticated, async (req, res) => {
+  app2.post("/api/notifications", isAuthenticated2, async (req, res) => {
     try {
       const notification = await storage.createNotification(req.body);
       await realtimeService.broadcastNotification(notification);
@@ -3207,7 +3798,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create notification" });
     }
   });
-  app2.put("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
+  app2.put("/api/notifications/:id/read", isAuthenticated2, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.markNotificationAsRead(id);
@@ -3217,9 +3808,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to mark notification as read" });
     }
   });
-  app2.post("/api/gift-cards", isAuthenticated, async (req, res) => {
+  app2.post("/api/gift-cards", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const giftCardData = {
         ...req.body,
         purchaserId: userId,
@@ -3232,9 +3823,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create gift card" });
     }
   });
-  app2.get("/api/gift-cards", isAuthenticated, async (req, res) => {
+  app2.get("/api/gift-cards", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const giftCards2 = await storage.getGiftCardsByPurchaser(userId);
       res.json(giftCards2);
     } catch (error) {
@@ -3242,7 +3833,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch gift cards" });
     }
   });
-  app2.get("/api/gift-cards/:id", isAuthenticated, async (req, res) => {
+  app2.get("/api/gift-cards/:id", isAuthenticated2, async (req, res) => {
     try {
       const giftCardId = parseInt(req.params.id);
       const giftCard = await storage.getGiftCardById(giftCardId);
@@ -3255,9 +3846,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch gift card" });
     }
   });
-  app2.post("/api/gift-cards/redeem", isAuthenticated, async (req, res) => {
+  app2.post("/api/gift-cards/redeem", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const { code, amount } = req.body;
       const giftCard = await storage.getGiftCardByCode(code);
       if (!giftCard) {
@@ -3287,10 +3878,10 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to redeem gift card" });
     }
   });
-  app2.post("/api/validate-address", isAuthenticated, async (req, res) => {
+  app2.post("/api/validate-address", isAuthenticated2, async (req, res) => {
     try {
       const { addressLine1, addressLine2, city, state, zipCode } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       if (!addressLine1 || !city || !state || !zipCode) {
         return res.status(400).json({
           isValid: false,
@@ -3362,7 +3953,7 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to seed message subjects" });
     }
   });
-  app2.get("/api/message-subjects", isAuthenticated, async (req, res) => {
+  app2.get("/api/message-subjects", isAuthenticated2, async (req, res) => {
     try {
       const subjects = await storage.getAllMessageSubjects();
       res.json(subjects);
@@ -3371,9 +3962,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch message subjects" });
     }
   });
-  app2.post("/api/seller/messages", isAuthenticated, async (req, res) => {
+  app2.post("/api/seller/messages", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(403).json({ message: "Only sellers can send messages" });
@@ -3419,9 +4010,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to create message" });
     }
   });
-  app2.get("/api/seller/messages", isAuthenticated, async (req, res) => {
+  app2.get("/api/seller/messages", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (!roaster) {
         return res.status(403).json({ message: "Only sellers can view sent messages" });
@@ -3433,9 +4024,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
-  app2.get("/api/buyer/messages", isAuthenticated, async (req, res) => {
+  app2.get("/api/buyer/messages", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (roaster) {
         return res.status(403).json({ message: "Sellers cannot view buyer messages" });
@@ -3447,9 +4038,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
-  app2.get("/api/buyer/messages/unread-count", isAuthenticated, async (req, res) => {
+  app2.get("/api/buyer/messages/unread-count", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const roaster = await storage.getRoasterByUserId(userId);
       if (roaster) {
         return res.json({ count: 0 });
@@ -3461,9 +4052,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to fetch unread count" });
     }
   });
-  app2.post("/api/buyer/messages/:messageId/read", isAuthenticated, async (req, res) => {
+  app2.post("/api/buyer/messages/:messageId/read", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const messageId = parseInt(req.params.messageId);
       const roaster = await storage.getRoasterByUserId(userId);
       if (roaster) {
@@ -3479,9 +4070,9 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
       res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
-  app2.get("/api/messages/:messageId", isAuthenticated, async (req, res) => {
+  app2.get("/api/messages/:messageId", isAuthenticated2, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user?.sub || req.user?.id;
       const messageId = parseInt(req.params.messageId);
       if (!messageId || isNaN(messageId)) {
         return res.status(400).json({ message: "Invalid message ID" });
@@ -3514,84 +4105,15 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
   return httpServer;
 }
 
-// server/secrets.ts
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
-var client2 = new SecretManagerServiceClient();
-async function getSecret(secretName) {
-  try {
-    const name = `projects/${process.env.GOOGLE_CLOUD_PROJECT || "roastah-d"}/secrets/${secretName}/versions/latest`;
-    const [version] = await client2.accessSecretVersion({ name });
-    return version.payload?.data?.toString() || "";
-  } catch (error) {
-    console.warn(`Failed to load secret ${secretName} from Secret Manager:`, error);
-    return process.env[secretName] || "";
-  }
-}
-async function loadSecrets() {
-  const isCloudRun = process.env.GOOGLE_CLOUD_PROJECT || process.env.K_SERVICE || process.env.K_REVISION || process.env.PORT === "8080" && process.env.NODE_ENV === "development";
-  if (isCloudRun) {
-    try {
-      console.log("Loading secrets from Secret Manager...");
-      const secretsToLoad = [];
-      if (process.env.REPLIT_DOMAINS?.startsWith("sm://")) {
-        secretsToLoad.push(["REPLIT_DOMAINS", process.env.REPLIT_DOMAINS.replace("sm://", "")]);
-      }
-      if (process.env.REPL_ID?.startsWith("sm://")) {
-        secretsToLoad.push(["REPL_ID", process.env.REPL_ID.replace("sm://", "")]);
-      }
-      if (process.env.STRIPE_SECRET_KEY?.startsWith("sm://")) {
-        secretsToLoad.push(["STRIPE_SECRET_KEY", process.env.STRIPE_SECRET_KEY.replace("sm://", "")]);
-      }
-      if (secretsToLoad.length > 0) {
-        console.log(`Found ${secretsToLoad.length} secrets using sm:// syntax, loading from Secret Manager...`);
-        for (const [envVar, secretName] of secretsToLoad) {
-          try {
-            const secretValue = await getSecret(secretName);
-            if (secretValue) {
-              process.env[envVar] = secretValue;
-              console.log(`Loaded ${envVar} from Secret Manager`);
-            } else {
-              console.warn(`Failed to load secret ${secretName} for ${envVar}`);
-            }
-          } catch (error) {
-            console.warn(`Error loading secret ${secretName} for ${envVar}:`, error);
-          }
-        }
-      } else {
-        console.log("No sm:// secrets found, using direct Secret Manager access...");
-        const [replitDomains, replId, stripeSecretKey] = await Promise.all([
-          getSecret("REPLIT_DOMAINS"),
-          getSecret("REPL_ID"),
-          getSecret("STRIPE_SECRET_KEY")
-        ]);
-        if (replitDomains) {
-          process.env.REPLIT_DOMAINS = replitDomains;
-          console.log("Loaded REPLIT_DOMAINS from Secret Manager");
-        }
-        if (replId) {
-          process.env.REPL_ID = replId;
-          console.log("Loaded REPL_ID from Secret Manager");
-        }
-        if (stripeSecretKey) {
-          process.env.STRIPE_SECRET_KEY = stripeSecretKey;
-          console.log("Loaded STRIPE_SECRET_KEY from Secret Manager");
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to load secrets from Secret Manager:", error);
-    }
-  } else {
-    console.log("Running locally, using environment variables");
-  }
-}
-
 // server/index.ts
+init_secrets();
 import fs2 from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var app = express();
+app.set("trust proxy", 1);
 setupSecurity(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -3633,7 +4155,9 @@ app.use((req, res, next) => {
     console.log("Environment:", process.env.NODE_ENV);
     console.log("Port:", process.env.PORT || 5e3);
     await loadSecrets();
-    const server = await registerRoutes(app);
+    const httpServer = await registerRoutes(app);
+    const serverPort = process.env.PORT || 5e3;
+    process.env.PORT = serverPort.toString();
     app.use((err, _req, res, _next) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -3643,21 +4167,29 @@ app.use((req, res, next) => {
     });
     const distPath = path.resolve(__dirname, "../dist/public");
     if (fs2.existsSync(distPath)) {
+      console.log("\u2705 Found dist/public directory, serving static files from:", distPath);
       app.use(express.static(distPath));
-      app.use("*", (req, res, next) => {
-        if (req.path.startsWith("/api")) {
+      app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api") || req.path.includes(".")) {
           return next();
         }
-        res.sendFile(path.resolve(distPath, "index.html"));
+        const indexPath = path.resolve(distPath, "index.html");
+        console.log("\u{1F4C4} Serving SPA route:", req.path, "-> index.html");
+        if (fs2.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          console.error("\u274C index.html not found at:", indexPath);
+          res.status(404).send("index.html not found");
+        }
       });
     } else {
-      console.warn("No dist/public directory found, skipping static file serving");
+      console.warn("\u274C No dist/public directory found at:", distPath);
+      console.warn('   Make sure to run "npm run build" first');
     }
-    const port = process.env.PORT || 5e3;
-    server.listen({
+    const port = serverPort;
+    httpServer.listen({
       port,
-      host: "0.0.0.0",
-      reusePort: true
+      host: "0.0.0.0"
     }, () => {
       console.log(`\u2705 Roastah server started successfully on port ${port}`);
     });

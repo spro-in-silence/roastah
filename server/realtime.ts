@@ -22,6 +22,12 @@ class RealtimeService {
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
   initialize(server: Server) {
+    // Skip WebSocket initialization in test environment
+    if (process.env.NODE_ENV === 'test') {
+      console.log('Skipping WebSocket initialization in test environment');
+      return;
+    }
+
     this.wss = new WebSocketServer({ 
       server, 
       path: '/ws',
@@ -178,6 +184,10 @@ class RealtimeService {
 
   // Public methods for broadcasting updates
   async broadcastOrderUpdate(orderId: number, tracking: OrderTracking) {
+    if (process.env.NODE_ENV === 'test') {
+      return; // Skip WebSocket operations in test environment
+    }
+
     const order = await storage.getOrderById(orderId);
     if (!order) return;
 
@@ -204,6 +214,10 @@ class RealtimeService {
   }
 
   async broadcastNotification(notification: Notification) {
+    if (process.env.NODE_ENV === 'test') {
+      return; // Skip WebSocket operations in test environment
+    }
+
     const message: RealtimeMessage = {
       type: 'notification',
       data: notification,
@@ -214,6 +228,10 @@ class RealtimeService {
   }
 
   async broadcastOrderStatusChange(orderId: number, newStatus: string, oldStatus: string) {
+    if (process.env.NODE_ENV === 'test') {
+      return; // Skip WebSocket operations in test environment
+    }
+
     const order = await storage.getOrderById(orderId);
     if (!order) return;
 
@@ -227,6 +245,10 @@ class RealtimeService {
   }
 
   private async sendToUser(userId: string, message: RealtimeMessage) {
+    if (process.env.NODE_ENV === 'test') {
+      return; // Skip WebSocket operations in test environment
+    }
+
     const userConnections = this.connections.get(userId);
     if (!userConnections || userConnections.length === 0) return;
 

@@ -38,11 +38,40 @@ global.Request = class Request {
 
 // Mock environment variables
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test_db';
 process.env.SESSION_SECRET = 'test-session-secret';
 
 // Mock fetch
 global.fetch = jest.fn();
+
+// Mock WebSocket for tests
+jest.mock('ws', () => ({
+  WebSocketServer: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    close: jest.fn(),
+    clients: new Set(),
+  })),
+  WebSocket: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    send: jest.fn(),
+    close: jest.fn(),
+    readyState: 1,
+    OPEN: 1,
+  })),
+}));
+
+// Mock the realtime service to avoid WebSocket initialization
+jest.mock('../server/realtime', () => ({
+  realtimeService: {
+    initialize: jest.fn(),
+    broadcastOrderUpdate: jest.fn(),
+    broadcastNotification: jest.fn(),
+    broadcastOrderStatusChange: jest.fn(),
+    getConnectedUsers: jest.fn(() => []),
+    getUserConnectionCount: jest.fn(() => 0),
+    shutdown: jest.fn(),
+  },
+}));
 
 // Mock console methods to reduce noise in tests
 global.console = {

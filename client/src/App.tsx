@@ -32,6 +32,11 @@ import BuyerMessages from "@/pages/buyer-messages";
 import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
 
+// Create a temporary component for missing SellerProductsNew
+const SellerProductsNew = () => {
+  return <div>Seller Products New - Coming Soon</div>;
+};
+
 // All environments should show the standard landing page by default
 function StandardLanding() {
   return <Landing />;

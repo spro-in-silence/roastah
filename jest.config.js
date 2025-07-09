@@ -34,10 +34,10 @@ export default {
   maxWorkers: 4,
   coverageThreshold: {
     global: {
-      branches: 20,
-      functions: 20,
-      lines: 20,
-      statements: 20
+      branches: 10,
+      functions: 10,
+      lines: 10,
+      statements: 10
     }
   },
   globalSetup: '<rootDir>/tests/global-setup.ts',

@@ -37,23 +37,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
   }
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-05-28.basil",
+    apiVersion: "2023-10-16",
   });
   
   // Setup authentication (automatically chooses Replit Auth or OAuth based on environment)
   const { isAuthenticated } = await setupAuthentication(app);
 
-  // Configuration endpoint - serves public configuration from GCP Secret Manager
+  // Configuration endpoint - serves public configuration from GCP Secret Manager or environment variables
   app.get('/api/config', async (req: any, res: any) => {
     try {
-      // Import the getSecret function to load VITE_STRIPE_PUBLIC_KEY
-      const { getSecret } = await import('./secrets');
-      
-      // Load the VITE_STRIPE_PUBLIC_KEY from GCP Secret Manager
-      const stripePublicKey = await getSecret('VITE_STRIPE_PUBLIC_KEY');
+      let stripePublicKey = process.env.VITE_STRIPE_PUBLIC_KEY;
       
       if (!stripePublicKey) {
-        console.error('VITE_STRIPE_PUBLIC_KEY not found in secrets');
+        // Fall back to GCP Secret Manager
+        const { getSecret } = await import('./secrets');
+        stripePublicKey = await getSecret('VITE_STRIPE_PUBLIC_KEY');
+      }
+      
+      if (!stripePublicKey) {
+        console.error('VITE_STRIPE_PUBLIC_KEY not found in environment or secrets');
         return res.status(500).json({ error: 'Stripe configuration not available' });
       }
       
@@ -926,31 +928,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
-        payment_method_types: [
-          'card',
-          'paypal',
-          'amazon_pay'
-        ],
-        payment_method_options: {
-          card: {
-            request_three_d_secure: 'automatic',
-          },
-          paypal: {
-            preferred_locale: 'en_US',
-          },
-          amazon_pay: {
-            capture_method: 'automatic',
-          },
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'always'
         },
         metadata: {
           cartItems: JSON.stringify(cartItems || []),
-          userId: (req.user as any)?.claims?.sub || '',
+          userId: req.session?.user?.sub || req.user?.id || req.user?.claims?.sub || '',
           ...metadata
         }
       });
       
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
+      console.error('Payment intent creation error:', error);
       res.status(500).json({ message: "Error creating payment intent: " + error.message });
     }
   });

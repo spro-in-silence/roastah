@@ -632,6 +632,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/roaster/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster profile not found" });
+      }
+      
+      res.json(roaster);
+    } catch (error) {
+      console.error("Error fetching roaster profile:", error);
+      res.status(500).json({ message: "Failed to fetch roaster profile" });
+    }
+  });
+
   app.post('/api/roaster/products', authLimiter, enhancedAuthCheck, requireRole('roaster'), validateProductCreation, handleValidationErrors, async (req: any, res: any) => {
     try {
       const userId = req.session.user?.sub || req.user?.id;
@@ -1344,11 +1360,51 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Generic analytics endpoint - gets roaster ID from authenticated user
+  app.get('/api/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const { startDate, endDate } = req.query;
+      const start = startDate ? new Date(startDate) : undefined;
+      const end = endDate ? new Date(endDate) : undefined;
+      
+      const analytics = await storage.getSellerAnalyticsByRoaster(roaster.id, start, end);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
   // Commission tracking
   app.get('/api/commissions/:roasterId', isAuthenticated, async (req: any, res) => {
     try {
       const roasterId = parseInt(req.params.roasterId);
       const commissions = await storage.getCommissionsByRoaster(roasterId);
+      res.json(commissions);
+    } catch (error) {
+      console.error("Error fetching commissions:", error);
+      res.status(500).json({ message: "Failed to fetch commissions" });
+    }
+  });
+
+  // Generic commissions endpoint - gets roaster ID from authenticated user
+  app.get('/api/commissions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const commissions = await storage.getCommissionsByRoaster(roaster.id);
       res.json(commissions);
     } catch (error) {
       console.error("Error fetching commissions:", error);
@@ -1371,6 +1427,24 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     try {
       const roasterId = parseInt(req.params.roasterId);
       const campaigns = await storage.getCampaignsByRoaster(roasterId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  // Generic campaigns endpoint - gets roaster ID from authenticated user
+  app.get('/api/campaigns', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const campaigns = await storage.getCampaignsByRoaster(roaster.id);
       res.json(campaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
@@ -1404,6 +1478,24 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     try {
       const roasterId = parseInt(req.params.roasterId);
       const uploads = await storage.getBulkUploadsByRoaster(roasterId);
+      res.json(uploads);
+    } catch (error) {
+      console.error("Error fetching bulk uploads:", error);
+      res.status(500).json({ message: "Failed to fetch bulk uploads" });
+    }
+  });
+
+  // Generic bulk uploads endpoint - gets roaster ID from authenticated user
+  app.get('/api/bulk-uploads', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const uploads = await storage.getBulkUploadsByRoaster(roaster.id);
       res.json(uploads);
     } catch (error) {
       console.error("Error fetching bulk uploads:", error);

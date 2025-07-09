@@ -1,0 +1,48 @@
+--------------------------|---------|----------|---------|---------|-------------------
+File                      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------------|---------|----------|---------|---------|-------------------
+All files                 |       0 |        0 |       0 |       0 |                   
+ client/src/components/ui |       0 |      100 |     100 |       0 |                   
+  aspect-ratio.tsx        |       0 |      100 |     100 |       0 | 3                 
+  collapsible.tsx         |       0 |      100 |     100 |       0 | 5-9               
+ client/src/hooks         |       0 |        0 |       0 |       0 |                   
+  use-mobile.tsx          |       0 |      100 |       0 |       0 | 3-18              
+  use-toast.ts            |       0 |        0 |       0 |       0 | 8-187             
+  useAuth.ts              |       0 |        0 |       0 |       0 | 5-24              
+  useConfig.ts            |       0 |      100 |       0 |       0 | 11-34             
+  useRealtimeTracking.ts  |       0 |        0 |       0 |       0 | 23-267            
+ client/src/lib           |       0 |        0 |       0 |       0 |                   
+  authUtils.ts            |       0 |      100 |       0 |       0 | 2                 
+  cache-utils.ts          |       0 |        0 |       0 |       0 | 22-175            
+  product-state.ts        |       0 |        0 |       0 |       0 | 19-154            
+  queryClient.ts          |       0 |        0 |       0 |       0 | 4-44              
+  utils.ts                |       0 |      100 |       0 |       0 | 5                 
+  websocket-service.ts    |       0 |        0 |       0 |       0 | 15-194            
+ server                   |       0 |        0 |       0 |       0 |                   
+  db.ts                   |       0 |        0 |       0 |       0 | 6-30              
+  dev-server.ts           |       0 |        0 |       0 |       0 | 2-106             
+  index.ts                |       0 |        0 |       0 |       0 | 10-128            
+  medusa-bridge.ts        |       0 |        0 |       0 |       0 | 9-148             
+  security.ts             |       0 |        0 |       0 |       0 | 8-310             
+  storage.ts              |       0 |        0 |       0 |       0 | 187-1228          
+  vite.ts                 |       0 |        0 |       0 |       0 | 11-93             
+ shared                   |       0 |      100 |       0 |       0 |                   
+  schema.ts               |       0 |      100 |       0 |       0 | 19-717            
+--------------------------|---------|----------|---------|---------|-------------------
+Jest: "global" coverage threshold for statements (80%) not met: 0%
+Jest: "global" coverage threshold for branches (80%) not met: 0%
+Jest: "global" coverage threshold for lines (80%) not met: 0%
+Jest: "global" coverage threshold for functions (80%) not met: 0%
+Test Suites: 13 failed, 13 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        72.48 s
+Ran all test suites matching tests/backend/auth.test.ts|tests/backend/products.test.ts|tests/backend/cart.test.ts|tests/backend/orders.test.ts|tests/backend/roasters.test.ts|tests/backend/payments.test.ts|tests/backend/realtime.test.ts|tests/backend/security.test.ts|tests/frontend/components/auth-page.test.tsx|tests/frontend/components/product-card.test.tsx|tests/frontend/components/seller-dashboard.test.tsx|tests/frontend/integration/user-flow.test.tsx|tests/frontend/integration/checkout-flow.test.tsx.
+🧹 Cleaning up global test environment...
+✅ Test database cleanup complete
+🏁 Global test teardown complete
+
+❌ Tests failed: Jest exited with code 1
+❌ Full test suite failed - push blocked
+error: failed to push some refs to 'https://github.com/spro-in-silence/roastah'
+~/workspace$ 

@@ -140,16 +140,18 @@ export default function AuthPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Email/Password Form - Available in all environments */}
-                <form onSubmit={handleEmailAuth} className="space-y-4">
-                  {!isLogin && isProduction && (
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={name}
+                {isProduction ? (
+                  <>
+                    {/* Email/Password Form - Available in all environments */}
+                    <form onSubmit={handleEmailAuth} className="space-y-4">
+                      {!isLogin && (
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Full Name</Label>
+                          <Input
+                            id="name"
+                            type="text"
+                            placeholder="Enter your full name"
+                            value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
                           />
@@ -203,25 +205,23 @@ export default function AuthPage() {
                     </form>
 
                     {/* Toggle between Login/Register - Only show signup in production */}
-                    {isProduction && (
-                      <div className="text-center">
-                        <Button
-                          variant="link"
-                          onClick={() => {
-                            setIsLogin(!isLogin);
-                            setEmail("");
-                            setPassword("");
-                            setName("");
-                          }}
-                          className="text-sm"
-                        >
-                          {isLogin 
-                            ? "Don't have an account? Sign up" 
-                            : "Already have an account? Sign in"
-                          }
-                        </Button>
-                      </div>
-                    )}
+                    <div className="text-center">
+                      <Button
+                        variant="link"
+                        onClick={() => {
+                          setIsLogin(!isLogin);
+                          setEmail("");
+                          setPassword("");
+                          setName("");
+                        }}
+                        className="text-sm"
+                      >
+                        {isLogin 
+                          ? "Don't have an account? Sign up" 
+                          : "Already have an account? Sign in"
+                        }
+                      </Button>
+                    </div>
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">

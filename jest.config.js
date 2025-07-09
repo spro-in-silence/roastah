@@ -1,14 +1,22 @@
-module.exports = {
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/src', '<rootDir>/client/src', '<rootDir>/server', '<rootDir>/tests'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/client/src/$1',
+    '^@shared/(.*)$': '<rootDir>/shared/$1',
+    '^@server/(.*)$': '<rootDir>/server/$1',
+    '^@assets/(.*)$': '<rootDir>/attached_assets/$1'
+  },
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: true
+    }]
+  },
   testMatch: [
     '**/__tests__/**/*.(ts|tsx|js)',
     '**/*.(test|spec).(ts|tsx|js)'
   ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
   collectCoverageFrom: [
     'server/**/*.{ts,tsx}',
     'client/src/**/*.{ts,tsx}',
@@ -19,12 +27,6 @@ module.exports = {
     '!**/dist/**'
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/client/src/$1',
-    '^@shared/(.*)$': '<rootDir>/shared/$1',
-    '^@server/(.*)$': '<rootDir>/server/$1',
-    '^@assets/(.*)$': '<rootDir>/attached_assets/$1'
-  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testTimeout: 30000,
   maxWorkers: 4,
@@ -39,3 +41,5 @@ module.exports = {
   globalSetup: '<rootDir>/tests/global-setup.ts',
   globalTeardown: '<rootDir>/tests/global-teardown.ts'
 };
+
+export default config;

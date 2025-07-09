@@ -178,6 +178,8 @@ Changelog:
 - July 08, 2025. Updated buyer impersonation to navigate to /home instead of landing page
 - July 08, 2025. Consolidated auth pages into single auth-page.tsx with conditional signup visibility based on environment
 - July 09, 2025. Completed systematic file consolidation across entire codebase - removed 6 duplicate files and archived 5 historical documentation files
+- July 09, 2025. Fixed deployment JSX syntax error caused during consolidation and corrected authentication page environment detection
+- July 09, 2025. Updated GCP dev Cloud Run environment to show proper login form while maintaining impersonation redirect after authentication
 ```
 
 ## User Preferences

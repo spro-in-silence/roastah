@@ -300,6 +300,16 @@ export async function setupOAuth(app: Express) {
           mfaRequired: !!(roaster || user?.role === 'admin'),
         };
         
+        // Debug logging for development users
+        if (user.id?.startsWith('dev-')) {
+          console.log('🔧 Development user data:', {
+            id: user.id,
+            role: user.role,
+            isRoasterApproved: user.isRoasterApproved,
+            roaster: roaster ? 'present' : 'not found'
+          });
+        }
+        
         return res.json(response);
       }
       

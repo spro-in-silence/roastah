@@ -30,18 +30,33 @@ export default function SellerDashboard() {
       return;
     }
 
-    // Skip roaster check for development impersonated users
-    if (!isLoading && isAuthenticated && !isRoaster && !user?.id?.startsWith('dev-seller-')) {
-      toast({
-        title: "Access Denied",
-        description: "You need to be a roaster to access this page.",
-        variant: "destructive",
+    // More robust check for roaster access - handle development impersonated users and timing issues
+    if (!isLoading && isAuthenticated && user) {
+      const isDevelopmentSeller = user.id?.startsWith('dev-seller-');
+      const isApprovedRoaster = user.role === 'roaster' && user.isRoasterApproved;
+      
+      console.log('SellerDashboard: Access check', {
+        userId: user.id,
+        role: user.role,
+        isRoasterApproved: user.isRoasterApproved,
+        isDevelopmentSeller,
+        isApprovedRoaster,
+        isRoaster,
+        shouldAllowAccess: isDevelopmentSeller || isApprovedRoaster
       });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
+      
+      if (!isDevelopmentSeller && !isApprovedRoaster) {
+        toast({
+          title: "Access Denied",
+          description: "You need to be a roaster to access this page.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+      }
     }
-  }, [isAuthenticated, isLoading, isRoaster, toast]);
+  }, [isAuthenticated, isLoading, isRoaster, user, toast]);
 
   // Fetch data - allow for development impersonated users
   const shouldFetchRoasterData = isAuthenticated && (isRoaster || user?.id?.startsWith('dev-seller-'));
@@ -93,9 +108,14 @@ export default function SellerDashboard() {
     );
   }
 
-  // Allow access for development impersonated sellers
-  if (!isRoaster && !user?.id?.startsWith('dev-seller-')) {
-    return null; // Will redirect in useEffect
+  // Allow access for development impersonated sellers and approved roasters
+  if (!isLoading && user) {
+    const isDevelopmentSeller = user.id?.startsWith('dev-seller-');
+    const isApprovedRoaster = user.role === 'roaster' && user.isRoasterApproved;
+    
+    if (!isDevelopmentSeller && !isApprovedRoaster) {
+      return null; // Will redirect in useEffect
+    }
   }
 
   return (

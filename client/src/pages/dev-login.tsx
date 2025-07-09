@@ -93,6 +93,9 @@ export default function DevLogin() {
         await queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
         
+        // Wait a moment for the context to update after cache invalidation
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         toast({
           title: "Success",
           description: `Now impersonating ${userType}`,

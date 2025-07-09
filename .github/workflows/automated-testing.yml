@@ -1,0 +1,484 @@
+name: Automated Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'hotfix/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run full test suite daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of tests to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - integration
+          - security
+          - performance
+          - regression
+
+env:
+  NODE_VERSION: '18'
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  # Fast feedback for all pushes
+  quick-validation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run quick tests
+      run: node scripts/test-quick.js
+      timeout-minutes: 5
+
+    - name: Upload quick test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: quick-test-results-${{ github.sha }}
+        path: test-results/
+        retention-days: 7
+
+  # Comprehensive testing for main branches
+  comprehensive-testing:
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'main') || contains(github.ref, 'develop') || github.event_name == 'schedule'
+    needs: quick-validation
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: roastah_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    strategy:
+      matrix:
+        test-suite: [backend, frontend, integration, security, performance]
+        
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup test database
+      run: npm run db:push
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+
+    - name: Run test suite
+      run: node scripts/run-tests.js ${{ matrix.test-suite }} --coverage --ci
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+        NODE_ENV: test
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        flags: ${{ matrix.test-suite }}
+        name: ${{ matrix.test-suite }}-coverage
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ matrix.test-suite }}-results-${{ github.sha }}
+        path: |
+          test-results/
+          coverage/
+
+  # Regression testing for critical paths
+  regression-testing:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'critical')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: roastah_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup test database
+      run: npm run db:push
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+
+    - name: Run regression tests
+      run: node scripts/test-regression.js
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+        NODE_ENV: test
+
+    - name: Comment regression results
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          let comment = '## 🔄 Regression Test Results\n\n';
+          
+          try {
+            const reportPath = path.join(process.cwd(), 'test-results', 'regression-report.json');
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              comment += `**Status**: ${report.success ? '✅ PASSED' : '❌ FAILED'}\n`;
+              comment += `**Critical Areas Tested**: ${report.suites.join(', ')}\n`;
+              comment += `**Execution Time**: ${report.duration}ms\n\n`;
+              
+              if (!report.success) {
+                comment += '### Failed Tests\n';
+                report.failures.forEach(failure => {
+                  comment += `- **${failure.suite}**: ${failure.error}\n`;
+                });
+              }
+            }
+          } catch (error) {
+            comment += '❌ Could not read regression test results\n';
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  # Deployment validation
+  deployment-validation:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [quick-validation, comprehensive-testing]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: roastah_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Setup test database
+      run: npm run db:push
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+
+    - name: Run deployment validation
+      run: node scripts/test-deployment.js
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+        NODE_ENV: test
+
+    - name: Create deployment report
+      run: |
+        echo "## 🚀 Deployment Validation Report" >> deployment-report.md
+        echo "**Status**: ✅ Ready for deployment" >> deployment-report.md
+        echo "**Timestamp**: $(date)" >> deployment-report.md
+        echo "**Commit**: ${{ github.sha }}" >> deployment-report.md
+        echo "**Branch**: ${{ github.ref }}" >> deployment-report.md
+
+    - name: Upload deployment report
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-validation-${{ github.sha }}
+        path: |
+          deployment-report.md
+          test-results/
+
+  # Security scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+
+    - name: Run security tests
+      run: node scripts/run-tests.js security --verbose --ci
+
+    - name: Run dependency scan
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Check for vulnerabilities
+      run: |
+        if npm audit --audit-level=high --json | jq '.vulnerabilities | length > 0' 2>/dev/null; then
+          echo "❌ High severity vulnerabilities found"
+          npm audit --audit-level=high
+          exit 1
+        else
+          echo "✅ No high severity vulnerabilities found"
+        fi
+
+    - name: Create security report
+      if: always()
+      run: |
+        echo "## 🔒 Security Scan Report" > security-report.md
+        echo "**Timestamp**: $(date)" >> security-report.md
+        echo "**Branch**: ${{ github.ref }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "### Audit Results" >> security-report.md
+        npm audit --audit-level=moderate >> security-report.md || true
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-report-${{ github.sha }}
+        path: security-report.md
+
+  # Performance monitoring
+  performance-monitoring:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: roastah_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup test database
+      run: npm run db:push
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+
+    - name: Run performance tests
+      run: node scripts/run-tests.js backend --verbose --ci
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roastah_test
+        NODE_ENV: test
+
+    - name: Generate performance report
+      run: |
+        echo "## ⚡ Performance Monitoring Report" > performance-report.md
+        echo "**Timestamp**: $(date)" >> performance-report.md
+        echo "**Branch**: ${{ github.ref }}" >> performance-report.md
+        echo "" >> performance-report.md
+        echo "### Test Execution Times" >> performance-report.md
+        # Add performance metrics here
+
+    - name: Upload performance report
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-report-${{ github.sha }}
+        path: performance-report.md
+
+  # Test result aggregation
+  test-summary:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [quick-validation, comprehensive-testing, security-scan]
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+
+    - name: Generate test summary
+      run: |
+        echo "# 📊 Automated Testing Summary" > test-summary.md
+        echo "" >> test-summary.md
+        echo "**Workflow**: ${{ github.workflow }}" >> test-summary.md
+        echo "**Branch**: ${{ github.ref }}" >> test-summary.md
+        echo "**Commit**: ${{ github.sha }}" >> test-summary.md
+        echo "**Timestamp**: $(date)" >> test-summary.md
+        echo "" >> test-summary.md
+        
+        # Check job statuses
+        echo "## Job Results" >> test-summary.md
+        echo "- Quick Validation: ${{ needs.quick-validation.result }}" >> test-summary.md
+        echo "- Comprehensive Testing: ${{ needs.comprehensive-testing.result }}" >> test-summary.md
+        echo "- Security Scan: ${{ needs.security-scan.result }}" >> test-summary.md
+        echo "" >> test-summary.md
+        
+        # Add coverage summary if available
+        if [ -f "artifacts/*/coverage-summary.json" ]; then
+          echo "## Coverage Summary" >> test-summary.md
+          # Process coverage data
+        fi
+
+    - name: Upload test summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-summary-${{ github.sha }}
+        path: test-summary.md
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let summary = '## 🧪 Automated Testing Summary\n\n';
+          
+          try {
+            const summaryContent = fs.readFileSync('test-summary.md', 'utf8');
+            summary += summaryContent;
+          } catch (error) {
+            summary += '❌ Could not read test summary\n';
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+
+  # Notification on failures
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    if: failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [quick-validation, comprehensive-testing, security-scan, deployment-validation]
+    
+    steps:
+    - name: Create failure issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🚨 Automated Testing Failure - ${new Date().toISOString().split('T')[0]}`;
+          const body = `## Testing Pipeline Failure
+          
+          **Workflow**: ${{ github.workflow }}
+          **Branch**: ${{ github.ref }}
+          **Commit**: ${{ github.sha }}
+          **Timestamp**: ${new Date().toISOString()}
+          
+          ### Failed Jobs
+          - Quick Validation: ${{ needs.quick-validation.result }}
+          - Comprehensive Testing: ${{ needs.comprehensive-testing.result }}
+          - Security Scan: ${{ needs.security-scan.result }}
+          - Deployment Validation: ${{ needs.deployment-validation.result }}
+          
+          ### Action Required
+          Please investigate and fix the failing tests immediately.
+          
+          [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['bug', 'critical', 'ci-failure', 'automated-testing']
+          });

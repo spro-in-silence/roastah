@@ -182,6 +182,9 @@ Changelog:
 - July 09, 2025. Updated GCP dev Cloud Run environment to show proper login form while maintaining impersonation redirect after authentication
 - July 09, 2025. Identified and fixed deployment pipeline issue - deployment script was stopping after Docker push step without executing Cloud Run deployment
 - July 09, 2025. Enhanced deployment script with better error handling and verbose logging to ensure successful Cloud Run deployment
+- July 09, 2025. Fixed seller impersonation access control timing issues across all environments with improved debugging
+- July 09, 2025. Updated environment detection in OAuth authentication to properly identify Cloud Run dev instances
+- July 09, 2025. Added comprehensive impersonation validation endpoint and debugging tools for thorough testing
 ```
 
 ## User Preferences

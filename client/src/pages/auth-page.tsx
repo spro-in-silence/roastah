@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Coffee, Star, Users, ShoppingBag, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
@@ -98,6 +99,9 @@ export default function AuthPage() {
           description: isLogin ? "You've successfully signed in." : "Your account has been created and you're now signed in.",
         });
         
+        // Force refetch of user data to ensure authentication state is updated
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        
         // Small delay to ensure authentication state is updated
         setTimeout(() => {
           // Development environments (Replit, localhost, GCP dev) redirect to /dev-login for impersonation
@@ -106,7 +110,7 @@ export default function AuthPage() {
           } else {
             navigate("/");
           }
-        }, 150);
+        }, 300);
       } else {
         const error = await response.text();
         toast({
@@ -207,24 +211,26 @@ export default function AuthPage() {
                       </Button>
                     </form>
 
-                    {/* Toggle between Login/Register - Only show signup in production */}
-                    <div className="text-center">
-                      <Button
-                        variant="link"
-                        onClick={() => {
-                          setIsLogin(!isLogin);
-                          setEmail("");
-                          setPassword("");
-                          setName("");
-                        }}
-                        className="text-sm"
-                      >
-                        {isLogin 
-                          ? "Don't have an account? Sign up" 
-                          : "Already have an account? Sign in"
-                        }
-                      </Button>
-                    </div>
+                    {/* Toggle between Login/Register - Only show signup in true production (not GCP dev) */}
+                    {!isCloudRunDev && (
+                      <div className="text-center">
+                        <Button
+                          variant="link"
+                          onClick={() => {
+                            setIsLogin(!isLogin);
+                            setEmail("");
+                            setPassword("");
+                            setName("");
+                          }}
+                          className="text-sm"
+                        >
+                          {isLogin 
+                            ? "Don't have an account? Sign up" 
+                            : "Already have an account? Sign in"
+                          }
+                        </Button>
+                      </div>
+                    )}
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">

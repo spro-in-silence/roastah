@@ -379,12 +379,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // For Cloud Run dev environments, check if user is authenticated through standard login
     const isCloudRun = process.env.K_SERVICE !== undefined;
     if (isCloudRun) {
-      // Check if user is authenticated through standard session-based auth
-      if (!req.session || !req.session.user) {
+      // Check if user is authenticated through passport session OR custom session
+      const isAuthenticated = req.user?.id || req.session?.user?.sub || req.session?.passport?.user;
+      if (!isAuthenticated) {
         return res.status(401).json({ error: 'Please log in first to access impersonation features' });
       }
       
-      console.log(`🔐 Authenticated user accessing impersonation: ${req.session.user.email}`);
+      const userInfo = req.user?.email || req.session?.user?.email || 'authenticated user';
+      console.log(`🔐 Authenticated user accessing impersonation: ${userInfo}`);
     }
 
     try {

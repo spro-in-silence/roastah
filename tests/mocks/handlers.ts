@@ -2,51 +2,83 @@ import { http, HttpResponse } from 'msw';
 
 export const handlers = [
   // Auth endpoints
-  http.get('/api/auth/user', () => {
-    return HttpResponse.json({
-      id: 'test-user-001',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      role: 'user',
-      isRoasterApproved: false,
-      mfaEnabled: false,
-    });
+  http.post('/api/auth/login', async ({ request }) => {
+    const body = await request.json();
+    const { email, password } = body as { email: string; password: string };
+    
+    if (!email || !password) {
+      return HttpResponse.json({ message: 'Missing email or password' }, { status: 400 });
+    }
+    
+    if (email === 'buyer@test.com' && password === 'testpassword123') {
+      return HttpResponse.json({
+        user: {
+          id: 'test-buyer-001',
+          email: 'buyer@test.com',
+          firstName: 'Test',
+          lastName: 'Buyer',
+          role: 'user'
+        }
+      });
+    }
+    
+    return HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 });
   }),
 
-  http.post('/api/auth/login', () => {
+  http.post('/api/auth/register', async ({ request }) => {
+    const body = await request.json();
+    const { email, password, firstName, lastName } = body as { 
+      email: string; 
+      password: string; 
+      firstName: string; 
+      lastName: string; 
+    };
+    
+    if (!email || !password || !firstName || !lastName) {
+      return HttpResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (email === 'buyer@test.com') {
+      return HttpResponse.json({ message: 'Email already exists' }, { status: 400 });
+    }
+    
     return HttpResponse.json({
-      success: true,
       user: {
-        id: 'test-user-001',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'user',
-      },
-    });
+        id: 'test-new-user',
+        email,
+        firstName,
+        lastName,
+        role: 'user'
+      }
+    }, { status: 201 });
   }),
 
   http.post('/api/auth/logout', () => {
-    return HttpResponse.json({ success: true });
+    return HttpResponse.json({ message: 'Logged out successfully' });
   }),
 
   // Products endpoints
   http.get('/api/products', () => {
     return HttpResponse.json([
       {
-        id: 1,
-        name: 'Ethiopian Single Origin',
-        description: 'Bright and fruity coffee from Ethiopia',
+        id: 'test-product-001',
+        name: 'Test Ethiopian Coffee',
+        description: 'Test coffee from Ethiopia',
         price: 2499,
         roastLevel: 'medium',
         origin: 'Ethiopia',
         inStock: true,
-        roasterId: 1,
-        imageUrl: 'https://example.com/coffee.jpg',
-        createdAt: new Date().toISOString(),
-      },
+        imageUrl: 'https://example.com/coffee1.jpg'
+      }
     ]);
+  }),
+
+  http.post('/api/products', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: 'test-product-new',
+      ...body
+    }, { status: 201 });
   }),
 
   // Cart endpoints
@@ -54,8 +86,12 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
-  http.post('/api/cart', () => {
-    return HttpResponse.json({ success: true });
+  http.post('/api/cart', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: 'test-cart-item',
+      ...body
+    }, { status: 201 });
   }),
 
   // Orders endpoints
@@ -63,45 +99,17 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
-  // Roaster endpoints
-  http.get('/api/roasters', () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        userId: 'roaster-001',
-        businessName: 'Test Roasters',
-        description: 'Premium coffee roasting',
-        businessType: 'commercial',
-        isApproved: true,
-      },
-    ]);
-  }),
-
-  // Development endpoints
-  http.get('/api/dev/validate-impersonation', () => {
+  http.post('/api/orders', async ({ request }) => {
+    const body = await request.json();
     return HttpResponse.json({
-      environment: {
-        isLocal: true,
-        isReplit: false,
-        isCloudRunDev: false,
-        isDev: true,
-      },
-      buyer: {
-        id: 'dev-buyer-001',
-        role: 'user',
-        isRoasterApproved: false,
-      },
-      seller: {
-        id: 'dev-seller-001',
-        role: 'roaster',
-        isRoasterApproved: true,
-        hasRoasterProfile: true,
-      },
-      session: { hasSession: true },
-    });
+      id: 'test-order-001',
+      ...body
+    }, { status: 201 });
   }),
 
-  http.post('/api/dev/impersonate', () => {
-    return HttpResponse.json({ success: true });
-  }),
+  // Default handler for unhandled requests
+  http.all('*', ({ request }) => {
+    console.warn(`Unhandled ${request.method} request to ${request.url}`);
+    return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+  })
 ];

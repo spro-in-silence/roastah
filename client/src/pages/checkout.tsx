@@ -307,7 +307,10 @@ function CheckoutForm() {
                         applePay: 'auto',
                         googlePay: 'auto',
                       },
-                      paymentMethodOrder: ['card', 'paypal', 'amazon_pay', 'apple_pay', 'google_pay'],
+                      paymentMethodOrder: ['card', 'paypal', 'amazon_pay'],
+                      fields: {
+                        billingDetails: 'auto',
+                      },
                     }}
                   />
                 </CardContent>

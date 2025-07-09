@@ -23,7 +23,9 @@ let stripePromise: Promise<any> | null = null;
 
 function loadStripeFromConfig(publicKey: string) {
   if (!stripePromise) {
-    stripePromise = loadStripe(publicKey).catch((error) => {
+    stripePromise = loadStripe(publicKey, {
+      betas: ['process_order_beta_1']
+    }).catch((error) => {
       console.error('Failed to load Stripe.js:', error);
       return null;
     });
@@ -295,7 +297,19 @@ function CheckoutForm() {
                   <CardTitle>Payment Information</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <PaymentElement />
+                  <PaymentElement 
+                    options={{
+                      layout: {
+                        type: 'tabs',
+                        defaultCollapsed: false,
+                      },
+                      wallets: {
+                        applePay: 'auto',
+                        googlePay: 'auto',
+                      },
+                      paymentMethodOrder: ['card', 'paypal', 'amazon_pay', 'apple_pay', 'google_pay'],
+                    }}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -480,7 +494,24 @@ export default function Checkout() {
   const stripePromise = loadStripeFromConfig(config.stripe.publicKey);
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#0F766E',
+            colorBackground: '#ffffff',
+            colorText: '#1F2937',
+            colorDanger: '#dc2626',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '6px',
+          },
+        },
+      }}
+    >
       <CheckoutForm />
     </Elements>
   );

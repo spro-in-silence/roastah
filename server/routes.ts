@@ -926,6 +926,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
+        payment_method_types: [
+          'card',
+          'paypal',
+          'amazon_pay'
+        ],
+        payment_method_options: {
+          card: {
+            request_three_d_secure: 'automatic',
+          },
+          paypal: {
+            preferred_locale: 'en_US',
+          },
+          amazon_pay: {
+            capture_method: 'automatic',
+          },
+        },
         metadata: {
           cartItems: JSON.stringify(cartItems || []),
           userId: (req.user as any)?.claims?.sub || '',

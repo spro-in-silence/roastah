@@ -18,7 +18,10 @@ export default function AuthPage() {
   const isCloudRunDev = typeof window !== 'undefined' && 
                         window.location.hostname.includes('run.app') && 
                         !window.location.hostname.includes('roastah.com'); // Exclude production domain
-  const isDevelopmentEnv = isReplit || isLocal || isCloudRunDev;
+  
+  // Only Replit and localhost should show development redirect
+  // GCP dev Cloud Run should show full login form like production
+  const isDevelopmentEnv = isReplit || isLocal;
   const isProduction = !isDevelopmentEnv;
   
   // Debug environment detection for Cloud Run
@@ -50,15 +53,15 @@ export default function AuthPage() {
     if (!isLoading && user) {
       // Small delay to prevent immediate redirect during page load
       setTimeout(() => {
-        // Development environments redirect to /dev-login for impersonation
-        if (isDevelopmentEnv) {
+        // Development environments (Replit, localhost, GCP dev) redirect to /dev-login for impersonation
+        if (isDevelopmentEnv || isCloudRunDev) {
           navigate("/dev-login");
         } else {
           navigate("/");
         }
       }, 100);
     }
-  }, [isLoading, user, navigate, isDevelopmentEnv]);
+  }, [isLoading, user, navigate, isDevelopmentEnv, isCloudRunDev]);
 
   if (isLoading) {
     return (
@@ -97,8 +100,8 @@ export default function AuthPage() {
         
         // Small delay to ensure authentication state is updated
         setTimeout(() => {
-          // Development environments redirect to /dev-login for impersonation
-          if (isDevelopmentEnv) {
+          // Development environments (Replit, localhost, GCP dev) redirect to /dev-login for impersonation
+          if (isDevelopmentEnv || isCloudRunDev) {
             navigate("/dev-login");
           } else {
             navigate("/");

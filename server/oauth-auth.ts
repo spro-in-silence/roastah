@@ -7,10 +7,11 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 // Environment detection
-const isDevelopment = process.env.NODE_ENV === 'development';
 const isCloudRun = process.env.K_SERVICE !== undefined;
+const isCloudRunDev = isCloudRun && process.env.GOOGLE_CLOUD_PROJECT === 'roastah-d';
+const isDevelopment = process.env.NODE_ENV === 'development' || process.env.REPL_ID !== undefined || isCloudRunDev;
 
-console.log(`🔐 OAuth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}`);
+console.log(`🔐 OAuth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}, CloudRunDev=${isCloudRunDev}`);
 
 // Session configuration with dynamic TTL
 export function getSession() {

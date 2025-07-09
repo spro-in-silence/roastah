@@ -59,6 +59,27 @@ export default function DevLogin() {
     }
   };
 
+  const handleValidateImpersonation = async () => {
+    try {
+      const response = await fetch('/api/dev/validate-impersonation');
+      const data = await response.json();
+      
+      console.log('🔍 Impersonation Validation Results:', data);
+      
+      toast({
+        title: "Validation Results",
+        description: `Environment: ${Object.entries(data.environment).filter(([k,v]) => v).map(([k]) => k).join(', ')}. Check console for details.`,
+      });
+    } catch (error) {
+      console.error('Validation failed:', error);
+      toast({
+        title: "Validation Failed",
+        description: "Could not validate impersonation setup",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleImpersonate = async (userType: 'buyer' | 'seller') => {
     setIsLoading(true);
     try {
@@ -264,15 +285,25 @@ export default function DevLogin() {
           </div>
           
           {/* Debug/Logout Section */}
-          <div className="mt-8 text-center">
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="text-gray-600 hover:text-gray-800"
-            >
-              Logout (for testing auth protection)
-            </Button>
+          <div className="mt-8 text-center space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button
+                onClick={handleValidateImpersonation}
+                variant="outline"
+                size="sm"
+                className="text-blue-600 hover:text-blue-800"
+              >
+                Validate Impersonation Setup
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Logout (for testing auth protection)
+              </Button>
+            </div>
             <p className="text-xs text-gray-500 mt-2">
               Current user: {user?.id || 'None'}
             </p>

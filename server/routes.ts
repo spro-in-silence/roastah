@@ -362,12 +362,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Development impersonation validation endpoint
+  app.get('/api/dev/validate-impersonation', async (req, res) => {
+    const isLocal = req.get('host')?.includes('localhost');
+    const isReplit = process.env.REPL_ID !== undefined;
+    const isCloudRunDev = process.env.K_SERVICE !== undefined && process.env.GOOGLE_CLOUD_PROJECT === 'roastah-d';
+    const isDev = isLocal || isReplit || isCloudRunDev;
+    
+    if (!isDev) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    try {
+      // Test if both dev users exist and are properly configured
+      const buyerUser = await storage.getUser('dev-buyer-001');
+      const sellerUser = await storage.getUser('dev-seller-001');
+      const sellerRoaster = sellerUser ? await storage.getRoasterByUserId('dev-seller-001') : null;
+      
+      return res.json({
+        environment: { isLocal, isReplit, isCloudRunDev, isDev },
+        buyer: buyerUser ? { 
+          id: buyerUser.id, 
+          role: buyerUser.role, 
+          isRoasterApproved: buyerUser.isRoasterApproved 
+        } : null,
+        seller: sellerUser ? { 
+          id: sellerUser.id, 
+          role: sellerUser.role, 
+          isRoasterApproved: sellerUser.isRoasterApproved,
+          hasRoasterProfile: !!sellerRoaster
+        } : null,
+        session: req.session?.user ? { 
+          userId: req.session.user.sub,
+          hasSession: true 
+        } : { hasSession: false }
+      });
+    } catch (error) {
+      console.error('Validation error:', error);
+      return res.status(500).json({ error: 'Validation failed' });
+    }
+  });
+
   // Development impersonation endpoint (only for authorized dev environments)
   app.post('/api/dev/impersonate', async (req: any, res) => {
     // Allow in development environments: localhost, Replit, or Cloud Run dev instances
     const isLocal = req.get('host')?.includes('localhost');
     const isReplit = process.env.REPL_ID !== undefined;
-    const isCloudRunDev = process.env.K_SERVICE !== undefined && req.get('host')?.includes('roastah-d');
+    const isCloudRunDev = process.env.K_SERVICE !== undefined && process.env.GOOGLE_CLOUD_PROJECT === 'roastah-d';
     const isDev = isLocal || isReplit || isCloudRunDev;
     
     console.log('🔧 Impersonation request - isLocal:', isLocal, 'isReplit:', isReplit, 'isCloudRunDev:', isCloudRunDev, 'isDev:', isDev);

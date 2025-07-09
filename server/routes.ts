@@ -490,6 +490,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           refreshToken: 'dev-refresh-token',
         };
         
+        // Set shorter session duration for development impersonation (24 hours)
+        // This helps avoid persistent session issues during development
+        req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        
         // Set up req.user for enhancedAuthCheck compatibility
         req.user = {
           claims: {

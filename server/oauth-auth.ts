@@ -12,9 +12,9 @@ const isCloudRun = process.env.K_SERVICE !== undefined;
 
 console.log(`🔐 OAuth Environment: Development=${isDevelopment}, CloudRun=${isCloudRun}`);
 
-// Session configuration
+// Session configuration with dynamic TTL
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const defaultSessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
   try {
     console.log('🔐 Setting up session store with DATABASE_URL:', process.env.DATABASE_URL ? 'Present' : 'Missing');
@@ -24,7 +24,7 @@ export function getSession() {
     const sessionStore = new pgStore({
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true, // Create sessions table if missing
-      ttl: sessionTtl,
+      ttl: defaultSessionTtl,
       tableName: "sessions",
     });
     
@@ -38,7 +38,7 @@ export function getSession() {
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: sessionTtl,
+        maxAge: defaultSessionTtl,
         sameSite: 'lax', // Add sameSite for better compatibility
       },
     });
@@ -53,7 +53,7 @@ export function getSession() {
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: sessionTtl,
+        maxAge: defaultSessionTtl,
         sameSite: 'lax',
       },
     });
@@ -318,7 +318,7 @@ export async function setupOAuth(app: Express) {
   // Email/Password authentication endpoints
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password, keepMeLoggedIn } = req.body;
 
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
@@ -360,6 +360,15 @@ export async function setupOAuth(app: Express) {
         if (err) {
           return res.status(500).json({ error: 'Failed to log in after registration' });
         }
+        
+        // Set session duration based on keepMeLoggedIn
+        if (keepMeLoggedIn) {
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        } else {
+          req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        }
+        
+        console.log('🔐 Registration successful for user:', user.id, 'keepMeLoggedIn:', keepMeLoggedIn);
         res.status(201).json(user);
       });
     } catch (error) {
@@ -418,7 +427,7 @@ export async function setupOAuth(app: Express) {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, keepMeLoggedIn } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required' });
@@ -446,7 +455,14 @@ export async function setupOAuth(app: Express) {
           return res.status(500).json({ error: 'Failed to log in' });
         }
         
-        console.log('🔐 Login successful for user:', user.id);
+        // Set session duration based on keepMeLoggedIn
+        if (keepMeLoggedIn) {
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        } else {
+          req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        }
+        
+        console.log('🔐 Login successful for user:', user.id, 'keepMeLoggedIn:', keepMeLoggedIn);
         
         // For development environments, redirect to /dev-login for impersonation
         if (isDevelopment) {

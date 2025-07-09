@@ -44,6 +44,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [keepMeLoggedIn, setKeepMeLoggedIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -83,8 +84,8 @@ export default function AuthPage() {
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
-        ? { email, password }
-        : { name, email, password };
+        ? { email, password, keepMeLoggedIn }
+        : { name, email, password, keepMeLoggedIn };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -199,6 +200,20 @@ export default function AuthPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
+                      </div>
+                      
+                      {/* Keep me logged in checkbox */}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="keepMeLoggedIn"
+                          checked={keepMeLoggedIn}
+                          onChange={(e) => setKeepMeLoggedIn(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="keepMeLoggedIn" className="text-sm">
+                          Keep me logged in
+                        </Label>
                       </div>
                       
                       <Button type="submit" className="w-full" disabled={isSubmitting}>

@@ -229,7 +229,7 @@ export default function DevLogin() {
                   disabled={isLoading}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isLoading ? 'Switching...' : 'Enter as Buyer'}
+                  {isLoading ? 'Switching...' : 'Impersonate Buyer'}
                 </Button>
               </CardContent>
             </Card>
@@ -271,7 +271,7 @@ export default function DevLogin() {
                   disabled={isLoading}
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
-                  {isLoading ? 'Switching...' : 'Enter as Seller'}
+                  {isLoading ? 'Switching...' : 'Impersonate Seller'}
                 </Button>
               </CardContent>
             </Card>

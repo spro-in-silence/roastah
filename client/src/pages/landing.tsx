@@ -56,22 +56,13 @@ export default function Landing() {
             <p className="text-xl lg:text-2xl mb-8 text-gray-200">
               Connect directly with passionate micro-roasters and home roasters crafting the perfect cup
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={() => window.location.href = '/auth'}
-                size="lg"
-                className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold"
-              >
-                Sign In to Shop Coffee
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
-              >
-                Learn More
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
+            >
+              Learn More
+            </Button>
           </div>
         </div>
       </section>
@@ -137,22 +128,13 @@ export default function Landing() {
               <p className="text-xl md:text-2xl mb-8 text-white/95 max-w-2xl mx-auto leading-relaxed">
                 Join our marketplace and share your passion for coffee with enthusiasts worldwide
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  onClick={() => window.location.href = '/api/login'}
-                  size="lg"
-                  className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
-                >
-                  Become a Roastah
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-white/80 text-white hover:bg-white/10 hover:border-white font-semibold"
-                >
-                  Learn More
-                </Button>
-              </div>
+              <Button
+                onClick={() => window.location.href = '/api/login'}
+                size="lg"
+                className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
+              >
+                Become a Roastah
+              </Button>
             </div>
           </div>
         </div>

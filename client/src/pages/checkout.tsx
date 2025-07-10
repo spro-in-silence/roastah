@@ -695,8 +695,8 @@ function CheckoutForm() {
                           </span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-4">
+                      <AccordionContent className="max-h-48 overflow-y-auto">
+                        <div className="space-y-4 pr-2">
                           {Object.entries(groupedItems).map(([groupKey, group]) => {
                             const groupSubtotal = group.items.reduce((sum, item) => {
                               return sum + (parseFloat(item.product?.price || "0") * item.quantity);

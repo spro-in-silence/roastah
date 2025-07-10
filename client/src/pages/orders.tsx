@@ -104,7 +104,7 @@ export default function OrdersPage() {
         <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex items-center justify-center h-64">
-              <CoffeeRoasterLoader className="w-8 h-8" />
+              <CoffeeRoasterLoader className="w-16 h-16" />
             </div>
           </div>
         </div>

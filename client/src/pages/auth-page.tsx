@@ -69,7 +69,7 @@ export default function AuthPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <CoffeeRoasterLoader className="w-8 h-8" />
+        <CoffeeRoasterLoader className="w-16 h-16" />
       </div>
     );
   }

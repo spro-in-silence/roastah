@@ -478,7 +478,7 @@ function CheckoutForm() {
                 <CardContent>
                   {isLoadingAddresses ? (
                     <div className="flex items-center justify-center py-8">
-                      <CoffeeRoasterLoader className="w-6 h-6" />
+                      <CoffeeRoasterLoader className="w-12 h-12" />
                       <span className="ml-2 text-gray-600">Loading addresses...</span>
                     </div>
                   ) : addresses.length > 0 && !showNewAddressForm ? (
@@ -692,7 +692,7 @@ export default function Checkout() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <CoffeeRoasterLoader className="w-8 h-8 mx-auto mb-4" />
+          <CoffeeRoasterLoader className="w-16 h-16 mx-auto mb-4" />
           <p>Loading checkout...</p>
         </div>
       </div>
@@ -703,7 +703,7 @@ export default function Checkout() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <CoffeeRoasterLoader className="w-8 h-8 mx-auto mb-4" />
+          <CoffeeRoasterLoader className="w-16 h-16 mx-auto mb-4" />
           <p>Preparing payment...</p>
         </div>
       </div>

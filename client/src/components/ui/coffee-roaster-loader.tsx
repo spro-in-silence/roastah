@@ -2,7 +2,7 @@ interface CoffeeRoasterLoaderProps {
   className?: string;
 }
 
-export function CoffeeRoasterLoader({ className = "w-8 h-8" }: CoffeeRoasterLoaderProps) {
+export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLoaderProps) {
   return (
     <div className={`${className} relative`}>
       <svg
@@ -10,106 +10,109 @@ export function CoffeeRoasterLoader({ className = "w-8 h-8" }: CoffeeRoasterLoad
         className="w-full h-full"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Coffee Roaster Drum */}
+        {/* Coffee Roaster Drum - Circle outline only */}
         <circle
           cx="50"
           cy="50"
           r="40"
-          fill="#d97706"
-          stroke="#b45309"
-          strokeWidth="2"
+          fill="none"
+          stroke="#d97706"
+          strokeWidth="4"
           className="animate-spin"
           style={{
             transformOrigin: '50px 50px',
-            animationDuration: '2s'
+            animationDuration: '2s',
+            animationDirection: 'normal'
           }}
         />
         
-        {/* Drum details */}
+        {/* Inner drum details */}
         <circle
           cx="50"
           cy="50"
           r="35"
           fill="none"
           stroke="#b45309"
-          strokeWidth="1"
+          strokeWidth="2"
           opacity="0.6"
           className="animate-spin"
           style={{
             transformOrigin: '50px 50px',
-            animationDuration: '2s'
+            animationDuration: '2s',
+            animationDirection: 'normal'
           }}
         />
         
-        {/* Coffee beans inside */}
-        <g className="animate-spin" style={{
-          transformOrigin: '50px 50px',
-          animationDuration: '1.5s',
-          animationDirection: 'reverse'
-        }}>
+        {/* Coffee beans bouncing up and down */}
+        <g>
           {/* Bean 1 */}
-          <ellipse cx="45" cy="40" rx="3" ry="5" fill="#8b4513" transform="rotate(15 45 40)">
+          <ellipse cx="45" cy="50" rx="3" ry="5" fill="#8b4513" transform="rotate(15 45 50)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="15 45 40;375 45 40"
-              dur="1.5s"
+              type="translate"
+              values="0 0; 0 -15; 0 0"
+              dur="1.2s"
               repeatCount="indefinite"
             />
           </ellipse>
           
           {/* Bean 2 */}
-          <ellipse cx="55" cy="45" rx="3" ry="5" fill="#654321" transform="rotate(45 55 45)">
+          <ellipse cx="55" cy="50" rx="3" ry="5" fill="#654321" transform="rotate(45 55 50)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="45 55 45;405 55 45"
-              dur="1.8s"
+              type="translate"
+              values="0 0; 0 -12; 0 0"
+              dur="1.0s"
               repeatCount="indefinite"
+              begin="0.2s"
             />
           </ellipse>
           
           {/* Bean 3 */}
-          <ellipse cx="50" cy="55" rx="3" ry="5" fill="#8b4513" transform="rotate(75 50 55)">
+          <ellipse cx="50" cy="45" rx="3" ry="5" fill="#8b4513" transform="rotate(75 50 45)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="75 50 55;435 50 55"
-              dur="1.3s"
+              type="translate"
+              values="0 0; 0 -18; 0 0"
+              dur="1.4s"
               repeatCount="indefinite"
+              begin="0.4s"
             />
           </ellipse>
           
           {/* Bean 4 */}
-          <ellipse cx="40" cy="52" rx="3" ry="5" fill="#654321" transform="rotate(120 40 52)">
+          <ellipse cx="40" cy="55" rx="3" ry="5" fill="#654321" transform="rotate(120 40 55)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="120 40 52;480 40 52"
-              dur="1.7s"
+              type="translate"
+              values="0 0; 0 -10; 0 0"
+              dur="0.8s"
               repeatCount="indefinite"
+              begin="0.6s"
             />
           </ellipse>
           
           {/* Bean 5 */}
-          <ellipse cx="60" cy="55" rx="3" ry="5" fill="#8b4513" transform="rotate(200 60 55)">
+          <ellipse cx="60" cy="45" rx="3" ry="5" fill="#8b4513" transform="rotate(200 60 45)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="200 60 55;560 60 55"
-              dur="1.4s"
+              type="translate"
+              values="0 0; 0 -14; 0 0"
+              dur="1.1s"
               repeatCount="indefinite"
+              begin="0.8s"
             />
           </ellipse>
           
           {/* Bean 6 */}
-          <ellipse cx="48" cy="42" rx="3" ry="5" fill="#654321" transform="rotate(300 48 42)">
+          <ellipse cx="48" cy="55" rx="3" ry="5" fill="#654321" transform="rotate(300 48 55)">
             <animateTransform
               attributeName="transform"
-              type="rotate"
-              values="300 48 42;660 48 42"
-              dur="1.6s"
+              type="translate"
+              values="0 0; 0 -16; 0 0"
+              dur="1.3s"
               repeatCount="indefinite"
+              begin="1.0s"
             />
           </ellipse>
         </g>

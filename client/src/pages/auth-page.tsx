@@ -23,7 +23,7 @@ export default function AuthPage() {
   // Only Replit and localhost should show development redirect
   // GCP dev Cloud Run should show full login form like production
   const isDevelopmentEnv = isReplit || isLocal;
-  const isProduction = !isDevelopmentEnv;
+  const showFullForm = true; // Always show full form for all environments
   
   // Debug environment detection for Cloud Run
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function AuthPage() {
         
         // Small delay to ensure authentication state is updated
         setTimeout(() => {
-          // Development environments (Replit, localhost, GCP dev) redirect to /dev-login for impersonation
+          // All development environments redirect to /dev-login for impersonation
           if (isDevelopmentEnv || isCloudRunDev) {
             navigate("/dev-login");
           } else {
@@ -148,7 +148,7 @@ export default function AuthPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isProduction ? (
+                {showFullForm ? (
                   <>
                     {/* Email/Password Form - Available in all environments */}
                     <form onSubmit={handleEmailAuth} className="space-y-4">

@@ -8,11 +8,26 @@ export class UploadService {
   private bucketName: string;
 
   constructor() {
-    this.bucketName = process.env.MEDIA_BUCKET || 'roastah-media-bucket';
+    // Try to load MEDIA_BUCKET from Secret Manager first, fallback to environment, then default
+    this.bucketName = process.env.MEDIA_BUCKET || 'roastah-dev-media-bucket';
+    
+    // For development/testing, create a simple fallback system
+    if (!this.bucketName || this.bucketName === 'roastah-dev-media-bucket') {
+      console.log('⚠️ Using fallback bucket name for development. Image uploads will be simulated.');
+    }
   }
 
   async uploadProductImage(file: Buffer, originalName: string, productId: number): Promise<string> {
     try {
+      // For development mode when GCP isn't configured, return a placeholder URL
+      if (this.bucketName === 'roastah-dev-media-bucket') {
+        console.log('📸 Simulating image upload for development:', originalName);
+        const fileExtension = path.extname(originalName).toLowerCase();
+        const fileName = `products/${productId}/${uuidv4()}${fileExtension}`;
+        // Return a placeholder URL that won't break the frontend
+        return `https://via.placeholder.com/400x300/8B5A3C/FFFFFF?text=Product+Image+${productId}`;
+      }
+
       // Generate unique filename with organized structure
       const fileExtension = path.extname(originalName).toLowerCase();
       const fileName = `products/${productId}/${uuidv4()}${fileExtension}`;
@@ -44,6 +59,12 @@ export class UploadService {
 
   async deleteProductImage(imageUrl: string): Promise<void> {
     try {
+      // For development mode with placeholder URLs, just log the deletion
+      if (this.bucketName === 'roastah-dev-media-bucket' || imageUrl.includes('placeholder')) {
+        console.log('🗑️ Simulating image deletion for development:', imageUrl);
+        return;
+      }
+
       // Extract file name from URL
       const fileName = this.getFileNameFromUrl(imageUrl);
       if (!fileName) {

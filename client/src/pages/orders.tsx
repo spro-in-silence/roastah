@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Package, Truck, CheckCircle, Clock, AlertCircle, ExternalLink } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { Link } from "react-router-dom";
+import Navbar from "@/components/layout/navbar";
+import Footer from "@/components/layout/footer";
 
 interface OrderItem {
   id: number;
@@ -96,41 +98,51 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="py-8">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Orders</h3>
-                <p className="text-gray-600">We couldn't load your orders at this time. Please try again later.</p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="py-8">
+          <div className="max-w-6xl mx-auto px-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Orders</h3>
+                  <p className="text-gray-600">We couldn't load your orders at this time. Please try again later.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
-          <p className="text-gray-600">Track your orders and view order history</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+            <p className="text-gray-600">Track your orders and view order history</p>
+          </div>
 
         {orders.length === 0 ? (
           <Card>
@@ -275,7 +287,9 @@ export default function OrdersPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }

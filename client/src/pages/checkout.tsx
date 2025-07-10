@@ -497,20 +497,14 @@ function CheckoutForm() {
                             {addresses.map((address) => (
                               <SelectItem key={address.id} value={address.id.toString()}>
                                 <div className="flex items-center justify-between w-full">
-                                  <div className="flex-1">
-                                    <div className="font-medium">
-                                      {address.firstName} {address.lastName}
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                      {address.addressLine1}
-                                      {address.addressLine2 && `, ${address.addressLine2}`}
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                      {address.city}, {address.state} {address.zipCode}
-                                    </div>
+                                  <div className="flex-1 truncate">
+                                    <span className="text-sm truncate">
+                                      {address.firstName} {address.lastName} - {address.addressLine1}
+                                      {address.addressLine2 && `, ${address.addressLine2}`}, {address.city}, {address.state} {address.zipCode}
+                                    </span>
                                   </div>
                                   {address.isDefault && (
-                                    <span className="text-xs bg-roastah-teal text-white px-2 py-1 rounded ml-2">
+                                    <span className="text-xs bg-roastah-teal text-white px-2 py-1 rounded ml-2 flex-shrink-0">
                                       Default
                                     </span>
                                   )}
@@ -526,31 +520,6 @@ function CheckoutForm() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
-                      {selectedAddress && (
-                        <div className="bg-gray-50 rounded-lg p-4 border">
-                          <div className="flex items-center gap-3">
-                            <MapPin className="h-5 w-5 text-roastah-teal" />
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {selectedAddress.firstName} {selectedAddress.lastName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {selectedAddress.addressLine1}
-                                {selectedAddress.addressLine2 && `, ${selectedAddress.addressLine2}`}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}
-                              </p>
-                              {selectedAddress.deliveryInstructions && (
-                                <p className="text-sm text-gray-500 mt-1">
-                                  Instructions: {selectedAddress.deliveryInstructions}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     // Show new address form

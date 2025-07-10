@@ -29,6 +29,7 @@ import Leaderboard from "@/pages/leaderboard";
 import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
+import Orders from "@/pages/orders";
 import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
 
@@ -94,6 +95,11 @@ function Router() {
         <Route path="/favorites" element={
           <ProtectedRoute requireAuth>
             <Favorites />
+          </ProtectedRoute>
+        } />
+        <Route path="/orders" element={
+          <ProtectedRoute requireAuth>
+            <Orders />
           </ProtectedRoute>
         } />
         <Route path="/gift-cards" element={

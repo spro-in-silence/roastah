@@ -283,6 +283,15 @@ export default function Navbar() {
                     </div>
                   </Link>
 
+                  <Link to="/orders" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location.pathname === '/orders' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <Package className="h-5 w-5" />
+                      <span className="font-medium">My Orders</span>
+                    </div>
+                  </Link>
+
                   <Link to="/gift-cards" onClick={closeMenu}>
                     <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
                       location.pathname === '/gift-cards' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'

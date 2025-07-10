@@ -231,6 +231,7 @@ Changelog:
 - July 10, 2025. Implemented proper cart item scrolling in checkout page with fixed header/footer to prevent page scroll when cart has many items
 - July 10, 2025. Fixed cart sidebar scrolling issue by implementing proper flex layout with constrained heights and scrollable content area
 - July 10, 2025. Added subtle scroll indicators using gradient overlays to Order Summary and cart sidebar for better UX without obvious visual clutter
+- July 10, 2025. Refined scroll indicator positioning - multiple iterations to achieve proper fixed positioning without interfering with content or buttons
 ```
 
 ## User Preferences

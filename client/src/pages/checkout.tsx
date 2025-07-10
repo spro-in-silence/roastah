@@ -15,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Plus, Star } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
@@ -491,7 +492,7 @@ function CheckoutForm() {
                           value={selectedAddressId?.toString() || ""}
                           onValueChange={handleAddressSelect}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-full focus:ring-0 focus:ring-offset-0">
                             <SelectValue placeholder="Select an address" />
                           </SelectTrigger>
                           <SelectContent>
@@ -505,9 +506,10 @@ function CheckoutForm() {
                                     </span>
                                   </div>
                                   {address.isDefault && (
-                                    <span className="text-xs bg-roastah-teal text-white px-2 py-1 rounded ml-2 flex-shrink-0">
+                                    <Badge variant="secondary" className="flex items-center gap-1 ml-2 flex-shrink-0">
+                                      <Star className="h-3 w-3 fill-current" />
                                       Default
-                                    </span>
+                                    </Badge>
                                   )}
                                 </div>
                               </SelectItem>

@@ -354,8 +354,7 @@ function CheckoutForm() {
   const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery<ShippingAddress[]>({
     queryKey: ["/api/shipping/addresses"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/shipping/addresses");
-      return response.json();
+      return await apiRequest("GET", "/api/shipping/addresses");
     },
   });
 
@@ -375,8 +374,7 @@ function CheckoutForm() {
   // Mutation for creating new address
   const createAddressMutation = useMutation({
     mutationFn: async (addressData: AddressFormData) => {
-      const response = await apiRequest("POST", "/api/shipping/addresses", addressData);
-      return response.json();
+      return await apiRequest("POST", "/api/shipping/addresses", addressData);
     },
     onSuccess: (newAddress) => {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping/addresses"] });
@@ -681,9 +679,11 @@ export default function Checkout() {
   useEffect(() => {
     // Create PaymentIntent as soon as the page loads
     apiRequest("POST", "/api/create-payment-intent", { amount: 100 }) // Placeholder amount
-      .then((res) => res.json())
       .then((data) => {
         setClientSecret(data.clientSecret);
+      })
+      .catch((error) => {
+        console.error('Failed to create payment intent:', error);
       });
   }, []);
 

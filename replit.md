@@ -210,6 +210,9 @@ Changelog:
 - July 10, 2025. Successfully tested address creation and retrieval functionality with proper authentication and data validation
 - July 10, 2025. Fixed address management data integrity issues: implemented duplicate address prevention and single default address enforcement
 - July 10, 2025. Enhanced address creation/update logic to prevent duplicates and ensure only one default address per user
+- July 10, 2025. Implemented enhanced checkout experience with intelligent address selection - shows dropdown when addresses exist, full form when none saved
+- July 10, 2025. Fixed checkout page API request handling - removed duplicate .json() calls that were causing TypeError
+- July 10, 2025. Created reusable AddressForm component for consistent address input across checkout and address book pages
 ```
 
 ## User Preferences

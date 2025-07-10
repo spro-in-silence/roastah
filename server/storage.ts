@@ -82,7 +82,7 @@ import {
   returnShipments,
 } from "@shared/schema";
 import { getDb } from "./db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, ne } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -1279,7 +1279,40 @@ export class DatabaseStorage implements IStorage {
   // ==========================================
 
   async createShippingAddress(address: InsertShippingAddress): Promise<ShippingAddress> {
-    const [result] = await getDb()
+    const db = getDb();
+    
+    // Check for duplicate addresses first
+    const existingAddress = await db
+      .select()
+      .from(shippingAddresses)
+      .where(
+        and(
+          eq(shippingAddresses.userId, address.userId),
+          eq(shippingAddresses.addressLine1, address.addressLine1),
+          eq(shippingAddresses.city, address.city),
+          eq(shippingAddresses.state, address.state),
+          eq(shippingAddresses.zipCode, address.zipCode)
+        )
+      );
+    
+    if (existingAddress.length > 0) {
+      throw new Error('This address already exists in your address book');
+    }
+    
+    // If this is set as default, clear other default addresses first
+    if (address.isDefault) {
+      await db
+        .update(shippingAddresses)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(shippingAddresses.userId, address.userId),
+            eq(shippingAddresses.isDefault, true)
+          )
+        );
+    }
+    
+    const [result] = await db
       .insert(shippingAddresses)
       .values(address)
       .returning();
@@ -1303,7 +1336,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateShippingAddress(id: number, updates: Partial<InsertShippingAddress>): Promise<ShippingAddress> {
-    const [result] = await getDb()
+    const db = getDb();
+    
+    // Get the current address to check user ownership
+    const currentAddress = await db
+      .select()
+      .from(shippingAddresses)
+      .where(eq(shippingAddresses.id, id));
+    
+    if (currentAddress.length === 0) {
+      throw new Error('Address not found');
+    }
+    
+    // If setting as default, clear other default addresses first
+    if (updates.isDefault === true) {
+      await db
+        .update(shippingAddresses)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(shippingAddresses.userId, currentAddress[0].userId),
+            eq(shippingAddresses.isDefault, true),
+            ne(shippingAddresses.id, id) // Don't update the current address
+          )
+        );
+    }
+    
+    const [result] = await db
       .update(shippingAddresses)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(shippingAddresses.id, id))

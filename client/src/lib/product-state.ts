@@ -85,7 +85,8 @@ export const getTagLabel = (tag: keyof ProductTags): string => {
 };
 
 export const canEditProduct = (state: ProductState): boolean => {
-  return state === 'draft' || state === 'rejected';
+  // Sellers should be able to edit most product states except archived
+  return state !== 'archived';
 };
 
 export const canPublishProduct = (state: ProductState): boolean => {

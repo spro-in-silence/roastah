@@ -41,64 +41,64 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
           }}
         />
         
-        {/* Coffee beans following arc from 6 o'clock to 11 o'clock */}
+        {/* Coffee beans following arc from 6 o'clock to 11 o'clock, contained within circle */}
         <g>
           {/* Bean 1 - Arc motion from 6 o'clock to 11 o'clock */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#8b4513">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#8b4513">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
           
           {/* Bean 2 - Arc motion with delay */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#654321">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#654321">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              begin="0.5s"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              begin="0.4s"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
           
           {/* Bean 3 - Arc motion with delay */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#8b4513">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#8b4513">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              begin="1s"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              begin="0.8s"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
           
           {/* Bean 4 - Arc motion with delay */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#654321">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#654321">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              begin="1.5s"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              begin="1.2s"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
           
           {/* Bean 5 - Arc motion with delay */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#8b4513">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#8b4513">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              begin="2s"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              begin="1.6s"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
           
           {/* Bean 6 - Arc motion with delay */}
-          <ellipse cx="50" cy="85" rx="3" ry="5" fill="#654321">
+          <ellipse cx="50" cy="82" rx="2" ry="3" fill="#654321">
             <animateMotion
-              dur="3s"
+              dur="2.5s"
               repeatCount="indefinite"
-              begin="2.5s"
-              path="M 0,0 L 5,-5 L 10,-15 L 15,-25 L 20,-30 L 25,-25 L 30,-15 L 35,-5 L 40,0 L 35,5 L 30,10 L 25,15 L 20,20 L 15,25 L 10,15 L 5,5 L 0,0 Z"
+              begin="2.0s"
+              path="M 0,0 A 25,25 0 0,0 -22,-12 L 0,0"
             />
           </ellipse>
         </g>

@@ -115,7 +115,7 @@ export default function BecomeRoastah() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
             <div className="bg-white rounded-xl p-8">
@@ -126,6 +126,7 @@ export default function BecomeRoastah() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -134,7 +135,7 @@ export default function BecomeRoastah() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">

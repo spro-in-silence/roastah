@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/contexts/UserContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { CartItem } from "@/lib/types";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Navbar() {
   const location = useLocation();
@@ -27,6 +28,17 @@ export default function Navbar() {
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
     enabled: isAuthenticated,
+  });
+
+  const queryClient = useQueryClient();
+  
+  const removeFromCartMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      return apiRequest("DELETE", `/api/cart/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    },
   });
 
   const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
@@ -481,7 +493,7 @@ export default function Navbar() {
               ) : (
                 <div className="space-y-4">
                   {(cartItems as CartItem[]).map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div key={item.id} className="group flex items-center space-x-3 p-3 border rounded-lg relative">
                       <img 
                         src={item.product?.images?.[0] || '/placeholder-coffee.jpg'} 
                         alt={item.product?.name || 'Product'}
@@ -497,6 +509,16 @@ export default function Navbar() {
                       <div className="text-right">
                         <p className="font-medium">${(Number(item.product?.price || 0) * Number(item.quantity)).toFixed(2)}</p>
                       </div>
+                      {/* Subtle delete button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                        onClick={() => removeFromCartMutation.mutate(item.id)}
+                        disabled={removeFromCartMutation.isPending}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
                   ))}
                 </div>

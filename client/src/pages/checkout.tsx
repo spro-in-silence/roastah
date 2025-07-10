@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MapPin, Plus, Star } from "lucide-react";
+import { MapPin, Plus, Star, X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
@@ -354,6 +354,20 @@ function CheckoutForm() {
     queryKey: ["/api/cart"],
   });
 
+  // Delete cart item mutation
+  const removeFromCartMutation = useMutationWithLoading({
+    mutationFn: async (itemId: number) => {
+      return apiRequest("DELETE", `/api/cart/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      toast({
+        title: "Item Removed",
+        description: "The item has been removed from your cart.",
+      });
+    },
+  });
+
   // Query for all shipping addresses
   const { data: addresses = [], isLoading: isLoadingAddresses } = useQueryWithLoading<ShippingAddress[]>({
     queryKey: ["/api/shipping/addresses"],
@@ -634,7 +648,7 @@ function CheckoutForm() {
                           </div>
                           <div className="space-y-3">
                             {group.items.map((item: CartItem) => (
-                              <div key={item.id} className="flex items-center space-x-3">
+                              <div key={item.id} className="group flex items-center space-x-3 relative">
                                 <img
                                   src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=60&h=60"}
                                   alt={item.product?.name}
@@ -649,6 +663,16 @@ function CheckoutForm() {
                                 <p className="font-medium text-sm">
                                   ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
                                 </p>
+                                {/* Subtle delete button */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                  onClick={() => removeFromCartMutation.mutate(item.id)}
+                                  disabled={removeFromCartMutation.isPending}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
                             ))}
                           </div>

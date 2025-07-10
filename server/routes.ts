@@ -21,15 +21,41 @@ import {
 import { 
   roasters, products, cartItems, orders, orderItems, reviews, 
   wishlist, notifications, commissions, sellerAnalytics, campaigns,
-  bulkUploads, disputes
+  bulkUploads, disputes, shippingAddresses, roasterShippingSettings,
+  shippingRates, shipments, returnShipments
 } from "@shared/schema";
 import { MedusaBridge } from "./medusa-bridge";
 import { realtimeService } from "./realtime";
-import { insertProductSchema, insertRoasterSchema, insertCartItemSchema } from "@shared/schema";
+import { insertProductSchema, insertRoasterSchema, insertCartItemSchema, insertShippingAddressSchema, insertRoasterShippingSettingsSchema } from "@shared/schema";
 import { z } from "zod";
+import { shippoService } from "./shippo-service";
 
 // Stripe will be initialized after secrets are loaded
 let stripe: Stripe | null = null;
+
+// Initialize Shippo service
+async function initializeShippoService() {
+  try {
+    if (!process.env.SHIPPO_API_KEY) {
+      // Try to load from GCP Secret Manager
+      const { getSecret } = await import('./secrets');
+      const shippoApiKey = await getSecret('SHIPPO_API_KEY');
+      if (shippoApiKey) {
+        process.env.SHIPPO_API_KEY = shippoApiKey;
+      }
+    }
+    
+    if (process.env.SHIPPO_API_KEY) {
+      const { initializeShippo } = await import('./shippo-service');
+      initializeShippo();
+      console.log('🚚 Shippo service initialized successfully');
+    } else {
+      console.log('⚠️ Shippo API key not found - shipping features will be limited');
+    }
+  } catch (error) {
+    console.error('Error initializing Shippo service:', error);
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Stripe after secrets are loaded
@@ -39,6 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2023-10-16",
   });
+  
+  // Initialize Shippo service
+  await initializeShippoService();
   
   // Setup authentication (automatically chooses Replit Auth or OAuth based on environment)
   const { isAuthenticated } = await setupAuthentication(app);
@@ -2167,6 +2196,320 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     } catch (error) {
       console.error("Error fetching message details:", error);
       res.status(500).json({ message: "Failed to fetch message" });
+    }
+  });
+
+  // =================================================================
+  // COMPREHENSIVE SHIPPING API ENDPOINTS (SHIPPO WHITE LABEL)
+  // =================================================================
+
+  // Shipping address management
+  app.post('/api/shipping/addresses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const addressData = { ...req.body, userId };
+
+      // Validate required fields
+      const validatedData = insertShippingAddressSchema.parse(addressData);
+      
+      // Create address with Shippo validation
+      const address = await shippoService.createShippingAddress(validatedData);
+      
+      res.json(address);
+    } catch (error: any) {
+      console.error("Error creating shipping address:", error);
+      res.status(500).json({ message: "Failed to create shipping address: " + error.message });
+    }
+  });
+
+  app.get('/api/shipping/addresses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const addresses = await storage.getShippingAddressesByUserId(userId);
+      res.json(addresses);
+    } catch (error: any) {
+      console.error("Error fetching shipping addresses:", error);
+      res.status(500).json({ message: "Failed to fetch shipping addresses" });
+    }
+  });
+
+  app.put('/api/shipping/addresses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const addressId = parseInt(req.params.id);
+      const userId = req.session.user?.sub || req.user?.id;
+      
+      // Verify ownership
+      const existingAddress = await storage.getShippingAddressById(addressId);
+      if (!existingAddress || existingAddress.userId !== userId) {
+        return res.status(403).json({ message: "Address not found or access denied" });
+      }
+      
+      const updatedAddress = await storage.updateShippingAddress(addressId, req.body);
+      res.json(updatedAddress);
+    } catch (error: any) {
+      console.error("Error updating shipping address:", error);
+      res.status(500).json({ message: "Failed to update shipping address" });
+    }
+  });
+
+  app.delete('/api/shipping/addresses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const addressId = parseInt(req.params.id);
+      const userId = req.session.user?.sub || req.user?.id;
+      
+      // Verify ownership
+      const existingAddress = await storage.getShippingAddressById(addressId);
+      if (!existingAddress || existingAddress.userId !== userId) {
+        return res.status(403).json({ message: "Address not found or access denied" });
+      }
+      
+      await storage.deleteShippingAddress(addressId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting shipping address:", error);
+      res.status(500).json({ message: "Failed to delete shipping address" });
+    }
+  });
+
+  // Roaster shipping settings
+  app.post('/api/roaster/shipping/settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const settingsData = { ...req.body, roasterId: roaster.id };
+      const validatedData = insertRoasterShippingSettingsSchema.parse(settingsData);
+      
+      const settings = await storage.createRoasterShippingSettings(validatedData);
+      res.json(settings);
+    } catch (error: any) {
+      console.error("Error creating roaster shipping settings:", error);
+      res.status(500).json({ message: "Failed to create shipping settings: " + error.message });
+    }
+  });
+
+  app.get('/api/roaster/shipping/settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const settings = await storage.getRoasterShippingSettings(roaster.id);
+      res.json(settings);
+    } catch (error: any) {
+      console.error("Error fetching roaster shipping settings:", error);
+      res.status(500).json({ message: "Failed to fetch shipping settings" });
+    }
+  });
+
+  app.put('/api/roaster/shipping/settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const updatedSettings = await storage.updateRoasterShippingSettings(roaster.id, req.body);
+      res.json(updatedSettings);
+    } catch (error: any) {
+      console.error("Error updating roaster shipping settings:", error);
+      res.status(500).json({ message: "Failed to update shipping settings" });
+    }
+  });
+
+  // Shipping rates calculation
+  app.post('/api/shipping/rates', isAuthenticated, async (req: any, res) => {
+    try {
+      const { fromAddressId, toAddressId, roasterId, packageInfo } = req.body;
+      
+      if (!fromAddressId || !toAddressId || !roasterId) {
+        return res.status(400).json({ message: "From address, to address, and roaster ID are required" });
+      }
+      
+      const rates = await shippoService.getShippingRates(
+        fromAddressId, 
+        toAddressId, 
+        roasterId, 
+        packageInfo
+      );
+      
+      res.json(rates);
+    } catch (error: any) {
+      console.error("Error calculating shipping rates:", error);
+      res.status(500).json({ message: "Failed to calculate shipping rates: " + error.message });
+    }
+  });
+
+  // Purchase shipping label
+  app.post('/api/shipping/labels', isAuthenticated, async (req: any, res) => {
+    try {
+      const { orderId, rateId, roasterId } = req.body;
+      
+      if (!orderId || !rateId || !roasterId) {
+        return res.status(400).json({ message: "Order ID, rate ID, and roaster ID are required" });
+      }
+      
+      // Verify roaster ownership
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster || roaster.id !== roasterId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const shipment = await shippoService.purchaseShippingLabel(orderId, rateId, roasterId);
+      res.json(shipment);
+    } catch (error: any) {
+      console.error("Error purchasing shipping label:", error);
+      res.status(500).json({ message: "Failed to purchase shipping label: " + error.message });
+    }
+  });
+
+  // Track shipment
+  app.get('/api/shipping/track/:trackingNumber', isAuthenticated, async (req: any, res) => {
+    try {
+      const { trackingNumber } = req.params;
+      const { carrier } = req.query;
+      
+      if (!trackingNumber || !carrier) {
+        return res.status(400).json({ message: "Tracking number and carrier are required" });
+      }
+      
+      const trackingInfo = await shippoService.trackShipment(trackingNumber, carrier as string);
+      res.json(trackingInfo);
+    } catch (error: any) {
+      console.error("Error tracking shipment:", error);
+      res.status(500).json({ message: "Failed to track shipment: " + error.message });
+    }
+  });
+
+  // Get shipments for an order
+  app.get('/api/orders/:orderId/shipments', isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const shipments = await storage.getShipmentsByOrderId(orderId);
+      res.json(shipments);
+    } catch (error: any) {
+      console.error("Error fetching order shipments:", error);
+      res.status(500).json({ message: "Failed to fetch order shipments" });
+    }
+  });
+
+  // Get shipments for a roaster
+  app.get('/api/roaster/shipments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const shipments = await storage.getShipmentsByRoasterId(roaster.id);
+      res.json(shipments);
+    } catch (error: any) {
+      console.error("Error fetching roaster shipments:", error);
+      res.status(500).json({ message: "Failed to fetch roaster shipments" });
+    }
+  });
+
+  // Create return label
+  app.post('/api/shipping/returns', isAuthenticated, async (req: any, res) => {
+    try {
+      const { originalShipmentId, reason, whoPaysCost } = req.body;
+      
+      if (!originalShipmentId || !reason) {
+        return res.status(400).json({ message: "Original shipment ID and reason are required" });
+      }
+      
+      const returnShipment = await shippoService.createReturnLabel(
+        originalShipmentId, 
+        reason, 
+        whoPaysCost || 'CUSTOMER'
+      );
+      
+      res.json(returnShipment);
+    } catch (error: any) {
+      console.error("Error creating return label:", error);
+      res.status(500).json({ message: "Failed to create return label: " + error.message });
+    }
+  });
+
+  // Get return shipments for an order
+  app.get('/api/orders/:orderId/returns', isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const returns = await storage.getReturnShipmentsByOrderId(orderId);
+      res.json(returns);
+    } catch (error: any) {
+      console.error("Error fetching order returns:", error);
+      res.status(500).json({ message: "Failed to fetch order returns" });
+    }
+  });
+
+  // Get return shipments for a roaster
+  app.get('/api/roaster/returns', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(403).json({ message: "Roaster profile required" });
+      }
+      
+      const returns = await storage.getReturnShipmentsByRoasterId(roaster.id);
+      res.json(returns);
+    } catch (error: any) {
+      console.error("Error fetching roaster returns:", error);
+      res.status(500).json({ message: "Failed to fetch roaster returns" });
+    }
+  });
+
+  // Shippo webhook handler
+  app.post('/api/webhooks/shippo', async (req: any, res) => {
+    try {
+      await shippoService.handleWebhook(req.body);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error handling Shippo webhook:", error);
+      res.status(500).json({ message: "Failed to handle webhook" });
+    }
+  });
+
+  // Update shipment status (internal)
+  app.put('/api/shipments/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const shipmentId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const updatedShipment = await storage.updateShipmentStatus(shipmentId, status);
+      res.json(updatedShipment);
+    } catch (error: any) {
+      console.error("Error updating shipment status:", error);
+      res.status(500).json({ message: "Failed to update shipment status" });
+    }
+  });
+
+  // Update return shipment status (internal)
+  app.put('/api/returns/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const returnId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const updatedReturn = await storage.updateReturnShipmentStatus(returnId, status);
+      res.json(updatedReturn);
+    } catch (error: any) {
+      console.error("Error updating return status:", error);
+      res.status(500).json({ message: "Failed to update return status" });
     }
   });
 

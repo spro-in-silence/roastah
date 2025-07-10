@@ -592,6 +592,151 @@ export const disputes = pgTable("disputes", {
   resolvedAt: timestamp("resolved_at"),
 });
 
+// =================================
+// SHIPPING SYSTEM TABLES (SHIPPO INTEGRATION)
+// =================================
+
+// Shipping addresses for users
+export const shippingAddresses = pgTable("shipping_addresses", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  company: varchar("company"),
+  addressLine1: varchar("address_line_1").notNull(),
+  addressLine2: varchar("address_line_2"),
+  city: varchar("city").notNull(),
+  state: varchar("state").notNull(),
+  zipCode: varchar("zip_code").notNull(),
+  country: varchar("country").notNull().default("US"),
+  phone: varchar("phone"),
+  isDefault: boolean("is_default").default(false),
+  isValidated: boolean("is_validated").default(false),
+  shippoAddressId: varchar("shippo_address_id"), // Shippo Address object ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Roaster shipping settings
+export const roasterShippingSettings = pgTable("roaster_shipping_settings", {
+  id: serial("id").primaryKey(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  // Shippo account settings
+  shippoAccountId: varchar("shippo_account_id"), // If roaster has their own Shippo account
+  useRoastahShipping: boolean("use_roastah_shipping").default(true),
+  // Origin address (where roaster ships from)
+  originName: varchar("origin_name").notNull(),
+  originCompany: varchar("origin_company"),
+  originAddressLine1: varchar("origin_address_line_1").notNull(),
+  originAddressLine2: varchar("origin_address_line_2"),
+  originCity: varchar("origin_city").notNull(),
+  originState: varchar("origin_state").notNull(),
+  originZipCode: varchar("origin_zip_code").notNull(),
+  originCountry: varchar("origin_country").notNull().default("US"),
+  originPhone: varchar("origin_phone"),
+  originEmail: varchar("origin_email"),
+  // Shipping preferences
+  freeShippingThreshold: decimal("free_shipping_threshold", { precision: 10, scale: 2 }),
+  handlingTime: integer("handling_time").default(1), // days
+  cutoffTime: varchar("cutoff_time").default("15:00"), // 3 PM default
+  weekendsEnabled: boolean("weekends_enabled").default(false),
+  // Packaging
+  defaultPackageType: varchar("default_package_type").default("USPS_PRIORITY_MAIL_BOX"),
+  packageWeight: decimal("package_weight", { precision: 5, scale: 2 }).default("1.00"), // lbs
+  packageLength: decimal("package_length", { precision: 5, scale: 2 }).default("12.00"), // inches
+  packageWidth: decimal("package_width", { precision: 5, scale: 2 }).default("9.00"),
+  packageHeight: decimal("package_height", { precision: 5, scale: 2 }).default("3.00"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shipping rates cache
+export const shippingRates = pgTable("shipping_rates", {
+  id: serial("id").primaryKey(),
+  shippoRateId: varchar("shippo_rate_id").notNull().unique(),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  fromAddressId: integer("from_address_id").notNull().references(() => shippingAddresses.id),
+  toAddressId: integer("to_address_id").notNull().references(() => shippingAddresses.id),
+  serviceName: varchar("service_name").notNull(),
+  serviceToken: varchar("service_token").notNull(),
+  carrier: varchar("carrier").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").notNull().default("USD"),
+  estimatedDays: integer("estimated_days"),
+  // Caching
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Shipments
+export const shipments = pgTable("shipments", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  shippoShipmentId: varchar("shippo_shipment_id").notNull().unique(),
+  shippoTransactionId: varchar("shippo_transaction_id"),
+  trackingNumber: varchar("tracking_number"),
+  labelUrl: varchar("label_url"),
+  carrier: varchar("carrier").notNull(),
+  serviceName: varchar("service_name").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").notNull().default("USD"),
+  status: varchar("status").notNull().default("PENDING"), // PENDING, PURCHASED, DELIVERED, EXCEPTION
+  estimatedDeliveryDate: timestamp("estimated_delivery_date"),
+  actualDeliveryDate: timestamp("actual_delivery_date"),
+  // Addresses
+  fromAddress: jsonb("from_address").notNull(),
+  toAddress: jsonb("to_address").notNull(),
+  // Package details
+  packageType: varchar("package_type").notNull(),
+  weight: decimal("weight", { precision: 5, scale: 2 }).notNull(),
+  length: decimal("length", { precision: 5, scale: 2 }).notNull(),
+  width: decimal("width", { precision: 5, scale: 2 }).notNull(),
+  height: decimal("height", { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shipment tracking events
+export const shipmentTrackingEvents = pgTable("shipment_tracking_events", {
+  id: serial("id").primaryKey(),
+  shipmentId: integer("shipment_id").notNull().references(() => shipments.id),
+  status: varchar("status").notNull(),
+  statusDate: timestamp("status_date").notNull(),
+  statusDetails: varchar("status_details"),
+  location: varchar("location"),
+  carrier: varchar("carrier").notNull(),
+  trackingNumber: varchar("tracking_number").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Return shipments
+export const returnShipments = pgTable("return_shipments", {
+  id: serial("id").primaryKey(),
+  originalShipmentId: integer("original_shipment_id").notNull().references(() => shipments.id),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  roasterId: integer("roaster_id").notNull().references(() => roasters.id),
+  customerId: varchar("customer_id").notNull().references(() => users.id),
+  reason: varchar("reason").notNull(), // DEFECTIVE, WRONG_ITEM, DAMAGED, CHANGE_OF_MIND
+  shippoShipmentId: varchar("shippo_shipment_id").unique(),
+  shippoTransactionId: varchar("shippo_transaction_id"),
+  trackingNumber: varchar("tracking_number"),
+  labelUrl: varchar("label_url"),
+  carrier: varchar("carrier"),
+  serviceName: varchar("service_name"),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  currency: varchar("currency").default("USD"),
+  status: varchar("status").notNull().default("REQUESTED"), // REQUESTED, APPROVED, LABEL_GENERATED, SHIPPED, DELIVERED, PROCESSED
+  whoPaysCost: varchar("who_pays_cost").notNull().default("CUSTOMER"), // CUSTOMER, ROASTER, ROASTAH
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  refundProcessed: boolean("refund_processed").default(false),
+  notes: text("notes"),
+  // Addresses
+  fromAddress: jsonb("from_address"),
+  toAddress: jsonb("to_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Additional relations
 export const commissionRelations = relations(commissions, ({ one }) => ({
   roaster: one(roasters, {
@@ -668,6 +813,36 @@ export const insertDisputeSchema = createInsertSchema(disputes).omit({
   resolvedAt: true,
 });
 
+// Shipping schema exports
+export const insertShippingAddressSchema = createInsertSchema(shippingAddresses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertRoasterShippingSettingsSchema = createInsertSchema(roasterShippingSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertShippingRateSchema = createInsertSchema(shippingRates).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertShipmentSchema = createInsertSchema(shipments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertShipmentTrackingEventSchema = createInsertSchema(shipmentTrackingEvents).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertReturnShipmentSchema = createInsertSchema(returnShipments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Commission = typeof commissions.$inferSelect;
 export type InsertCommission = z.infer<typeof insertCommissionSchema>;
 export type SellerAnalytics = typeof sellerAnalytics.$inferSelect;
@@ -725,3 +900,17 @@ export const insertGiftCardSchema = createInsertSchema(giftCards).omit({
 
 export type GiftCard = typeof giftCards.$inferSelect;
 export type InsertGiftCard = z.infer<typeof insertGiftCardSchema>;
+
+// Shipping types
+export type ShippingAddress = typeof shippingAddresses.$inferSelect;
+export type InsertShippingAddress = z.infer<typeof insertShippingAddressSchema>;
+export type RoasterShippingSettings = typeof roasterShippingSettings.$inferSelect;
+export type InsertRoasterShippingSettings = z.infer<typeof insertRoasterShippingSettingsSchema>;
+export type ShippingRate = typeof shippingRates.$inferSelect;
+export type InsertShippingRate = z.infer<typeof insertShippingRateSchema>;
+export type Shipment = typeof shipments.$inferSelect;
+export type InsertShipment = z.infer<typeof insertShipmentSchema>;
+export type ShipmentTrackingEvent = typeof shipmentTrackingEvents.$inferSelect;
+export type InsertShipmentTrackingEvent = z.infer<typeof insertShipmentTrackingEventSchema>;
+export type ReturnShipment = typeof returnShipments.$inferSelect;
+export type InsertReturnShipment = z.infer<typeof insertReturnShipmentSchema>;

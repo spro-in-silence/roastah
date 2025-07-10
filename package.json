@@ -129,6 +129,7 @@
     "react-router-dom": "^7.6.2",
     "recharts": "^2.15.2",
     "redis": "^4.7.1",
+    "shippo": "^2.15.0",
     "speakeasy": "^2.0.0",
     "stripe": "^18.3.0",
     "supertest": "^7.1.3",

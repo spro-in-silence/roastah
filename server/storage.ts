@@ -61,6 +61,25 @@ import {
   type InsertSellerMessage,
   type MessageRecipient,
   type InsertMessageRecipient,
+  // Shipping types
+  type ShippingAddress,
+  type InsertShippingAddress,
+  type RoasterShippingSettings,
+  type InsertRoasterShippingSettings,
+  type ShippingRate,
+  type InsertShippingRate,
+  type Shipment,
+  type InsertShipment,
+  type ShipmentTrackingEvent,
+  type InsertShipmentTrackingEvent,
+  type ReturnShipment,
+  type InsertReturnShipment,
+  shippingAddresses,
+  roasterShippingSettings,
+  shippingRates,
+  shipments,
+  shipmentTrackingEvents,
+  returnShipments,
 } from "@shared/schema";
 import { getDb } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -179,6 +198,37 @@ export interface IStorage {
   getGiftCardsByPurchaser(purchaserId: string): Promise<GiftCard[]>;
   redeemGiftCard(code: string, userId: string, amount: number): Promise<GiftCard>;
   updateGiftCardStatus(id: number, status: string): Promise<void>;
+  
+  // Shipping operations
+  createShippingAddress(address: InsertShippingAddress): Promise<ShippingAddress>;
+  getShippingAddressById(id: number): Promise<ShippingAddress | undefined>;
+  getShippingAddressesByUserId(userId: string): Promise<ShippingAddress[]>;
+  updateShippingAddress(id: number, updates: Partial<InsertShippingAddress>): Promise<ShippingAddress>;
+  deleteShippingAddress(id: number): Promise<void>;
+  
+  createRoasterShippingSettings(settings: InsertRoasterShippingSettings): Promise<RoasterShippingSettings>;
+  getRoasterShippingSettings(roasterId: number): Promise<RoasterShippingSettings | undefined>;
+  updateRoasterShippingSettings(roasterId: number, updates: Partial<InsertRoasterShippingSettings>): Promise<RoasterShippingSettings>;
+  
+  createShippingRate(rate: InsertShippingRate): Promise<ShippingRate>;
+  getShippingRateByShippoId(shippoRateId: string): Promise<ShippingRate | undefined>;
+  getCachedShippingRates(fromAddressId: number, toAddressId: number, roasterId: number): Promise<ShippingRate[]>;
+  
+  createShipment(shipment: InsertShipment): Promise<Shipment>;
+  getShipmentById(id: number): Promise<Shipment | undefined>;
+  getShipmentsByOrderId(orderId: number): Promise<Shipment[]>;
+  getShipmentsByRoasterId(roasterId: number): Promise<Shipment[]>;
+  updateShipmentStatus(id: number, status: string): Promise<Shipment>;
+  updateShipmentTracking(trackingNumber: string, trackingData: any): Promise<void>;
+  
+  createShipmentTrackingEvent(event: InsertShipmentTrackingEvent): Promise<ShipmentTrackingEvent>;
+  getShipmentTrackingEvents(shipmentId: number): Promise<ShipmentTrackingEvent[]>;
+  
+  createReturnShipment(returnShipment: InsertReturnShipment): Promise<ReturnShipment>;
+  getReturnShipmentById(id: number): Promise<ReturnShipment | undefined>;
+  getReturnShipmentsByOrderId(orderId: number): Promise<ReturnShipment[]>;
+  getReturnShipmentsByRoasterId(roasterId: number): Promise<ReturnShipment[]>;
+  updateReturnShipmentStatus(id: number, status: string): Promise<ReturnShipment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1222,6 +1272,213 @@ export class DatabaseStorage implements IStorage {
     pastBuyers.forEach(user => allRecipients.add(user.userId));
 
     return Array.from(allRecipients);
+  }
+
+  // ==========================================
+  // SHIPPING OPERATIONS
+  // ==========================================
+
+  async createShippingAddress(address: InsertShippingAddress): Promise<ShippingAddress> {
+    const [result] = await getDb()
+      .insert(shippingAddresses)
+      .values(address)
+      .returning();
+    return result;
+  }
+
+  async getShippingAddressById(id: number): Promise<ShippingAddress | undefined> {
+    const [result] = await getDb()
+      .select()
+      .from(shippingAddresses)
+      .where(eq(shippingAddresses.id, id));
+    return result;
+  }
+
+  async getShippingAddressesByUserId(userId: string): Promise<ShippingAddress[]> {
+    return await getDb()
+      .select()
+      .from(shippingAddresses)
+      .where(eq(shippingAddresses.userId, userId))
+      .orderBy(desc(shippingAddresses.isDefault), desc(shippingAddresses.createdAt));
+  }
+
+  async updateShippingAddress(id: number, updates: Partial<InsertShippingAddress>): Promise<ShippingAddress> {
+    const [result] = await getDb()
+      .update(shippingAddresses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(shippingAddresses.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteShippingAddress(id: number): Promise<void> {
+    await getDb()
+      .delete(shippingAddresses)
+      .where(eq(shippingAddresses.id, id));
+  }
+
+  async createRoasterShippingSettings(settings: InsertRoasterShippingSettings): Promise<RoasterShippingSettings> {
+    const [result] = await getDb()
+      .insert(roasterShippingSettings)
+      .values(settings)
+      .returning();
+    return result;
+  }
+
+  async getRoasterShippingSettings(roasterId: number): Promise<RoasterShippingSettings | undefined> {
+    const [result] = await getDb()
+      .select()
+      .from(roasterShippingSettings)
+      .where(eq(roasterShippingSettings.roasterId, roasterId));
+    return result;
+  }
+
+  async updateRoasterShippingSettings(roasterId: number, updates: Partial<InsertRoasterShippingSettings>): Promise<RoasterShippingSettings> {
+    const [result] = await getDb()
+      .update(roasterShippingSettings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(roasterShippingSettings.roasterId, roasterId))
+      .returning();
+    return result;
+  }
+
+  async createShippingRate(rate: InsertShippingRate): Promise<ShippingRate> {
+    const [result] = await getDb()
+      .insert(shippingRates)
+      .values(rate)
+      .returning();
+    return result;
+  }
+
+  async getShippingRateByShippoId(shippoRateId: string): Promise<ShippingRate | undefined> {
+    const [result] = await getDb()
+      .select()
+      .from(shippingRates)
+      .where(eq(shippingRates.shippoRateId, shippoRateId));
+    return result;
+  }
+
+  async getCachedShippingRates(fromAddressId: number, toAddressId: number, roasterId: number): Promise<ShippingRate[]> {
+    const now = new Date();
+    return await getDb()
+      .select()
+      .from(shippingRates)
+      .where(
+        and(
+          eq(shippingRates.fromAddressId, fromAddressId),
+          eq(shippingRates.toAddressId, toAddressId),
+          eq(shippingRates.roasterId, roasterId),
+          sql`${shippingRates.expiresAt} > ${now}`
+        )
+      )
+      .orderBy(shippingRates.amount);
+  }
+
+  async createShipment(shipment: InsertShipment): Promise<Shipment> {
+    const [result] = await getDb()
+      .insert(shipments)
+      .values(shipment)
+      .returning();
+    return result;
+  }
+
+  async getShipmentById(id: number): Promise<Shipment | undefined> {
+    const [result] = await getDb()
+      .select()
+      .from(shipments)
+      .where(eq(shipments.id, id));
+    return result;
+  }
+
+  async getShipmentsByOrderId(orderId: number): Promise<Shipment[]> {
+    return await getDb()
+      .select()
+      .from(shipments)
+      .where(eq(shipments.orderId, orderId));
+  }
+
+  async getShipmentsByRoasterId(roasterId: number): Promise<Shipment[]> {
+    return await getDb()
+      .select()
+      .from(shipments)
+      .where(eq(shipments.roasterId, roasterId))
+      .orderBy(desc(shipments.createdAt));
+  }
+
+  async updateShipmentStatus(id: number, status: string): Promise<Shipment> {
+    const [result] = await getDb()
+      .update(shipments)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(shipments.id, id))
+      .returning();
+    return result;
+  }
+
+  async updateShipmentTracking(trackingNumber: string, trackingData: any): Promise<void> {
+    await getDb()
+      .update(shipments)
+      .set({ 
+        status: trackingData.status,
+        actualDeliveryDate: trackingData.actualDeliveryDate,
+        updatedAt: new Date()
+      })
+      .where(eq(shipments.trackingNumber, trackingNumber));
+  }
+
+  async createShipmentTrackingEvent(event: InsertShipmentTrackingEvent): Promise<ShipmentTrackingEvent> {
+    const [result] = await getDb()
+      .insert(shipmentTrackingEvents)
+      .values(event)
+      .returning();
+    return result;
+  }
+
+  async getShipmentTrackingEvents(shipmentId: number): Promise<ShipmentTrackingEvent[]> {
+    return await getDb()
+      .select()
+      .from(shipmentTrackingEvents)
+      .where(eq(shipmentTrackingEvents.shipmentId, shipmentId))
+      .orderBy(desc(shipmentTrackingEvents.statusDate));
+  }
+
+  async createReturnShipment(returnShipment: InsertReturnShipment): Promise<ReturnShipment> {
+    const [result] = await getDb()
+      .insert(returnShipments)
+      .values(returnShipment)
+      .returning();
+    return result;
+  }
+
+  async getReturnShipmentById(id: number): Promise<ReturnShipment | undefined> {
+    const [result] = await getDb()
+      .select()
+      .from(returnShipments)
+      .where(eq(returnShipments.id, id));
+    return result;
+  }
+
+  async getReturnShipmentsByOrderId(orderId: number): Promise<ReturnShipment[]> {
+    return await getDb()
+      .select()
+      .from(returnShipments)
+      .where(eq(returnShipments.orderId, orderId));
+  }
+
+  async getReturnShipmentsByRoasterId(roasterId: number): Promise<ReturnShipment[]> {
+    return await getDb()
+      .select()
+      .from(returnShipments)
+      .where(eq(returnShipments.roasterId, roasterId))
+      .orderBy(desc(returnShipments.createdAt));
+  }
+
+  async updateReturnShipmentStatus(id: number, status: string): Promise<ReturnShipment> {
+    const [result] = await getDb()
+      .update(returnShipments)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(returnShipments.id, id))
+      .returning();
+    return result;
   }
 }
 

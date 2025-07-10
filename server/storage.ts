@@ -410,32 +410,28 @@ export class DatabaseStorage implements IStorage {
         quantity: cartItems.quantity,
         grindSize: cartItems.grindSize,
         createdAt: cartItems.createdAt,
-        product: {
-          id: products.id,
-          roasterId: products.roasterId,
-          name: products.name,
-          description: products.description,
-          price: products.price,
-          stockQuantity: products.stockQuantity,
-          origin: products.origin,
-          roastLevel: products.roastLevel,
-          process: products.process,
-          altitude: products.altitude,
-          varietal: products.varietal,
-          tastingNotes: products.tastingNotes,
-          images: products.images,
-          isActive: products.isActive,
-          createdAt: products.createdAt,
-          updatedAt: products.updatedAt,
-        },
-        roaster: {
-          id: roasters.id,
-          userId: roasters.userId,
-          name: roasters.name,
-          businessName: roasters.businessName,
-          description: roasters.description,
-          location: roasters.location,
-        }
+        productId2: products.id,
+        productRoasterId: products.roasterId,
+        productName: products.name,
+        productDescription: products.description,
+        productPrice: products.price,
+        productStockQuantity: products.stockQuantity,
+        productOrigin: products.origin,
+        productRoastLevel: products.roastLevel,
+        productProcess: products.process,
+        productAltitude: products.altitude,
+        productVarietal: products.varietal,
+        productTastingNotes: products.tastingNotes,
+        productImages: products.images,
+        productIsActive: products.isActive,
+        productCreatedAt: products.createdAt,
+        productUpdatedAt: products.updatedAt,
+        roasterId: roasters.id,
+        roasterUserId: roasters.userId,
+        roasterName: roasters.name,
+        roasterBusinessName: roasters.businessName,
+        roasterDescription: roasters.description,
+        roasterLocation: roasters.location,
       })
       .from(cartItems)
       .leftJoin(products, eq(cartItems.productId, products.id))
@@ -443,10 +439,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cartItems.userId, userId));
     
     return result.map(item => ({
-      ...item,
-      product: item.product ? {
-        ...item.product,
-        roaster: item.roaster
+      id: item.id,
+      userId: item.userId,
+      productId: item.productId,
+      quantity: item.quantity,
+      grindSize: item.grindSize,
+      createdAt: item.createdAt,
+      product: item.productId2 ? {
+        id: item.productId2,
+        roasterId: item.productRoasterId,
+        name: item.productName,
+        description: item.productDescription,
+        price: item.productPrice,
+        stockQuantity: item.productStockQuantity,
+        origin: item.productOrigin,
+        roastLevel: item.productRoastLevel,
+        process: item.productProcess,
+        altitude: item.productAltitude,
+        varietal: item.productVarietal,
+        tastingNotes: item.productTastingNotes,
+        images: item.productImages,
+        isActive: item.productIsActive,
+        createdAt: item.productCreatedAt,
+        updatedAt: item.productUpdatedAt,
+        roaster: item.roasterId ? {
+          id: item.roasterId,
+          userId: item.roasterUserId,
+          name: item.roasterName,
+          businessName: item.roasterBusinessName,
+          description: item.roasterDescription,
+          location: item.roasterLocation,
+        } : undefined
       } : undefined
     }));
   }

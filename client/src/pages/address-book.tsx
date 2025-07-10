@@ -120,20 +120,18 @@ export default function AddressBook() {
   const { data: addresses, isLoading } = useQuery<Address[]>({
     queryKey: ["/api/shipping/addresses"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/shipping/addresses");
-      return response.json();
+      return await apiRequest("GET", "/api/shipping/addresses");
     },
   });
 
   // Add address mutation
   const addAddressMutation = useMutation({
     mutationFn: async (addressData: AddressFormData) => {
-      const response = await apiRequest("POST", "/api/shipping/addresses", {
+      return await apiRequest("POST", "/api/shipping/addresses", {
         ...addressData,
         name: `${addressData.firstName} ${addressData.lastName}`,
         country: "US",
       });
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping/addresses"] });
@@ -155,12 +153,11 @@ export default function AddressBook() {
   // Edit address mutation
   const editAddressMutation = useMutation({
     mutationFn: async ({ id, addressData }: { id: number; addressData: AddressFormData }) => {
-      const response = await apiRequest("PUT", `/api/shipping/addresses/${id}`, {
+      return await apiRequest("PUT", `/api/shipping/addresses/${id}`, {
         ...addressData,
         name: `${addressData.firstName} ${addressData.lastName}`,
         country: "US",
       });
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping/addresses"] });
@@ -203,10 +200,9 @@ export default function AddressBook() {
   // Set default address mutation
   const setDefaultMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("PUT", `/api/shipping/addresses/${id}`, {
+      return await apiRequest("PUT", `/api/shipping/addresses/${id}`, {
         isDefault: true,
       });
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping/addresses"] });

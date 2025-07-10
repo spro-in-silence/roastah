@@ -1,3 +1,12 @@
+export interface Roaster {
+  id: number;
+  userId: string;
+  name: string;
+  businessName: string;
+  description: string;
+  location: string;
+}
+
 export interface Product {
   id: number;
   roasterId: number;
@@ -15,6 +24,7 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  roaster?: Roaster;
 }
 
 export interface CartItem {

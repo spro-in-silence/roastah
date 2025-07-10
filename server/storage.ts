@@ -402,7 +402,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCartByUserId(userId: string): Promise<CartItem[]> {
-    return await getDb().select().from(cartItems).where(eq(cartItems.userId, userId));
+    const result = await getDb()
+      .select({
+        id: cartItems.id,
+        userId: cartItems.userId,
+        productId: cartItems.productId,
+        quantity: cartItems.quantity,
+        grindSize: cartItems.grindSize,
+        createdAt: cartItems.createdAt,
+        product: {
+          id: products.id,
+          roasterId: products.roasterId,
+          name: products.name,
+          description: products.description,
+          price: products.price,
+          stockQuantity: products.stockQuantity,
+          origin: products.origin,
+          roastLevel: products.roastLevel,
+          process: products.process,
+          altitude: products.altitude,
+          varietal: products.varietal,
+          tastingNotes: products.tastingNotes,
+          images: products.images,
+          isActive: products.isActive,
+          createdAt: products.createdAt,
+          updatedAt: products.updatedAt,
+        },
+        roaster: {
+          id: roasters.id,
+          userId: roasters.userId,
+          name: roasters.name,
+          businessName: roasters.businessName,
+          description: roasters.description,
+          location: roasters.location,
+        }
+      })
+      .from(cartItems)
+      .leftJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(roasters, eq(products.roasterId, roasters.id))
+      .where(eq(cartItems.userId, userId));
+    
+    return result.map(item => ({
+      ...item,
+      product: item.product ? {
+        ...item.product,
+        roaster: item.roaster
+      } : undefined
+    }));
   }
 
   async updateCartItem(id: number, quantity: number): Promise<CartItem> {

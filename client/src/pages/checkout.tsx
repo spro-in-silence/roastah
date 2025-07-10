@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { MapPin, Plus, Star } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
@@ -415,11 +416,24 @@ function CheckoutForm() {
     return groups;
   }, {});
 
+  // Calculate shipping per group (assuming different shipping rates per seller)
+  const calculateShippingForGroup = (groupSubtotal: number) => {
+    return groupSubtotal >= 35 ? 0 : 5.99;
+  };
+
   const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
     return sum + (parseFloat(item.product?.price || "0") * item.quantity);
   }, 0);
 
-  const shipping = subtotal >= 35 ? 0 : 5.99;
+  // Calculate total shipping across all groups
+  const totalShipping = Object.values(groupedItems).reduce((sum, group) => {
+    const groupSubtotal = group.items.reduce((groupSum, item) => {
+      return groupSum + (parseFloat(item.product?.price || "0") * item.quantity);
+    }, 0);
+    return sum + calculateShippingForGroup(groupSubtotal);
+  }, 0);
+
+  const shipping = totalShipping;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
 
@@ -643,15 +657,46 @@ function CheckoutForm() {
                   
                   <Separator className="my-4" />
                   
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Shipping</span>
-                      <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
-                    </div>
+                  <Accordion type="single" collapsible defaultValue="summary">
+                    <AccordionItem value="summary">
+                      <AccordionTrigger className="text-sm font-medium">
+                        <div className="flex justify-between w-full pr-4">
+                          <span>Order Summary</span>
+                          <span>
+                            Subtotal: ${subtotal.toFixed(2)} | Shipping: ${shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4">
+                          {Object.entries(groupedItems).map(([groupKey, group]) => {
+                            const groupSubtotal = group.items.reduce((sum, item) => {
+                              return sum + (parseFloat(item.product?.price || "0") * item.quantity);
+                            }, 0);
+                            const groupShipping = calculateShippingForGroup(groupSubtotal);
+                            
+                            return (
+                              <div key={groupKey} className="border rounded-lg p-3 bg-gray-50">
+                                <h4 className="font-medium text-sm mb-2">{group.sellerName}</h4>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>${groupSubtotal.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Shipping</span>
+                                    <span>{groupShipping === 0 ? 'FREE' : `$${groupShipping.toFixed(2)}`}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  
+                  <div className="mt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Tax</span>
                       <span>${tax.toFixed(2)}</span>

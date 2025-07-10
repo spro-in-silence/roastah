@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryWithLoading, useMutationWithLoading } from "@/hooks/use-query-with-loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -347,12 +348,12 @@ function CheckoutForm() {
     },
   });
 
-  const { data: cartItems = [] } = useQuery<CartItem[]>({
+  const { data: cartItems = [] } = useQueryWithLoading<CartItem[]>({
     queryKey: ["/api/cart"],
   });
 
   // Query for all shipping addresses
-  const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery<ShippingAddress[]>({
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useQueryWithLoading<ShippingAddress[]>({
     queryKey: ["/api/shipping/addresses"],
     queryFn: async () => {
       return await apiRequest("GET", "/api/shipping/addresses");
@@ -373,7 +374,7 @@ function CheckoutForm() {
   }, [defaultAddress, selectedAddressId]);
 
   // Mutation for creating new address
-  const createAddressMutation = useMutation({
+  const createAddressMutation = useMutationWithLoading({
     mutationFn: async (addressData: AddressFormData) => {
       return await apiRequest("POST", "/api/shipping/addresses", addressData);
     },

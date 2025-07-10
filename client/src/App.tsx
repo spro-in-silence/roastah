@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
+import { LoadingProvider } from "@/contexts/loading-context";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SellerLayout from "@/components/SellerLayout";
 import NotFound from "@/pages/not-found";
@@ -33,6 +34,7 @@ import Orders from "@/pages/orders";
 import AddressBook from "@/pages/address-book";
 import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
+import LoadingDemo from "@/pages/loading-demo";
 
 // Create a temporary component for missing SellerProductsNew
 const SellerProductsNew = () => {
@@ -55,6 +57,7 @@ function Router() {
         <Route path="/" element={<StandardLanding />} />
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
+        <Route path="/loading-demo" element={<LoadingDemo />} />
         <Route path="/dev-login" element={<DevLogin />} />
         
         {/* Authentication Required Routes */}
@@ -161,10 +164,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <LoadingProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </LoadingProvider>
     </QueryClientProvider>
   );
 }

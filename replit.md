@@ -61,6 +61,13 @@ The application uses a dual-database approach:
 - **Real-time inventory updates**
 - **Instant messaging** between buyers and sellers
 
+### Global Loading System
+- **Automatic loading detection** for operations taking more than 500ms
+- **Coffee roaster animation** with realistic bean movement patterns
+- **React Query integration** for seamless API call loading states
+- **Manual loading control** for custom operations
+- **Centralized loading context** prevents loading flashes and provides consistent UX
+
 ## Data Flow
 
 ### Product Lifecycle
@@ -213,6 +220,11 @@ Changelog:
 - July 10, 2025. Implemented enhanced checkout experience with intelligent address selection - shows dropdown when addresses exist, full form when none saved
 - July 10, 2025. Fixed checkout page API request handling - removed duplicate .json() calls that were causing TypeError
 - July 10, 2025. Created reusable AddressForm component for consistent address input across checkout and address book pages
+- July 10, 2025. Fixed checkout page loading issue - corrected useConfig hook destructuring from {data: config} to {config, loading, error}
+- July 10, 2025. Enhanced checkout address dropdown to display single-line addresses with ellipsis truncation and removed full address display box
+- July 10, 2025. Implemented global loading system with coffee roaster animation for operations taking more than 500ms
+- July 10, 2025. Created comprehensive loading context with automatic React Query integration and manual control capabilities
+- July 10, 2025. Added loading demo page at /loading-demo to showcase global loading system functionality
 ```
 
 ## User Preferences

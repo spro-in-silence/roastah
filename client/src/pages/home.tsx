@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useQueryWithLoading } from "@/hooks/use-query-with-loading";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -11,7 +12,7 @@ import { Product } from "@/lib/types";
 export default function Home() {
   const { isRoaster } = useUser();
 
-  const { data: featuredProducts = [] } = useQuery({
+  const { data: featuredProducts = [] } = useQueryWithLoading({
     queryKey: ["/api/products"],
   });
 

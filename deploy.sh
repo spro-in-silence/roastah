@@ -30,4 +30,13 @@ gcloud run deploy roastah-d \
   --set-secrets="REPLIT_DOMAINS=REPLIT_DOMAINS:latest,REPL_ID=REPL_ID:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest" \
   --quiet
 
-echo "✅ Deployment complete!"  
+echo "✅ Deployment complete!"
+
+echo "🧹 Cleaning up Docker resources to prevent future ENOSPC errors..."
+echo "   Removing unused Docker images, containers, and networks..."
+docker system prune -f
+
+echo "   Clearing Docker build cache..."
+docker builder prune -f
+
+echo "   Docker cleanup complete!"  

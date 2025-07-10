@@ -609,12 +609,12 @@ function CheckoutForm() {
 
             {/* Order Summary */}
             <div>
-              <Card className="sticky top-24">
-                <CardHeader>
+              <Card className="sticky top-24 flex flex-col max-h-[calc(100vh-7rem)]">
+                <CardHeader className="flex-shrink-0">
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-6 mb-6">
+                <CardContent className="flex flex-col overflow-hidden">
+                  <div className="flex-1 overflow-y-auto space-y-6 mb-6 max-h-[50vh]">
                     {Object.entries(groupedItems).map(([groupKey, group]) => {
                       const groupSubtotal = group.items.reduce((sum, item) => {
                         return sum + (parseFloat(item.product?.price || "0") * item.quantity);
@@ -655,9 +655,11 @@ function CheckoutForm() {
                     })}
                   </div>
                   
+                  <div className="flex-shrink-0">
+                  
                   <Separator className="my-4" />
                   
-                  <Accordion type="single" collapsible defaultValue="summary">
+                  <Accordion type="single" collapsible>
                     <AccordionItem value="summary">
                       <AccordionTrigger className="text-sm font-medium">
                         <div className="flex justify-between w-full pr-4">
@@ -715,6 +717,7 @@ function CheckoutForm() {
                   >
                     {isProcessing ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
                   </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>

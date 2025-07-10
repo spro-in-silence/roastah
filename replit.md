@@ -226,6 +226,9 @@ Changelog:
 - July 10, 2025. Created comprehensive loading context with automatic React Query integration and manual control capabilities
 - July 10, 2025. Added loading demo page at /loading-demo to showcase global loading system functionality
 - July 10, 2025. Implemented multi-vendor order grouping in checkout page - groups cart items by seller with individual subtotals and maintains overall total for Place Order button
+- July 10, 2025. Fixed critical cart API database query issues by restructuring Drizzle ORM queries - replaced complex nested joins with separate queries for reliability
+- July 10, 2025. Enhanced checkout page with collapsible accordion for order summary breakdown - shows compressed totals by default and expandable per-roaster details
+- July 10, 2025. Implemented proper cart item scrolling in checkout page with fixed header/footer to prevent page scroll when cart has many items
 ```
 
 ## User Preferences

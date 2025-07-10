@@ -145,6 +145,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email/Password authentication for development
+  app.post('/api/auth/login', async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+      
+      // For development, create/find user by email
+      const user = await storage.upsertUser({
+        id: email,
+        email,
+        name: email.split('@')[0],
+        username: email.split('@')[0],
+        role: 'user',
+        mfaEnabled: false,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        onboardingCompleted: false,
+        profileComplete: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      // Log the user in
+      req.login(user, (err: any) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).json({ error: 'Failed to log in user' });
+        }
+        res.json(user);
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Login failed' });
+    }
+  });
+
+  app.post('/api/auth/register', async (req: any, res) => {
+    try {
+      const { name, email, password } = req.body;
+      
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+      }
+      
+      // For development, create user
+      const user = await storage.upsertUser({
+        id: email,
+        email,
+        name,
+        username: email.split('@')[0],
+        role: 'user',
+        mfaEnabled: false,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        onboardingCompleted: false,
+        profileComplete: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      // Log the user in
+      req.login(user, (err: any) => {
+        if (err) {
+          console.error('Registration error:', err);
+          return res.status(500).json({ error: 'Failed to register user' });
+        }
+        res.json(user);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Registration failed' });
+    }
+  });
+
+  app.post('/api/auth/logout', (req: any, res) => {
+    req.logout((err: any) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ error: 'Logout failed' });
+      }
+      res.json({ success: true });
+    });
+  });
+
   // MFA Security Endpoints
   app.post('/api/auth/mfa/setup', authLimiter, enhancedAuthCheck, async (req: any, res) => {
     try {

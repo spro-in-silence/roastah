@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,10 +8,13 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { MapPin } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
@@ -97,7 +100,12 @@ const addressSchema = z.object({
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(5, "Valid ZIP code is required"),
+  phone: z.string().min(10, "Phone number is required"),
+  deliveryInstructions: z.string().optional(),
+  isDefault: z.boolean().default(false),
 });
+
+type AddressFormData = z.infer<typeof addressSchema>;
 
 interface ShippingAddress {
   id: number;
@@ -115,33 +123,277 @@ interface ShippingAddress {
   isDefault: boolean;
 }
 
+// AddressForm component
+interface AddressFormProps {
+  form: any;
+  onSubmit: (data: AddressFormData) => void;
+  onCancel?: () => void;
+  isLoading?: boolean;
+}
+
+function AddressForm({ form, onSubmit, onCancel, isLoading = false }: AddressFormProps) {
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter first name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter last name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="Enter email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input type="tel" placeholder="Enter phone number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="addressLine1"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address Line 1</FormLabel>
+              <FormControl>
+                <Input placeholder="123 Coffee Street" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="addressLine2"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address Line 2 (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Apartment, suite, unit, etc." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>City</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter city" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="state"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>State</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-48 overflow-y-auto">
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="zipCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ZIP Code</FormLabel>
+                <FormControl>
+                  <Input placeholder="12345" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="deliveryInstructions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Delivery Instructions (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Any special delivery instructions..."
+                  rows={3}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isDefault"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Set as default address</FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-3 pt-4">
+          <Button type="submit" disabled={isLoading} className="flex-1">
+            {isLoading ? 'Saving...' : 'Save Address'}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </div>
+      </form>
+    </Form>
+  );
+}
+
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<Address>({
+  // Address form for new address
+  const addressForm = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
+    defaultValues: {
+      isDefault: false,
+    },
   });
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
   });
 
-  // Query for default shipping address
-  const { data: defaultAddress, isLoading: isLoadingAddress } = useQuery<ShippingAddress>({
-    queryKey: ["/api/shipping/addresses/default"],
+  // Query for all shipping addresses
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery<ShippingAddress[]>({
+    queryKey: ["/api/shipping/addresses"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/shipping/addresses");
-      const addresses = await response.json();
-      return addresses.find((addr: ShippingAddress) => addr.isDefault) || null;
+      return response.json();
+    },
+  });
+
+  // Find default address and set it as selected
+  const defaultAddress = addresses.find((addr: ShippingAddress) => addr.isDefault);
+  const selectedAddress = selectedAddressId 
+    ? addresses.find(addr => addr.id === selectedAddressId)
+    : defaultAddress;
+
+  // Set initial selected address to default
+  useEffect(() => {
+    if (defaultAddress && !selectedAddressId) {
+      setSelectedAddressId(defaultAddress.id);
+    }
+  }, [defaultAddress, selectedAddressId]);
+
+  // Mutation for creating new address
+  const createAddressMutation = useMutation({
+    mutationFn: async (addressData: AddressFormData) => {
+      const response = await apiRequest("POST", "/api/shipping/addresses", addressData);
+      return response.json();
+    },
+    onSuccess: (newAddress) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shipping/addresses"] });
+      setSelectedAddressId(newAddress.id);
+      setShowNewAddressForm(false);
+      addressForm.reset();
+      toast({
+        title: "Address Added",
+        description: "Your new address has been saved and selected for delivery.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add address",
+        variant: "destructive",
+      });
     },
   });
 
@@ -153,7 +405,22 @@ function CheckoutForm() {
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
 
-  const onSubmit = async (data: Address) => {
+  // Handle address selection
+  const handleAddressSelect = (addressId: string) => {
+    if (addressId === "new") {
+      setShowNewAddressForm(true);
+    } else {
+      setSelectedAddressId(parseInt(addressId));
+      setShowNewAddressForm(false);
+    }
+  };
+
+  // Handle new address form submission
+  const handleAddAddress = (data: AddressFormData) => {
+    createAddressMutation.mutate(data);
+  };
+
+  const onSubmit = async (data: any) => {
     if (!stripe || !elements) {
       return;
     }
@@ -198,168 +465,116 @@ function CheckoutForm() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
         
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={onSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Shipping & Payment Form */}
             <div className="lg:col-span-2 space-y-8">
               {/* Shipping Information */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Shipping Information</CardTitle>
-                    {defaultAddress && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.location.href = '/address-book'}
-                      >
-                        Change Address
-                      </Button>
-                    )}
-                  </div>
+                  <CardTitle>
+                    {addresses.length > 0 ? "Delivering to" : "Shipping Information"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingAddress ? (
+                  {isLoadingAddresses ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="animate-spin w-6 h-6 border-2 border-roastah-teal border-t-transparent rounded-full"></div>
-                      <span className="ml-2 text-gray-600">Loading shipping address...</span>
+                      <span className="ml-2 text-gray-600">Loading addresses...</span>
                     </div>
-                  ) : defaultAddress ? (
-                    // Show compact delivery info for default address
-                    <div className="bg-gray-50 rounded-lg p-4 border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <MapPin className="h-5 w-5 text-roastah-teal" />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              Delivering to {defaultAddress.firstName} {defaultAddress.lastName}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {defaultAddress.addressLine1}
-                              {defaultAddress.addressLine2 && `, ${defaultAddress.addressLine2}`}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {defaultAddress.city}, {defaultAddress.state} {defaultAddress.zipCode}
-                            </p>
-                            {defaultAddress.deliveryInstructions && (
-                              <p className="text-sm text-gray-500 mt-1">
-                                Instructions: {defaultAddress.deliveryInstructions}
+                  ) : addresses.length > 0 && !showNewAddressForm ? (
+                    // Show address dropdown when addresses exist
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="address-select">Select delivery address</Label>
+                        <Select
+                          value={selectedAddressId?.toString() || ""}
+                          onValueChange={handleAddressSelect}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select an address" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {addresses.map((address) => (
+                              <SelectItem key={address.id} value={address.id.toString()}>
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      {address.firstName} {address.lastName}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      {address.addressLine1}
+                                      {address.addressLine2 && `, ${address.addressLine2}`}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      {address.city}, {address.state} {address.zipCode}
+                                    </div>
+                                  </div>
+                                  {address.isDefault && (
+                                    <span className="text-xs bg-roastah-teal text-white px-2 py-1 rounded ml-2">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="new">
+                              <div className="flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                Ship to a new address
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {selectedAddress && (
+                        <div className="bg-gray-50 rounded-lg p-4 border">
+                          <div className="flex items-center gap-3">
+                            <MapPin className="h-5 w-5 text-roastah-teal" />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {selectedAddress.firstName} {selectedAddress.lastName}
                               </p>
-                            )}
+                              <p className="text-sm text-gray-600">
+                                {selectedAddress.addressLine1}
+                                {selectedAddress.addressLine2 && `, ${selectedAddress.addressLine2}`}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}
+                              </p>
+                              {selectedAddress.deliveryInstructions && (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  Instructions: {selectedAddress.deliveryInstructions}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ) : (
-                    // Show full address form if no default address
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        {...register("firstName")}
-                        className={errors.firstName ? "border-red-500" : ""}
+                    // Show new address form
+                    <div className="space-y-4">
+                      {addresses.length > 0 && (
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium">Add New Address</h3>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowNewAddressForm(false)}
+                          >
+                            Back to Address List
+                          </Button>
+                        </div>
+                      )}
+                      <AddressForm
+                        form={addressForm}
+                        onSubmit={handleAddAddress}
+                        onCancel={addresses.length > 0 ? () => setShowNewAddressForm(false) : undefined}
+                        isLoading={createAddressMutation.isPending}
                       />
-                      {errors.firstName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
-                      )}
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        {...register("lastName")}
-                        className={errors.lastName ? "border-red-500" : ""}
-                      />
-                      {errors.lastName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        {...register("email")}
-                        className={errors.email ? "border-red-500" : ""}
-                      />
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <Label htmlFor="addressLine1">Address Line 1</Label>
-                      <Input
-                        id="addressLine1"
-                        {...register("addressLine1")}
-                        placeholder="123 Coffee Street"
-                        className={errors.addressLine1 ? "border-red-500" : ""}
-                      />
-                      {errors.addressLine1 && (
-                        <p className="text-red-500 text-sm mt-1">{errors.addressLine1.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
-                      <Input
-                        id="addressLine2"
-                        {...register("addressLine2")}
-                        placeholder="Apartment, suite, unit, building, floor, etc."
-                        className={errors.addressLine2 ? "border-red-500" : ""}
-                      />
-                      {errors.addressLine2 && (
-                        <p className="text-red-500 text-sm mt-1">{errors.addressLine2.message}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        {...register("city")}
-                        className={errors.city ? "border-red-500" : ""}
-                      />
-                      {errors.city && (
-                        <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Select onValueChange={(value) => setValue("state", value)}>
-                        <SelectTrigger className={errors.state ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select a state" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-48 overflow-y-auto">
-                          {US_STATES.map((state) => (
-                            <SelectItem key={state.value} value={state.value}>
-                              {state.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.state && (
-                        <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="zipCode">ZIP Code</Label>
-                      <Input
-                        id="zipCode"
-                        {...register("zipCode")}
-                        className={errors.zipCode ? "border-red-500" : ""}
-                      />
-                      {errors.zipCode && (
-                        <p className="text-red-500 text-sm mt-1">{errors.zipCode.message}</p>
-                      )}
-                    </div>
-                  </div>
                   )}
                 </CardContent>
               </Card>
@@ -407,45 +622,45 @@ function CheckoutForm() {
                         />
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{item.product?.name}</h4>
-                          <p className="text-xs text-roastah-warm-gray">Qty: {item.quantity}</p>
+                          <p className="text-sm text-gray-600">
+                            Quantity: {item.quantity}
+                          </p>
                         </div>
-                        <span className="text-sm font-medium">
+                        <p className="font-medium">
                           ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
-                        </span>
+                        </p>
                       </div>
                     ))}
                   </div>
-
+                  
                   <Separator className="my-4" />
-
+                  
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
+                      <span>Subtotal</span>
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Shipping:</span>
-                      <span className={shipping === 0 ? "text-green-600" : ""}>
-                        {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
-                      </span>
+                      <span>Shipping</span>
+                      <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Tax:</span>
+                      <span>Tax</span>
                       <span>${tax.toFixed(2)}</span>
                     </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
-
-                  <Button
-                    type="submit"
-                    disabled={!stripe || isProcessing}
-                    className="w-full mt-6 bg-roastah-teal text-white hover:bg-roastah-dark-teal"
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full mt-6"
+                    disabled={isProcessing || (!selectedAddress && addresses.length > 0)}
                   >
-                    {isProcessing ? "Processing..." : "Complete Order"}
+                    {isProcessing ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
                   </Button>
                 </CardContent>
               </Card>
@@ -453,7 +668,7 @@ function CheckoutForm() {
           </div>
         </form>
       </div>
-
+      
       <Footer />
     </div>
   );
@@ -461,80 +676,23 @@ function CheckoutForm() {
 
 export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
-  const { toast } = useToast();
-  const { config, loading: configLoading, error: configError } = useConfig();
-
-  const { data: cartItems = [] } = useQuery<CartItem[]>({
-    queryKey: ["/api/cart"],
-  });
+  const { data: config } = useConfig();
 
   useEffect(() => {
-    if ((cartItems as CartItem[]).length === 0) return;
-    
-    // Calculate total from cart items
-    const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
-      return sum + (parseFloat(item.product?.price || "0") * item.quantity);
-    }, 0);
-    
-    const shipping = subtotal >= 35 ? 0 : 5.99;
-    const tax = subtotal * 0.08;
-    const total = subtotal + shipping + tax;
-
-    // Create PaymentIntent with cart items
-    apiRequest("POST", "/api/create-payment-intent", { 
-      amount: total,
-      cartItems: (cartItems as CartItem[]).map((item: CartItem) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.product?.price
-      }))
-    })
+    // Create PaymentIntent as soon as the page loads
+    apiRequest("POST", "/api/create-payment-intent", { amount: 100 }) // Placeholder amount
+      .then((res) => res.json())
       .then((data) => {
         setClientSecret(data.clientSecret);
-      })
-      .catch((error) => {
-        console.error("Error creating payment intent:", error);
-        toast({
-          title: "Payment Setup Error",
-          description: "Failed to initialize payment. Please try again.",
-          variant: "destructive",
-        });
       });
-  }, [cartItems, toast]);
+  }, []);
 
-  // Show loading state while configuration is loading
-  if (configLoading) {
+  if (!config?.stripe?.publicKey) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
-            <div className="flex items-center justify-center">
-              <div className="animate-spin w-8 h-8 border-4 border-roastah-teal border-t-transparent rounded-full" />
-              <span className="ml-3">Loading configuration...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if configuration failed to load
-  if (configError || !config?.stripe?.publicKey) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Configuration Error</h1>
-            <p className="text-gray-600 mb-4">
-              {configError || 'Payment configuration is not available. Please try again later.'}
-            </p>
-            <Button onClick={() => window.location.reload()}>
-              Retry
-            </Button>
-          </div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p>Loading checkout...</p>
         </div>
       </div>
     );
@@ -542,52 +700,19 @@ export default function Checkout() {
 
   if (!clientSecret) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
-            {(cartItems as CartItem[]).length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-8">
-                <p className="text-gray-600 mb-4">Your cart is empty</p>
-                <Button onClick={() => window.location.href = '/products'}>
-                  Continue Shopping
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-roastah-teal border-t-transparent rounded-full" />
-                <span className="ml-3">Setting up payment...</span>
-              </div>
-            )}
-          </div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p>Preparing payment...</p>
         </div>
       </div>
     );
   }
 
-  // Load Stripe with the public key from configuration
   const stripePromise = loadStripeFromConfig(config.stripe.publicKey);
 
   return (
-    <Elements 
-      stripe={stripePromise} 
-      options={{ 
-        clientSecret,
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            colorPrimary: '#0F766E',
-            colorBackground: '#ffffff',
-            colorText: '#1F2937',
-            colorDanger: '#dc2626',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            spacingUnit: '4px',
-            borderRadius: '6px',
-          },
-        },
-      }}
-    >
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <CheckoutForm />
     </Elements>
   );

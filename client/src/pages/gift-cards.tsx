@@ -185,7 +185,7 @@ export default function GiftCards() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-16">
             <Gift className="h-16 w-16 mx-auto text-gray-400 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -208,7 +208,7 @@ export default function GiftCards() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">

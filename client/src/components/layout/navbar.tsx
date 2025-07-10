@@ -468,12 +468,10 @@ export default function Navbar() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 min-h-0 relative">
-              {/* Container for scroll content and gradient */}
-              <div className="relative">
-                {/* Subtle scroll indicator gradient - positioned at bottom of scrollable area */}
-                {cartItems.length > 3 && (
-                  <div className="sticky bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10 -mb-4"></div>
-                )}
+              {/* Subtle scroll indicator gradient - overlay at bottom of scrollable area */}
+              {cartItems.length > 3 && (
+                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-10"></div>
+              )}
               {cartItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -503,7 +501,6 @@ export default function Navbar() {
                   ))}
                 </div>
               )}
-              </div>
             </div>
 
             {cartItems.length > 0 && (

@@ -33,7 +33,7 @@ export default function AuthPage() {
       isLocal,
       isCloudRunDev,
       isDevelopmentEnv,
-      isProduction,
+      showFullForm,
       nodeEnv: process.env.NODE_ENV
     });
   }, []);

@@ -56,13 +56,15 @@ export default function Landing() {
             <p className="text-xl lg:text-2xl mb-8 text-gray-200">
               Connect directly with passionate micro-roasters and home roasters crafting the perfect cup
             </p>
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
-            >
-              Learn More
-            </Button>
+            <Link to="/learn-more">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
+              >
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

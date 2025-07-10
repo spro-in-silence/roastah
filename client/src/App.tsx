@@ -36,6 +36,7 @@ import AddressBook from "@/pages/address-book";
 import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
 import LoadingDemo from "@/pages/loading-demo";
+import LearnMore from "@/pages/learn-more";
 
 // Create a temporary component for missing SellerProductsNew
 const SellerProductsNew = () => {
@@ -56,6 +57,7 @@ function Router() {
         
         {/* Public Routes */}
         <Route path="/" element={<StandardLanding />} />
+        <Route path="/learn-more" element={<LearnMore />} />
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
         <Route path="/loading-demo" element={<LoadingDemo />} />

@@ -121,21 +121,39 @@ export default function Landing() {
       </section>
 
       {/* Become a Roaster CTA */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="coffee-gradient rounded-xl p-8 text-white">
-            <TrendingUp className="h-12 w-12 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-4">Are You a Coffee Roaster?</h2>
-            <p className="text-xl mb-6 text-white/90">
-              Join our marketplace and share your passion for coffee with enthusiasts worldwide
-            </p>
-            <Button
-              onClick={() => window.location.href = '/api/login'}
-              size="lg"
-              className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold"
-            >
-              Become a Roastah
-            </Button>
+          <div className="coffee-gradient rounded-2xl p-10 md:p-12 text-white relative overflow-hidden">
+            {/* Background decorative elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
+            
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <TrendingUp className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Are You a Coffee Roaster?</h2>
+              <p className="text-xl md:text-2xl mb-8 text-white/95 max-w-2xl mx-auto leading-relaxed">
+                Join our marketplace and share your passion for coffee with enthusiasts worldwide
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={() => window.location.href = '/api/login'}
+                  size="lg"
+                  className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
+                >
+                  Become a Roastah
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-white/80 text-white hover:bg-white/10 hover:border-white font-semibold"
+                >
+                  Learn More
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

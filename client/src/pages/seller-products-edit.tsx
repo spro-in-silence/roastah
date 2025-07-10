@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertProductSchema } from "@shared/schema";
 import { z } from "zod";
+import ImageUpload from "@/components/ImageUpload";
 
 const editProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -451,6 +452,33 @@ export default function SellerProductEdit() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Product Images */}
+                  <div className="space-y-2">
+                    <FormLabel>Product Images</FormLabel>
+                    <ImageUpload
+                      productId={productId}
+                      images={product.images as string[] || []}
+                      onImagesChange={(newImages) => {
+                        // Update the form
+                        form.setValue('images', newImages);
+                        
+                        // Update the query cache to reflect changes immediately
+                        queryClient.setQueryData([`/api/roaster/products/${productId}`], (oldData: any) => {
+                          if (oldData) {
+                            return { ...oldData, images: newImages };
+                          }
+                          return oldData;
+                        });
+                        
+                        // Invalidate queries for consistency
+                        queryClient.invalidateQueries({ queryKey: ["/api/roaster/products"] });
+                        queryClient.invalidateQueries({ queryKey: [`/api/roaster/products/${productId}`] });
+                      }}
+                      maxImages={5}
+                      disabled={!canEdit}
+                    />
+                  </div>
 
                   {canEdit && (
                     <Button 

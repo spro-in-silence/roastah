@@ -31,6 +31,7 @@ export async function loadSecrets(): Promise<void> {
       'SESSION_SECRET', 
       'STRIPE_SECRET_KEY',
       'SHIPPO_API_KEY',
+      'MEDIA_BUCKET',
       'GOOGLE_CLIENT_ID',
       'GOOGLE_CLIENT_SECRET'
     ];

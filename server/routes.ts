@@ -29,6 +29,7 @@ import { realtimeService } from "./realtime";
 import { insertProductSchema, insertRoasterSchema, insertCartItemSchema, insertShippingAddressSchema, insertRoasterShippingSettingsSchema } from "@shared/schema";
 import { z } from "zod";
 import { shippoService } from "./shippo-service";
+import { uploadService } from "./upload-service";
 
 // Stripe will be initialized after secrets are loaded
 let stripe: Stripe | null = null;
@@ -2063,6 +2064,131 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     } catch (error) {
       console.error("Error redeeming gift card:", error);
       res.status(500).json({ message: "Failed to redeem gift card" });
+    }
+  });
+
+  // Image Upload Routes
+  const imageUpload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { 
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+      files: 1 // One file per request
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'));
+      }
+    }
+  });
+
+  app.post('/api/upload/product-image', uploadLimiter, isAuthenticated, imageUpload.single('image'), async (req: any, res) => {
+    try {
+      const file = req.file;
+      const productId = parseInt(req.body.productId);
+      
+      if (!file) {
+        return res.status(400).json({ error: 'No image file provided' });
+      }
+      
+      if (!productId) {
+        return res.status(400).json({ error: 'Product ID is required' });
+      }
+      
+      // Verify user owns this product
+      const db = getDb();
+      const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+      
+      if (!product.length) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      
+      // Get roaster to verify ownership
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
+      if (!roaster || roaster.id !== product[0].roasterId) {
+        return res.status(403).json({ error: 'You can only upload images to your own products' });
+      }
+      
+      // Validate file
+      uploadService.validateImageFile(file);
+      
+      // Upload to GCP Cloud Storage
+      const imageUrl = await uploadService.uploadProductImage(file.buffer, file.originalname, productId);
+      
+      // Get current images
+      const currentImages = product[0].images || [];
+      
+      // Check image limit (5 max)
+      if (currentImages.length >= 5) {
+        // Delete the uploaded image since we can't use it
+        await uploadService.deleteProductImage(imageUrl);
+        return res.status(400).json({ error: 'Maximum 5 images per product allowed' });
+      }
+      
+      // Update product with new image
+      const updatedImages = [...currentImages, imageUrl];
+      await db.update(products)
+        .set({ images: updatedImages, updatedAt: new Date() })
+        .where(eq(products.id, productId));
+      
+      res.json({ 
+        imageUrl, 
+        message: 'Image uploaded successfully',
+        totalImages: updatedImages.length 
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to upload image' 
+      });
+    }
+  });
+
+  app.delete('/api/upload/product-image', uploadLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const { imageUrl, productId } = req.body;
+      
+      if (!imageUrl || !productId) {
+        return res.status(400).json({ error: 'Image URL and product ID are required' });
+      }
+      
+      // Verify user owns this product
+      const db = getDb();
+      const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+      
+      if (!product.length) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      
+      // Get roaster to verify ownership
+      const roaster = await storage.getRoasterByUserId(req.session.user?.sub || req.user?.id);
+      if (!roaster || roaster.id !== product[0].roasterId) {
+        return res.status(403).json({ error: 'You can only delete images from your own products' });
+      }
+      
+      // Remove image from product
+      const currentImages = product[0].images || [];
+      const updatedImages = currentImages.filter(img => img !== imageUrl);
+      
+      // Update product
+      await db.update(products)
+        .set({ images: updatedImages, updatedAt: new Date() })
+        .where(eq(products.id, productId));
+      
+      // Delete from cloud storage
+      await uploadService.deleteProductImage(imageUrl);
+      
+      res.json({ 
+        message: 'Image deleted successfully',
+        totalImages: updatedImages.length 
+      });
+    } catch (error) {
+      console.error('Image delete error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to delete image' 
+      });
     }
   });
 

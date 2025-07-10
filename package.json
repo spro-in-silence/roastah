@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^6.0.1",
+    "@google-cloud/storage": "^7.16.0",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@medusajs/admin": "^7.1.18",
@@ -137,6 +138,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.4.0",
     "tw-animate-css": "^1.2.5",
+    "uuid": "^11.1.0",
     "vaul": "^1.1.2",
     "whatwg-fetch": "^3.6.20",
     "ws": "^8.18.0",

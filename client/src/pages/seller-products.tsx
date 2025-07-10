@@ -230,8 +230,7 @@ export default function SellerProducts() {
   const productsWithState: ProductWithState[] = Array.isArray(products) 
     ? products.map((product: Product) => ({
         ...product,
-        state: product.stockQuantity === 0 ? 'out-of-stock' as ProductState :
-               product.isUnlisted ? 'draft' as ProductState : 'active' as ProductState
+        state: product.isUnlisted ? 'draft' as ProductState : 'published' as ProductState
       }))
     : [];
 
@@ -305,9 +304,9 @@ export default function SellerProducts() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Products</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

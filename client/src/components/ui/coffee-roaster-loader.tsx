@@ -16,7 +16,7 @@ export function CoffeeRoasterLoader({
         <path
           d="M 50 10 A 40 40 0 1 1 47 10"
           fill="none"
-          stroke="#d97706"
+          stroke="#000000"
           strokeWidth="4"
           strokeLinecap="round"
           className="animate-spin"
@@ -31,7 +31,7 @@ export function CoffeeRoasterLoader({
         <path
           d="M 50 15 A 35 35 0 1 1 47.5 15"
           fill="none"
-          stroke="#b45309"
+          stroke="#000000"
           strokeWidth="2"
           opacity="0.6"
           strokeLinecap="round"

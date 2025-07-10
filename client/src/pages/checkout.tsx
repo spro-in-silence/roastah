@@ -693,7 +693,7 @@ export default function Checkout() {
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <CoffeeRoasterLoader className="w-16 h-16 mx-auto mb-4" />
-          <p>Loading checkout...</p>
+          <p>Roasting...</p>
         </div>
       </div>
     );

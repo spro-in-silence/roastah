@@ -92,7 +92,7 @@ export default function SellerTrackingPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Order Tracking</h1>
@@ -111,21 +111,21 @@ export default function SellerTrackingPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="all" onClick={() => setSelectedStatus("all")}>
+      <Tabs value={selectedStatus} onValueChange={setSelectedStatus} className="w-full">
+        <TabsList className="mb-6 grid w-full grid-cols-5">
+          <TabsTrigger value="all">
             All ({statusCounts.all})
           </TabsTrigger>
-          <TabsTrigger value="shipped" onClick={() => setSelectedStatus("shipped")}>
+          <TabsTrigger value="shipped">
             Shipped ({statusCounts.shipped})
           </TabsTrigger>
-          <TabsTrigger value="in_transit" onClick={() => setSelectedStatus("in_transit")}>
+          <TabsTrigger value="in_transit">
             In Transit ({statusCounts.in_transit})
           </TabsTrigger>
-          <TabsTrigger value="delivered" onClick={() => setSelectedStatus("delivered")}>
+          <TabsTrigger value="delivered">
             Delivered ({statusCounts.delivered})
           </TabsTrigger>
-          <TabsTrigger value="delayed" onClick={() => setSelectedStatus("delayed")}>
+          <TabsTrigger value="delayed">
             Delayed ({statusCounts.delayed})
           </TabsTrigger>
         </TabsList>
@@ -143,119 +143,202 @@ export default function SellerTrackingPage() {
             </Card>
           ) : (
             filteredTracking.map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(item.status)}
-                        <CardTitle className="text-lg">Order #{item.orderId}</CardTitle>
-                      </div>
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status.replace("_", " ").toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Tracking Details - Order #{item.orderId}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">Tracking Number</label>
-                                <p className="text-lg font-mono">{item.trackingNumber}</p>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">Carrier</label>
-                                <p className="text-lg">{item.carrier}</p>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">Shipping Address</label>
-                              <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                                <p className="font-medium">{item.shippingAddress.name}</p>
-                                <p>{item.shippingAddress.street}</p>
-                                <p>{item.shippingAddress.city}, {item.shippingAddress.state} {item.shippingAddress.zip}</p>
-                              </div>
-                            </div>
+              <TrackingCard key={item.id} item={item} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
+            ))
+          )}
+        </TabsContent>
 
-                            <div>
-                              <label className="text-sm font-medium text-gray-500">Order Items</label>
-                              <div className="mt-2 space-y-2">
-                                {item.orderItems.map((orderItem, index) => (
-                                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                    <span>{orderItem.productName}</span>
-                                    <span className="text-sm text-gray-600">
-                                      Qty: {orderItem.quantity} × ${orderItem.price}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Package className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Tracking Number</span>
-                      </div>
-                      <p className="font-mono text-sm">{item.trackingNumber}</p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Truck className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Carrier</span>
-                      </div>
-                      <p className="text-sm">{item.carrier}</p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Estimated Delivery</span>
-                      </div>
-                      <p className="text-sm">{item.estimatedDelivery}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">
-                          {item.shippingAddress.city}, {item.shippingAddress.state}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        Last updated: {item.lastUpdate}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        <TabsContent value="shipped" className="space-y-4">
+          {filteredTracking.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No shipped orders found</h3>
+                <p className="text-gray-500">
+                  {searchQuery ? "Try adjusting your search terms" : "Shipped orders will appear here"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTracking.map((item) => (
+              <TrackingCard key={item.id} item={item} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="in_transit" className="space-y-4">
+          {filteredTracking.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders in transit found</h3>
+                <p className="text-gray-500">
+                  {searchQuery ? "Try adjusting your search terms" : "Orders in transit will appear here"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTracking.map((item) => (
+              <TrackingCard key={item.id} item={item} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="delivered" className="space-y-4">
+          {filteredTracking.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <CheckCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No delivered orders found</h3>
+                <p className="text-gray-500">
+                  {searchQuery ? "Try adjusting your search terms" : "Delivered orders will appear here"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTracking.map((item) => (
+              <TrackingCard key={item.id} item={item} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="delayed" className="space-y-4">
+          {filteredTracking.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No delayed orders found</h3>
+                <p className="text-gray-500">
+                  {searchQuery ? "Try adjusting your search terms" : "Delayed orders will appear here"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTracking.map((item) => (
+              <TrackingCard key={item.id} item={item} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
             ))
           )}
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Separate TrackingCard component to avoid duplication
+function TrackingCard({ item, getStatusIcon, getStatusColor }: {
+  item: TrackingInfo;
+  getStatusIcon: (status: string) => JSX.Element;
+  getStatusColor: (status: string) => string;
+}) {
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              {getStatusIcon(item.status)}
+              <CardTitle className="text-lg">Order #{item.orderId}</CardTitle>
+            </div>
+            <Badge className={getStatusColor(item.status)}>
+              {item.status.replace("_", " ").toUpperCase()}
+            </Badge>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Tracking Details - Order #{item.orderId}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Tracking Number</label>
+                      <p className="text-lg font-mono">{item.trackingNumber}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Carrier</label>
+                      <p className="text-lg">{item.carrier}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Shipping Address</label>
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                      <p className="font-medium">{item.shippingAddress.name}</p>
+                      <p>{item.shippingAddress.street}</p>
+                      <p>{item.shippingAddress.city}, {item.shippingAddress.state} {item.shippingAddress.zip}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Order Items</label>
+                    <div className="mt-2 space-y-2">
+                      {item.orderItems.map((orderItem, index) => (
+                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span>{orderItem.productName}</span>
+                          <span className="text-sm text-gray-600">
+                            Qty: {orderItem.quantity} × ${orderItem.price}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="ghost" size="sm">
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Package className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Tracking Number</span>
+            </div>
+            <p className="font-mono text-sm">{item.trackingNumber}</p>
+          </div>
+          
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Truck className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Carrier</span>
+            </div>
+            <p className="text-sm">{item.carrier}</p>
+          </div>
+          
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Estimated Delivery</span>
+            </div>
+            <p className="text-sm">{item.estimatedDelivery}</p>
+          </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">
+                {item.shippingAddress.city}, {item.shippingAddress.state}
+              </span>
+            </div>
+            <span className="text-sm text-gray-500">
+              Last updated: {item.lastUpdate}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

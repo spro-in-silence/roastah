@@ -48,7 +48,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
             <animateMotion
               dur="2.5s"
               repeatCount="indefinite"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
           
@@ -58,7 +58,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
               dur="2.5s"
               repeatCount="indefinite"
               begin="0.4s"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
           
@@ -68,7 +68,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
               dur="2.5s"
               repeatCount="indefinite"
               begin="0.8s"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
           
@@ -78,7 +78,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
               dur="2.5s"
               repeatCount="indefinite"
               begin="1.2s"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
           
@@ -88,7 +88,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
               dur="2.5s"
               repeatCount="indefinite"
               begin="1.6s"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
           
@@ -98,7 +98,7 @@ export function CoffeeRoasterLoader({ className = "w-16 h-16" }: CoffeeRoasterLo
               dur="2.5s"
               repeatCount="indefinite"
               begin="2.0s"
-              path="M 0 0 A -20 -12 0 0 0 25 25 L 0 0"
+              path="M 0 0 A 20 12 0 0 1 25 25 L 0 0"
             />
           </ellipse>
         </g>

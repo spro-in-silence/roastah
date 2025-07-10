@@ -12,11 +12,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<any> {
-  // In development, ensure API calls go to the backend server on port 5000
-  const apiUrl = url.startsWith('/') ? 
-    (import.meta.env.DEV ? `http://localhost:5000${url}` : url) : url;
-  
-  const res = await fetch(apiUrl, {
+  const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -33,12 +29,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // In development, ensure API calls go to the backend server on port 5000
-    const url = queryKey[0] as string;
-    const apiUrl = url.startsWith('/') ? 
-      (import.meta.env.DEV ? `http://localhost:5000${url}` : url) : url;
-    
-    const res = await fetch(apiUrl, {
+    const res = await fetch(queryKey[0] as string, {
       credentials: "include",
     });
 

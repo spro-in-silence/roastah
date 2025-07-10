@@ -20,38 +20,8 @@ export async function loadSecrets(): Promise<void> {
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('PORT:', process.env.PORT);
   
-  // Check if we're in a development environment
-  const isDevelopment = process.env.NODE_ENV === 'development' || 
-                       process.env.NODE_ENV === 'dev' ||
-                       !process.env.NODE_ENV ||
-                       process.env.K_SERVICE === undefined;
-  
-  if (isDevelopment) {
-    console.log('🔧 Development environment detected - using fallback environment variables');
-    // In development, just use environment variables if they exist
-    // Don't fail if secrets are missing - let the app run with fallbacks
-    const developmentSecrets = {
-      'DATABASE_URL': process.env.DATABASE_URL,
-      'SESSION_SECRET': process.env.SESSION_SECRET || 'dev-session-secret-fallback',
-      'STRIPE_SECRET_KEY': process.env.STRIPE_SECRET_KEY,
-      'SHIPPO_API_KEY': process.env.SHIPPO_API_KEY,
-      'GOOGLE_CLIENT_ID': process.env.GOOGLE_CLIENT_ID,
-      'GOOGLE_CLIENT_SECRET': process.env.GOOGLE_CLIENT_SECRET
-    };
-    
-    Object.entries(developmentSecrets).forEach(([key, value]) => {
-      if (value) {
-        console.log(`✅ Using ${key} from environment`);
-      } else {
-        console.log(`⚠️ ${key} not found in environment - using fallback`);
-      }
-    });
-    
-    console.log('📊 Development secret loading complete - app will run with available secrets');
-    return;
-  }
-  
-  // Production/Cloud Run environment - try to load from Secret Manager
+  // Always load secrets from GCP Secret Manager regardless of environment
+  // This ensures consistent behavior across local, dev, and production
   try {
     console.log('Loading secrets from GCP Secret Manager...');
     
@@ -113,7 +83,6 @@ export async function loadSecrets(): Promise<void> {
     
   } catch (error) {
     console.error('❌ Failed to load secrets from Secret Manager:', error);
-    console.log('⚠️ Continuing without Secret Manager secrets in production mode');
-    // Don't throw in production either - let the app start with whatever secrets are available
+    throw error;
   }
 } 

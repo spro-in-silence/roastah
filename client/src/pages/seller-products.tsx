@@ -32,6 +32,7 @@ import {
   type ProductWithState
 } from "@/lib/product-state";
 import BulkProductUpload from "@/components/bulk-product-upload";
+import ImageUpload from "@/components/ImageUpload";
 
 // Product form schema
 const productSchema = z.object({
@@ -56,6 +57,7 @@ const productSchema = z.object({
   isMicrolot: z.boolean().default(false),
   isEstate: z.boolean().default(false),
   isHoneyed: z.boolean().default(false),
+  images: z.array(z.string()).default([]),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -70,6 +72,7 @@ export default function SellerProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState<ProductState | "all">("all");
   const [activeTab, setActiveTab] = useState("manage");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   // Get active tab from URL
   useEffect(() => {
@@ -153,6 +156,7 @@ export default function SellerProducts() {
       isMicrolot: false,
       isEstate: false,
       isHoneyed: false,
+      images: [],
     },
   });
 
@@ -168,6 +172,7 @@ export default function SellerProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/roaster/products'] });
       form.reset();
+      setUploadedImages([]); // Clear uploaded images
       setActiveTab("manage");
       toast({
         title: "Success",
@@ -207,7 +212,12 @@ export default function SellerProducts() {
 
   // Event handlers
   const onSubmit = (data: ProductFormData) => {
-    createProductMutation.mutate(data);
+    // Include uploaded images in the form data
+    const productData = {
+      ...data,
+      images: uploadedImages
+    };
+    createProductMutation.mutate(productData);
   };
 
   const handleDeleteProduct = (productId: number) => {
@@ -545,6 +555,20 @@ export default function SellerProducts() {
                   )}
                 </div>
 
+                {/* Product Images */}
+                <div className="space-y-2">
+                  <Label>Product Images</Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Upload up to 5 high-quality images of your coffee product. The first image will be used as the main product image.
+                  </p>
+                  <ImageUpload
+                    productId={0} // For new products, we'll use 0 or handle differently
+                    images={uploadedImages}
+                    onImagesChange={setUploadedImages}
+                    maxImages={5}
+                  />
+                </div>
+
                 {/* Product Tags */}
                 <div className="space-y-4">
                   <Label>Product Tags</Label>
@@ -593,7 +617,10 @@ export default function SellerProducts() {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => form.reset()}
+                    onClick={() => {
+                      form.reset();
+                      setUploadedImages([]);
+                    }}
                   >
                     Clear Form
                   </Button>

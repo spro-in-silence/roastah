@@ -614,7 +614,9 @@ function CheckoutForm() {
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto space-y-6 mb-6 max-h-[50vh]">
+                  <div className="flex-1 overflow-y-auto space-y-6 mb-6 max-h-[50vh] relative">
+                    {/* Subtle scroll indicator gradient */}
+                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10"></div>
                     {Object.entries(groupedItems).map(([groupKey, group]) => {
                       const groupSubtotal = group.items.reduce((sum, item) => {
                         return sum + (parseFloat(item.product?.price || "0") * item.quantity);

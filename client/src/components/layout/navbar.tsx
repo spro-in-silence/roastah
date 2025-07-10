@@ -455,8 +455,8 @@ export default function Navbar() {
           />
           
           {/* Cart Panel */}
-          <div className="fixed top-0 right-0 bottom-0 w-96 bg-white shadow-xl transform transition-transform">
-            <div className="flex items-center justify-between p-4 border-b">
+          <div className="fixed top-0 right-0 bottom-0 w-96 bg-white shadow-xl transform transition-transform flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-semibold">Your Cart</h2>
               <Button 
                 variant="ghost" 
@@ -467,7 +467,11 @@ export default function Navbar() {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 min-h-0 relative">
+              {/* Subtle scroll indicator gradient */}
+              {cartItems.length > 3 && (
+                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10"></div>
+              )}
               {cartItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -500,7 +504,7 @@ export default function Navbar() {
             </div>
 
             {cartItems.length > 0 && (
-              <div className="border-t p-4">
+              <div className="border-t p-4 flex-shrink-0">
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-medium">Total:</span>
                   <span className="font-bold text-lg">

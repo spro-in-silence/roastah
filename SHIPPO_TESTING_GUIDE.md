@@ -6,7 +6,7 @@ The Roastah platform now includes comprehensive white label Shippo integration w
 ## Testing Environment Setup
 
 ### 1. Verify API Key Configuration
-- ✅ SHIPPO_API_KEY is now configured in Replit Secrets
+- ✅ SHIPPO_API_KEY is now configured in GCP Secret Manager
 - ✅ Server logs show: "🚚 Shippo service initialized successfully"
 - ✅ All 17 shipping endpoints are active
 

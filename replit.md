@@ -204,6 +204,7 @@ Changelog:
 - July 10, 2025. Added complete shipping address management system with React components and comprehensive validation
 - July 10, 2025. Created 17 comprehensive shipping API endpoints covering addresses, rates, labels, tracking, and returns management
 - July 10, 2025. Integrated Shippo API key retrieval from GCP Secret Manager for seamless multi-vendor shipping operations
+- July 10, 2025. Migrated SHIPPO_API_KEY from Replit Secrets to GCP Secret Manager for consistent secret management across all environments
 ```
 
 ## User Preferences

@@ -82,7 +82,7 @@ import {
   returnShipments,
 } from "@shared/schema";
 import { getDb } from "./db";
-import { eq, and, sql, desc, ne } from "drizzle-orm";
+import { eq, and, sql, desc, ne, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -402,76 +402,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCartByUserId(userId: string): Promise<CartItem[]> {
-    const result = await getDb()
-      .select({
-        id: cartItems.id,
-        userId: cartItems.userId,
-        productId: cartItems.productId,
-        quantity: cartItems.quantity,
-        grindSize: cartItems.grindSize,
-        createdAt: cartItems.createdAt,
-        productId2: products.id,
-        productRoasterId: products.roasterId,
-        productName: products.name,
-        productDescription: products.description,
-        productPrice: products.price,
-        productStockQuantity: products.stockQuantity,
-        productOrigin: products.origin,
-        productRoastLevel: products.roastLevel,
-        productProcess: products.process,
-        productAltitude: products.altitude,
-        productVarietal: products.varietal,
-        productTastingNotes: products.tastingNotes,
-        productImages: products.images,
-        productIsActive: products.isActive,
-        productCreatedAt: products.createdAt,
-        productUpdatedAt: products.updatedAt,
-        roasterId: roasters.id,
-        roasterUserId: roasters.userId,
-        roasterName: roasters.name,
-        roasterBusinessName: roasters.businessName,
-        roasterDescription: roasters.description,
-        roasterLocation: roasters.location,
-      })
+    // Get basic cart items first
+    const cartItemsResult = await getDb()
+      .select()
       .from(cartItems)
-      .leftJoin(products, eq(cartItems.productId, products.id))
-      .leftJoin(roasters, eq(products.roasterId, roasters.id))
       .where(eq(cartItems.userId, userId));
     
-    return result.map(item => ({
-      id: item.id,
-      userId: item.userId,
-      productId: item.productId,
-      quantity: item.quantity,
-      grindSize: item.grindSize,
-      createdAt: item.createdAt,
-      product: item.productId2 ? {
-        id: item.productId2,
-        roasterId: item.productRoasterId,
-        name: item.productName,
-        description: item.productDescription,
-        price: item.productPrice,
-        stockQuantity: item.productStockQuantity,
-        origin: item.productOrigin,
-        roastLevel: item.productRoastLevel,
-        process: item.productProcess,
-        altitude: item.productAltitude,
-        varietal: item.productVarietal,
-        tastingNotes: item.productTastingNotes,
-        images: item.productImages,
-        isActive: item.productIsActive,
-        createdAt: item.productCreatedAt,
-        updatedAt: item.productUpdatedAt,
-        roaster: item.roasterId ? {
-          id: item.roasterId,
-          userId: item.roasterUserId,
-          name: item.roasterName,
-          businessName: item.roasterBusinessName,
-          description: item.roasterDescription,
-          location: item.roasterLocation,
+    if (cartItemsResult.length === 0) {
+      return [];
+    }
+    
+    // Get products and roasters separately
+    const productIds = cartItemsResult.map(item => item.productId);
+    const productsResult = await getDb()
+      .select()
+      .from(products)
+      .where(inArray(products.id, productIds));
+    
+    const roasterIds = productsResult.map(p => p.roasterId);
+    const roastersResult = await getDb()
+      .select()
+      .from(roasters)
+      .where(inArray(roasters.id, roasterIds));
+    
+    // Combine the data
+    return cartItemsResult.map(cartItem => {
+      const product = productsResult.find(p => p.id === cartItem.productId);
+      const roaster = product ? roastersResult.find(r => r.id === product.roasterId) : undefined;
+      
+      return {
+        ...cartItem,
+        product: product ? {
+          ...product,
+          roaster: roaster
         } : undefined
-      } : undefined
-    }));
+      };
+    });
   }
 
   async updateCartItem(id: number, quantity: number): Promise<CartItem> {

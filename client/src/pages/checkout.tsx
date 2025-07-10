@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MapPin, Plus, Star } from "lucide-react";
+import { MapPin, Plus, Star, Trash2 } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
@@ -399,6 +399,27 @@ function CheckoutForm() {
     },
   });
 
+  // Mutation for removing cart items
+  const removeFromCartMutation = useMutationWithLoading({
+    mutationFn: async (itemId: number) => {
+      await apiRequest("DELETE", `/api/cart/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      toast({
+        title: "Item removed",
+        description: "Item removed from cart",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove item",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Group cart items by seller
   const groupedItems = (cartItems as CartItem[]).reduce((groups: { [key: string]: { items: CartItem[], sellerName: string, sellerId: string } }, item: CartItem) => {
     const sellerId = item.product?.roasterId?.toString() || 'unknown';
@@ -614,7 +635,7 @@ function CheckoutForm() {
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col overflow-hidden relative">
-                  <div className="flex-1 overflow-y-auto space-y-6 mb-6 max-h-[50vh]">
+                  <div className="flex-1 overflow-y-auto space-y-6 mb-6 max-h-[40vh]">
                     {/* Subtle scroll indicator gradient - overlay at bottom of scrollable area */}
                     <div className="absolute bottom-6 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-10"></div>
                     {Object.entries(groupedItems).map(([groupKey, group]) => {
@@ -646,9 +667,20 @@ function CheckoutForm() {
                                     Quantity: {item.quantity}
                                   </p>
                                 </div>
-                                <p className="font-medium text-sm">
-                                  ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
-                                </p>
+                                <div className="flex items-center space-x-2">
+                                  <p className="font-medium text-sm">
+                                    ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
+                                  </p>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeFromCartMutation.mutate(item.id)}
+                                    disabled={removeFromCartMutation.isPending}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-auto"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -672,7 +704,7 @@ function CheckoutForm() {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[200px] overflow-y-auto">
                           {Object.entries(groupedItems).map(([groupKey, group]) => {
                             const groupSubtotal = group.items.reduce((sum, item) => {
                               return sum + (parseFloat(item.product?.price || "0") * item.quantity);

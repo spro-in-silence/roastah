@@ -46,7 +46,7 @@ function StandardLanding() {
   return <Landing />;
 }
 
-function Router() {
+function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
@@ -142,16 +142,37 @@ function Router() {
           </ProtectedRoute>
         } />
         
-        {/* Seller Routes - Nested under seller layout */}
-        <Route path="/seller" element={<SellerLayout />}>
-          <Route path="dashboard" element={<SellerDashboard />} />
-          <Route path="products" element={<SellerProducts />} />
-          <Route path="products/new" element={<SellerProductsNew />} />
-          <Route path="products/edit/:id" element={<SellerProductsEdit />} />
-          <Route path="orders" element={<SellerOrders />} />
-          <Route path="messages" element={<SellerMessages />} />
-          <Route path="profile" element={<Profile />} />
-        </Route>
+        {/* Seller Routes */}
+        <Route path="/seller/dashboard" element={
+          <SellerLayout>
+            <SellerDashboard />
+          </SellerLayout>
+        } />
+        <Route path="/seller/products" element={
+          <SellerLayout>
+            <SellerProducts />
+          </SellerLayout>
+        } />
+        <Route path="/seller/products/new" element={
+          <SellerLayout>
+            <SellerProductsNew />
+          </SellerLayout>
+        } />
+        <Route path="/seller/products/edit/:id" element={
+          <SellerLayout>
+            <SellerProductsEdit />
+          </SellerLayout>
+        } />
+        <Route path="/seller/orders" element={
+          <SellerLayout>
+            <SellerOrders />
+          </SellerLayout>
+        } />
+        <Route path="/seller/messages" element={
+          <SellerLayout>
+            <SellerMessages />
+          </SellerLayout>
+        } />
         
         {/* Fallback Routes */}
         <Route path="/404" element={<NotFound />} />
@@ -167,7 +188,7 @@ function App() {
       <LoadingProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppRouter />
         </TooltipProvider>
       </LoadingProvider>
     </QueryClientProvider>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin, Trash2 } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,9 @@ import { useUser } from "@/contexts/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { CartItem } from "@/lib/types";
+import { useMutation, queryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Navbar() {
   const location = useLocation();
@@ -27,6 +30,28 @@ export default function Navbar() {
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
     enabled: isAuthenticated,
+  });
+
+  const { toast } = useToast();
+
+  const removeFromCartMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      await apiRequest("DELETE", `/api/cart/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      toast({
+        title: "Item removed",
+        description: "Item removed from cart",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove item",
+        variant: "destructive",
+      });
+    },
   });
 
   const cartItemCount = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
@@ -494,8 +519,17 @@ export default function Navbar() {
                           <span className="text-sm">Qty: {item.quantity}</span>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex flex-col items-end space-y-2">
                         <p className="font-medium">${(Number(item.product?.price || 0) * Number(item.quantity)).toFixed(2)}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCartMutation.mutate(item.id)}
+                          disabled={removeFromCartMutation.isPending}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-auto"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}

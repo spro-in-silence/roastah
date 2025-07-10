@@ -398,6 +398,23 @@ function CheckoutForm() {
     },
   });
 
+  // Group cart items by seller
+  const groupedItems = (cartItems as CartItem[]).reduce((groups: { [key: string]: { items: CartItem[], sellerName: string, sellerId: string } }, item: CartItem) => {
+    const sellerId = item.product?.roasterId?.toString() || 'unknown';
+    const sellerName = item.product?.roaster?.businessName || item.product?.roaster?.name || 'Unknown Seller';
+    const groupKey = `${sellerId}-${sellerName}`;
+    
+    if (!groups[groupKey]) {
+      groups[groupKey] = {
+        items: [],
+        sellerName: sellerName,
+        sellerId: sellerId
+      };
+    }
+    groups[groupKey].items.push(item);
+    return groups;
+  }, {});
+
   const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
     return sum + (parseFloat(item.product?.price || "0") * item.quantity);
   }, 0);
@@ -583,25 +600,45 @@ function CheckoutForm() {
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4 mb-6">
-                    {(cartItems as CartItem[]).map((item: CartItem) => (
-                      <div key={item.id} className="flex items-center space-x-3">
-                        <img
-                          src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=60&h=60"}
-                          alt={item.product?.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{item.product?.name}</h4>
-                          <p className="text-sm text-gray-600">
-                            Quantity: {item.quantity}
-                          </p>
+                  <div className="space-y-6 mb-6">
+                    {Object.entries(groupedItems).map(([groupKey, group]) => {
+                      const groupSubtotal = group.items.reduce((sum, item) => {
+                        return sum + (parseFloat(item.product?.price || "0") * item.quantity);
+                      }, 0);
+                      
+                      return (
+                        <div key={groupKey} className="border rounded-lg p-4 bg-gray-50">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-sm text-gray-900">
+                              {group.sellerName}
+                            </h3>
+                            <span className="text-sm font-medium text-gray-700">
+                              ${groupSubtotal.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            {group.items.map((item: CartItem) => (
+                              <div key={item.id} className="flex items-center space-x-3">
+                                <img
+                                  src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&fit=crop&w=60&h=60"}
+                                  alt={item.product?.name}
+                                  className="w-10 h-10 object-cover rounded"
+                                />
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-sm">{item.product?.name}</h4>
+                                  <p className="text-xs text-gray-600">
+                                    Quantity: {item.quantity}
+                                  </p>
+                                </div>
+                                <p className="font-medium text-sm">
+                                  ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <p className="font-medium">
-                          ${(parseFloat(item.product?.price || "0") * item.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   
                   <Separator className="my-4" />

@@ -225,6 +225,7 @@ Changelog:
 - July 10, 2025. Implemented global loading system with coffee roaster animation for operations taking more than 500ms
 - July 10, 2025. Created comprehensive loading context with automatic React Query integration and manual control capabilities
 - July 10, 2025. Added loading demo page at /loading-demo to showcase global loading system functionality
+- July 10, 2025. Implemented multi-vendor order grouping in checkout page - groups cart items by seller with individual subtotals and maintains overall total for Place Order button
 ```
 
 ## User Preferences

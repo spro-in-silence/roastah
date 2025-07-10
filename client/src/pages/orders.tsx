@@ -8,6 +8,7 @@ import { useUser } from "@/contexts/UserContext";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
+import { CoffeeRoasterLoader } from "@/components/ui/coffee-roaster-loader";
 
 interface OrderItem {
   id: number;
@@ -103,7 +104,7 @@ export default function OrdersPage() {
         <div className="py-8">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <CoffeeRoasterLoader className="w-8 h-8" />
             </div>
           </div>
         </div>

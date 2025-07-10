@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Coffee, Star, Users, ShoppingBag, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { CoffeeRoasterLoader } from "@/components/ui/coffee-roaster-loader";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
@@ -68,7 +69,7 @@ export default function AuthPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <CoffeeRoasterLoader className="w-8 h-8" />
       </div>
     );
   }

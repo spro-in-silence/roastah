@@ -21,6 +21,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConfig } from "@/hooks/useConfig";
 import { Address, CartItem, User } from "@/lib/types";
+import { CoffeeRoasterLoader } from "@/components/ui/coffee-roaster-loader";
 
 // Stripe will be loaded dynamically from the backend configuration
 let stripePromise: Promise<any> | null = null;
@@ -477,7 +478,7 @@ function CheckoutForm() {
                 <CardContent>
                   {isLoadingAddresses ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin w-6 h-6 border-2 border-roastah-teal border-t-transparent rounded-full"></div>
+                      <CoffeeRoasterLoader className="w-6 h-6" />
                       <span className="ml-2 text-gray-600">Loading addresses...</span>
                     </div>
                   ) : addresses.length > 0 && !showNewAddressForm ? (
@@ -691,7 +692,7 @@ export default function Checkout() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <CoffeeRoasterLoader className="w-8 h-8 mx-auto mb-4" />
           <p>Loading checkout...</p>
         </div>
       </div>
@@ -702,7 +703,7 @@ export default function Checkout() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <CoffeeRoasterLoader className="w-8 h-8 mx-auto mb-4" />
           <p>Preparing payment...</p>
         </div>
       </div>

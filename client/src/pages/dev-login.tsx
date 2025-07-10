@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { CoffeeRoasterLoader } from "@/components/ui/coffee-roaster-loader";
 
 export default function DevLogin() {
   // Simplified environment detection - all development environments work the same
@@ -44,7 +45,7 @@ export default function DevLogin() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <CoffeeRoasterLoader className="w-8 h-8" />
       </div>
     );
   }

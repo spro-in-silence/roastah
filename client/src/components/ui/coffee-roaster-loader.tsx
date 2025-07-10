@@ -296,10 +296,7 @@ export function CoffeeRoasterLoader({
           </ellipse>
         </g>
 
-        {/* Roaster handle */}
-        <rect x="88" y="48" width="8" height="4" fill="#b45309" rx="2" />
-
-        {/* Heat indicator dots */}
+        {/* Heat indicator dots - 8 dots */}
         <circle cx="50" cy="25" r="1.5" fill="#ef4444" opacity="0.8">
           <animate
             attributeName="opacity"
@@ -321,6 +318,46 @@ export function CoffeeRoasterLoader({
             attributeName="opacity"
             values="0.7;0.3;0.7"
             dur="0.8s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="40" cy="30" r="1.2" fill="#dc2626" opacity="0.9">
+          <animate
+            attributeName="opacity"
+            values="0.9;0.4;0.9"
+            dur="1.4s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="60" cy="30" r="1.2" fill="#ea580c" opacity="0.5">
+          <animate
+            attributeName="opacity"
+            values="0.5;0.1;0.5"
+            dur="0.9s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="47" cy="23" r="0.8" fill="#f59e0b" opacity="0.8">
+          <animate
+            attributeName="opacity"
+            values="0.8;0.2;0.8"
+            dur="1.1s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="53" cy="23" r="0.8" fill="#f97316" opacity="0.6">
+          <animate
+            attributeName="opacity"
+            values="0.6;0.3;0.6"
+            dur="1.3s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="50" cy="20" r="1" fill="#dc2626" opacity="0.7">
+          <animate
+            attributeName="opacity"
+            values="0.7;0.2;0.7"
+            dur="0.7s"
             repeatCount="indefinite"
           />
         </circle>

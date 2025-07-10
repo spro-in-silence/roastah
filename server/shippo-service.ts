@@ -1,4 +1,3 @@
-import shippo from 'shippo';
 import { storage } from './storage';
 import type { 
   ShippingAddress, 
@@ -15,14 +14,26 @@ import type {
 // Initialize Shippo client
 let shippoClient: any = null;
 
-export function initializeShippo() {
+export async function initializeShippo() {
   if (!process.env.SHIPPO_API_KEY) {
     console.log('⚠️ SHIPPO_API_KEY not found - shipping features will be limited');
     return;
   }
   
-  shippoClient = shippo(process.env.SHIPPO_API_KEY);
-  console.log('🚚 Shippo client initialized');
+  try {
+    const shippo = await import('shippo');
+    // Try different ways to access the Shippo constructor
+    const ShippoConstructor = shippo.default || shippo;
+    shippoClient = typeof ShippoConstructor === 'function' ? ShippoConstructor(process.env.SHIPPO_API_KEY) : null;
+    
+    if (shippoClient) {
+      console.log('🚚 Shippo client initialized successfully');
+    } else {
+      console.log('⚠️ Shippo client initialization failed - using fallback mode');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize Shippo client:', error);
+  }
 }
 
 export class ShippoService {

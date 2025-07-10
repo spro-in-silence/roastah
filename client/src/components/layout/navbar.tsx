@@ -377,7 +377,7 @@ export default function Navbar() {
                       location.pathname.startsWith('/seller/orders') ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
                     }`}>
                       <ShoppingBag className="h-5 w-5" />
-                      <span className="font-medium">Orders</span>
+                      <span className="font-medium">Order Management</span>
                     </div>
                   </Link>
 

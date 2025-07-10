@@ -1032,6 +1032,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/seller/tracking', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const roaster = await storage.getRoasterByUserId(userId);
+      
+      if (!roaster) {
+        return res.status(404).json({ message: "Roaster not found" });
+      }
+      
+      // Mock tracking data based on the test orders we created
+      const mockTrackingData = [
+        {
+          id: 1,
+          orderId: 14,
+          trackingNumber: "1Z12345E0291980793",
+          carrier: "UPS",
+          status: "in_transit",
+          estimatedDelivery: "July 12, 2025",
+          lastUpdate: "2 hours ago",
+          shippingAddress: {
+            name: "Coffee Enthusiast",
+            street: "123 Coffee Street",
+            city: "Seattle",
+            state: "WA",
+            zip: "98101"
+          },
+          orderItems: [
+            { productName: "Ethiopia Yirgacheffe", quantity: 2, price: 18.99 },
+            { productName: "Colombia Huila", quantity: 1, price: 16.99 }
+          ]
+        },
+        {
+          id: 2,
+          orderId: 16,
+          trackingNumber: "1Z12345E0305271688",
+          carrier: "UPS",
+          status: "delivered",
+          estimatedDelivery: "July 8, 2025",
+          lastUpdate: "3 days ago",
+          shippingAddress: {
+            name: "Bean Lover",
+            street: "789 Roast Road",
+            city: "San Francisco",
+            state: "CA",
+            zip: "94102"
+          },
+          orderItems: [
+            { productName: "Ethiopia Yirgacheffe", quantity: 1, price: 18.99 },
+            { productName: "Colombia Huila", quantity: 1, price: 16.99 }
+          ]
+        },
+        {
+          id: 3,
+          orderId: 15,
+          trackingNumber: "1Z12345E0392837465",
+          carrier: "UPS",
+          status: "shipped",
+          estimatedDelivery: "July 11, 2025",
+          lastUpdate: "1 day ago",
+          shippingAddress: {
+            name: "Brew Master",
+            street: "456 Bean Avenue",
+            city: "Portland",
+            state: "OR",
+            zip: "97201"
+          },
+          orderItems: [
+            { productName: "Ethiopia Yirgacheffe", quantity: 1, price: 18.99 },
+            { productName: "Guatemala Antigua", quantity: 2, price: 17.99 }
+          ]
+        }
+      ];
+      
+      res.json(mockTrackingData);
+    } catch (error) {
+      console.error("Error fetching tracking data:", error);
+      res.status(500).json({ message: "Failed to fetch tracking data" });
+    }
+  });
+
   // Enhanced payment processing with commission tracking
   app.post("/api/create-payment-intent", paymentLimiter, enhancedAuthCheck, validatePaymentIntent, handleValidationErrors, async (req: any, res: any) => {
     try {

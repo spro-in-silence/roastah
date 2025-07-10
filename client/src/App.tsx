@@ -20,6 +20,7 @@ import SellerDashboard from "@/pages/seller-dashboard";
 import SellerProducts from "@/pages/seller-products";
 import SellerProductsEdit from "@/pages/seller-products-edit";
 import SellerOrders from "@/pages/seller-orders";
+import SellerTracking from "@/pages/seller/tracking";
 import SellerMessages from "@/pages/seller-messages";
 import ProductionDemo from "@/pages/production-demo";
 import MedusaAdmin from "@/pages/medusa-admin";
@@ -149,6 +150,7 @@ function Router() {
           <Route path="products/new" element={<SellerProductsNew />} />
           <Route path="products/edit/:id" element={<SellerProductsEdit />} />
           <Route path="orders" element={<SellerOrders />} />
+          <Route path="tracking" element={<SellerTracking />} />
           <Route path="messages" element={<SellerMessages />} />
           <Route path="profile" element={<Profile />} />
         </Route>

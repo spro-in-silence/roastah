@@ -233,6 +233,8 @@ Changelog:
 - July 10, 2025. Added subtle scroll indicators using gradient overlays to Order Summary and cart sidebar for better UX without obvious visual clutter
 - July 10, 2025. Refined scroll indicator positioning - multiple iterations to achieve proper fixed positioning without interfering with content or buttons
 - July 10, 2025. Fixed Order Summary accordion scrolling issue - added max-height and overflow scrolling to prevent buttons from being hidden when many vendors are present
+- July 10, 2025. Renamed seller "Orders" menu to "Order Management" for better clarity and organization
+- July 10, 2025. Created dedicated Order Tracking page at /seller/tracking with comprehensive tracking interface, search functionality, status filtering, and detailed tracking information displays
 ```
 
 ## User Preferences

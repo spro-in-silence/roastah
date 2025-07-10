@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -289,6 +289,15 @@ export default function Navbar() {
                     }`}>
                       <Package className="h-5 w-5" />
                       <span className="font-medium">My Orders</span>
+                    </div>
+                  </Link>
+
+                  <Link to="/address-book" onClick={closeMenu}>
+                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                      location.pathname === '/address-book' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                    }`}>
+                      <MapPin className="h-5 w-5" />
+                      <span className="font-medium">Address Book</span>
                     </div>
                   </Link>
 

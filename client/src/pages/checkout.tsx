@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { MapPin } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { apiRequest } from "@/lib/queryClient";
@@ -98,6 +99,22 @@ const addressSchema = z.object({
   zipCode: z.string().min(5, "Valid ZIP code is required"),
 });
 
+interface ShippingAddress {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  name: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone?: string;
+  deliveryInstructions?: string;
+  isDefault: boolean;
+}
+
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
@@ -116,6 +133,16 @@ function CheckoutForm() {
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ["/api/cart"],
+  });
+
+  // Query for default shipping address
+  const { data: defaultAddress, isLoading: isLoadingAddress } = useQuery<ShippingAddress>({
+    queryKey: ["/api/shipping/addresses/default"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/shipping/addresses");
+      const addresses = await response.json();
+      return addresses.find((addr: ShippingAddress) => addr.isDefault) || null;
+    },
   });
 
   const subtotal = (cartItems as CartItem[]).reduce((sum: number, item: CartItem) => {
@@ -178,10 +205,55 @@ function CheckoutForm() {
               {/* Shipping Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Shipping Information</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Shipping Information</CardTitle>
+                    {defaultAddress && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = '/address-book'}
+                      >
+                        Change Address
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {isLoadingAddress ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin w-6 h-6 border-2 border-roastah-teal border-t-transparent rounded-full"></div>
+                      <span className="ml-2 text-gray-600">Loading shipping address...</span>
+                    </div>
+                  ) : defaultAddress ? (
+                    // Show compact delivery info for default address
+                    <div className="bg-gray-50 rounded-lg p-4 border">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-roastah-teal" />
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              Delivering to {defaultAddress.firstName} {defaultAddress.lastName}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {defaultAddress.addressLine1}
+                              {defaultAddress.addressLine2 && `, ${defaultAddress.addressLine2}`}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {defaultAddress.city}, {defaultAddress.state} {defaultAddress.zipCode}
+                            </p>
+                            {defaultAddress.deliveryInstructions && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                Instructions: {defaultAddress.deliveryInstructions}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Show full address form if no default address
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName">First Name</Label>
                       <Input
@@ -288,6 +360,7 @@ function CheckoutForm() {
                       )}
                     </div>
                   </div>
+                  )}
                 </CardContent>
               </Card>
 

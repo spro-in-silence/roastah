@@ -600,6 +600,9 @@ export const disputes = pgTable("disputes", {
 export const shippingAddresses = pgTable("shipping_addresses", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull(),
   name: varchar("name").notNull(),
   company: varchar("company"),
   addressLine1: varchar("address_line_1").notNull(),
@@ -609,6 +612,7 @@ export const shippingAddresses = pgTable("shipping_addresses", {
   zipCode: varchar("zip_code").notNull(),
   country: varchar("country").notNull().default("US"),
   phone: varchar("phone"),
+  deliveryInstructions: text("delivery_instructions"),
   isDefault: boolean("is_default").default(false),
   isValidated: boolean("is_validated").default(false),
   shippoAddressId: varchar("shippo_address_id"), // Shippo Address object ID

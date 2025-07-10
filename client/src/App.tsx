@@ -30,6 +30,7 @@ import Favorites from "@/pages/favorites";
 import GiftCards from "@/pages/gift-cards";
 import BuyerMessages from "@/pages/buyer-messages";
 import Orders from "@/pages/orders";
+import AddressBook from "@/pages/address-book";
 import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
 
@@ -110,6 +111,11 @@ function Router() {
         <Route path="/buyer-messages" element={
           <ProtectedRoute requireAuth>
             <BuyerMessages />
+          </ProtectedRoute>
+        } />
+        <Route path="/address-book" element={
+          <ProtectedRoute requireAuth>
+            <AddressBook />
           </ProtectedRoute>
         } />
         <Route path="/become-roastah" element={

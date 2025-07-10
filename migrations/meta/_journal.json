@@ -15,6 +15,13 @@
       "when": 1752026876968,
       "tag": "0001_gorgeous_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752122279510,
+      "tag": "0002_curvy_elektra",
+      "breakpoints": true
     }
   ]
 }

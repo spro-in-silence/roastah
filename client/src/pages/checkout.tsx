@@ -675,7 +675,7 @@ function CheckoutForm() {
 
 export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
-  const { data: config } = useConfig();
+  const { config, loading, error } = useConfig();
 
   useEffect(() => {
     // Create PaymentIntent as soon as the page loads
@@ -688,12 +688,32 @@ export default function Checkout() {
       });
   }, []);
 
-  if (!config?.stripe?.publicKey) {
+  if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <CoffeeRoasterLoader className="w-16 h-16 mx-auto mb-2" />
           <p>Roasting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!config?.stripe?.publicKey) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500">Stripe configuration not found</p>
         </div>
       </div>
     );

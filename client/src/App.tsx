@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
 import { LoadingProvider } from "@/contexts/loading-context";
+import { PWAInstallPrompt } from "@/components/ui/pwa-install-prompt";
+import { NetworkStatus } from "@/components/ui/network-status";
+import { MobileOptimizations } from "@/components/ui/mobile-optimizations";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SellerLayout from "@/components/SellerLayout";
 import NotFound from "@/pages/not-found";
@@ -37,6 +40,8 @@ import DevLogin from "@/pages/dev-login";
 import AuthPage from "@/pages/auth-page";
 import LoadingDemo from "@/pages/loading-demo";
 import LearnMore from "@/pages/learn-more";
+import OfflinePage from "@/pages/offline";
+import PWASettings from "@/pages/pwa-settings";
 
 // Create a temporary component for missing SellerProductsNew
 const SellerProductsNew = () => {
@@ -61,6 +66,8 @@ function Router() {
         <Route path="/production-demo" element={<ProductionDemo />} />
         <Route path="/tracking-demo" element={<TrackingDemo />} />
         <Route path="/loading-demo" element={<LoadingDemo />} />
+        <Route path="/offline" element={<OfflinePage />} />
+        <Route path="/pwa-settings" element={<PWASettings />} />
         <Route path="/dev-login" element={<DevLogin />} />
         
         {/* Authentication Required Routes */}
@@ -172,6 +179,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <PWAInstallPrompt />
+          <NetworkStatus />
+          <MobileOptimizations />
         </TooltipProvider>
       </LoadingProvider>
     </QueryClientProvider>

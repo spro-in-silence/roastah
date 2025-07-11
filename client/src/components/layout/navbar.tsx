@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin, Truck } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin, Truck, Smartphone } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { CartItem } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
+import { PWAInstallButton } from "@/components/ui/pwa-install-prompt";
+import { NetworkStatusIndicator } from "@/components/ui/network-status";
 
 export default function Navbar() {
   const location = useLocation();
@@ -190,6 +192,12 @@ export default function Navbar() {
 
             {/* Right: Action Icons */}
             <div className="flex items-center space-x-2">
+              {/* PWA Install Button */}
+              <PWAInstallButton />
+              
+              {/* Network Status Indicator */}
+              <NetworkStatusIndicator />
+              
               {isAuthenticated ? (
                 <>
                   {/* Real-time Notifications */}
@@ -435,6 +443,15 @@ export default function Navbar() {
                 }`}>
                   <User className="h-5 w-5" />
                   <span className="font-medium">Profile Settings</span>
+                </div>
+              </Link>
+
+              <Link to="/pwa-settings" onClick={closeMenu}>
+                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
+                  location.pathname === '/pwa-settings' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
+                }`}>
+                  <Smartphone className="h-5 w-5" />
+                  <span className="font-medium">PWA Settings</span>
                 </div>
               </Link>
 

@@ -258,6 +258,7 @@ Changelog:
 - July 11, 2025. Created mobile-specific optimizations including touch gestures, safe area insets, and responsive design patterns for iOS/Android
 - July 11, 2025. Implemented PWA utility functions for device detection, installation prompts, background sync, and offline capabilities
 - July 11, 2025. Changed tagline from "Experimental Early Access" to "Experimental Alpha Release" across all pages for better version clarity
+- July 11, 2025. Hidden PWA Settings link from navbar menu while keeping route accessible via URL - PWA settings are now enforced globally for all users
 ```
 
 ## User Preferences

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin, Truck, Smartphone } from "lucide-react";
+import { Search, ShoppingCart, Coffee, User, Package, BarChart3, ShoppingBag, Database, Trophy, Menu, X, Bell, Shield, RotateCcw, Heart, Gift, MessageSquare, MapPin, Truck } from "lucide-react";
 import { RealtimeNotifications } from "@/components/realtime-notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -446,14 +446,7 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              <Link to="/pwa-settings" onClick={closeMenu}>
-                <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                  location.pathname === '/pwa-settings' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                }`}>
-                  <Smartphone className="h-5 w-5" />
-                  <span className="font-medium">PWA Settings</span>
-                </div>
-              </Link>
+
 
               {/* Mode Switch - Only for non-approved roasters who are pending approval */}
               {user?.role === 'roaster' && !user?.isRoasterApproved && (

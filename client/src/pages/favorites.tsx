@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Heart, MapPin, Star, ExternalLink, Package, Coffee } from "lucide-react";
+import { Heart, MapPin, Star, ExternalLink, Package, Coffee, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FavoriteButton } from "@/components/favorite-button";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/navbar";
@@ -26,11 +28,31 @@ interface FavoriteRoaster {
   profileImageUrl: string;
 }
 
+interface FavoriteProduct {
+  id: number;
+  productId: number;
+  createdAt: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  roaster: {
+    id: number;
+    businessName: string;
+  };
+}
+
 export default function Favorites() {
   const { isAuthenticated, user } = useAuth();
+  const [activeTab, setActiveTab] = useState("roasters");
 
-  const { data: favorites, isLoading, error } = useQuery<FavoriteRoaster[]>({
+  const { data: favoriteRoasters = [], isLoading: roastersLoading, error: roastersError } = useQuery<FavoriteRoaster[]>({
     queryKey: ['/api/favorites/roasters'],
+    enabled: isAuthenticated,
+  });
+
+  const { data: favoriteProducts = [], isLoading: productsLoading, error: productsError } = useQuery<FavoriteProduct[]>({
+    queryKey: ['/api/favorites/products'],
     enabled: isAuthenticated,
   });
 
@@ -45,10 +67,10 @@ export default function Favorites() {
               Sign In Required
             </h1>
             <p className="text-gray-600 mb-6">
-              Please sign in to view your favorite roasters.
+              Please sign in to view your favorites.
             </p>
             <Button asChild>
-              <a to="/api/login">Sign In</a>
+              <Link to="/api/login">Sign In</Link>
             </Button>
           </div>
         </div>
@@ -66,58 +88,70 @@ export default function Favorites() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Heart className="h-8 w-8 text-red-500 mr-3" />
-            <h1 className="text-4xl font-bold text-gray-900">My Favorite Roasters</h1>
+            <h1 className="text-4xl font-bold text-gray-900">My Favorites</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Your curated collection of trusted coffee roasters
+            Your curated collection of favorite roasters and coffee beans
           </p>
         </div>
 
-        {/* Main Content */}
-        <div>
-          {isLoading ? (
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="roasters" className="flex items-center gap-2">
+              <Coffee className="h-4 w-4" />
+              Roasters
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              Coffee Beans
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Roasters Tab */}
+          <TabsContent value="roasters" className="mt-6">
+            {roastersLoading ? (
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
+                  ))}
+                </div>
+              </div>
+            ) : roastersError ? (
+              <div className="text-center py-16">
+                <div className="text-red-500 mb-4">
+                  <Heart className="h-16 w-16 mx-auto" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Error Loading Favorites
+                </h2>
+                <p className="text-gray-600">
+                  Unable to load your favorite roasters. Please try again.
+                </p>
+              </div>
+            ) : !favoriteRoasters || favoriteRoasters.length === 0 ? (
+              <div className="text-center py-16">
+                <Coffee className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  No Favorite Roasters Yet
+                </h2>
+                <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                  Start exploring roasters and add your favorites to build your collection. Discover amazing coffee roasters and save the ones you love.
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Button asChild size="lg">
+                    <Link to="/leaderboard">Browse Roasters</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link to="/products">View Products</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-16">
-              <div className="text-red-500 mb-4">
-                <Heart className="h-16 w-16 mx-auto" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Error Loading Favorites
-              </h2>
-              <p className="text-gray-600">
-                Unable to load your favorite roasters. Please try again.
-              </p>
-            </div>
-          ) : !favorites || favorites.length === 0 ? (
-            <div className="text-center py-16">
-              <Coffee className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                No Favorites Yet
-              </h2>
-              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                Start exploring roasters and add your favorites to build your collection. Discover amazing coffee roasters and save the ones you love.
-              </p>
-              <div className="flex justify-center gap-4">
-                <Button asChild size="lg">
-                  <Link to="/leaderboard">Browse Roasters</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/products">View Products</Link>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {favorites.map((favorite) => (
+                {favoriteRoasters.map((favorite) => (
                   <Card key={favorite.id} className="group hover:shadow-lg transition-all duration-200 border-gray-200 bg-white">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
@@ -180,7 +214,7 @@ export default function Favorites() {
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
                         <Button asChild size="sm" className="flex-1">
-                          <Link href={`/products?roaster=${favorite.roasterId}`}>
+                          <Link to={`/products?roaster=${favorite.roasterId}`}>
                             <Package className="h-4 w-4 mr-2" />
                             View Products
                           </Link>
@@ -200,20 +234,126 @@ export default function Favorites() {
                   </Card>
                 ))}
               </div>
+            )}
+          </TabsContent>
 
-              {/* Bottom Actions */}
-              <div className="text-center">
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/leaderboard">
-                    <Coffee className="h-5 w-5 mr-2" />
-                    Discover More Roasters
-                  </Link>
-                </Button>
+          {/* Products Tab */}
+          <TabsContent value="products" className="mt-6">
+            {productsLoading ? (
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
+                  ))}
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            ) : productsError ? (
+              <div className="text-center py-16">
+                <div className="text-red-500 mb-4">
+                  <Heart className="h-16 w-16 mx-auto" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Error Loading Favorites
+                </h2>
+                <p className="text-gray-600">
+                  Unable to load your favorite products. Please try again.
+                </p>
+              </div>
+            ) : !favoriteProducts || favoriteProducts.length === 0 ? (
+              <div className="text-center py-16">
+                <ShoppingBag className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  No Favorite Coffee Beans Yet
+                </h2>
+                <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                  Start exploring coffee beans and add your favorites to build your collection. Discover amazing coffee and save the ones you love.
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Button asChild size="lg">
+                    <Link to="/products">Browse Coffee</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link to="/leaderboard">View Roasters</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {favoriteProducts.map((favorite) => (
+                  <Card key={favorite.id} className="group hover:shadow-lg transition-all duration-200 border-gray-200 bg-white">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={favorite.images && favorite.images.length > 0 ? favorite.images[0] : '/api/placeholder/60/60'}
+                            alt={favorite.name}
+                            className="w-12 h-12 object-cover rounded-lg"
+                          />
+                          <div>
+                            <CardTitle className="text-lg text-gray-900">
+                              {favorite.name}
+                            </CardTitle>
+                            <div className="text-sm text-gray-600">
+                              by {favorite.roaster.businessName}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => {
+                            // TODO: Implement remove favorite product
+                            console.log('Remove favorite product:', favorite.productId);
+                          }}
+                        >
+                          <Heart className="h-4 w-4 fill-current" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {/* Description */}
+                      {favorite.description && (
+                        <CardDescription className="text-gray-600 line-clamp-3">
+                          {favorite.description}
+                        </CardDescription>
+                      )}
+
+                      {/* Price */}
+                      <div className="text-lg font-semibold text-gray-900">
+                        ${favorite.price.toFixed(2)}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-2">
+                        <Button asChild size="sm" className="flex-1">
+                          <Link to={`/product/${favorite.productId}`}>
+                            <Package className="h-4 w-4 mr-2" />
+                            View Details
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link to={`/products?roaster=${favorite.roaster.id}`}>
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+
+                      {/* Added Date */}
+                      <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
+                        Favorited on {new Date(favorite.createdAt).toLocaleDateString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+      
       <Footer />
     </div>
   );

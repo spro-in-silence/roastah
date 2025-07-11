@@ -188,7 +188,7 @@ export default function OrdersPage() {
                         </span>
                       </Badge>
                       <p className="text-lg font-semibold text-gray-900 mt-2">
-                        ${order.totalAmount.toFixed(2)}
+                        ${typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : '0.00'}
                       </p>
                     </div>
                   </div>
@@ -200,32 +200,36 @@ export default function OrdersPage() {
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-4">Order Items</h4>
                       <div className="space-y-4">
-                        {order.items.map((item) => (
-                          <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                            <img
-                              src={item.product.imageUrl || '/api/placeholder/60/60'}
-                              alt={item.product.name}
-                              className="w-15 h-15 object-cover rounded-md"
-                            />
-                            <div className="flex-1">
-                              <h5 className="font-medium text-gray-900">{item.product.name}</h5>
-                              <p className="text-sm text-gray-600">
-                                by {item.product.roaster.businessName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Quantity: {item.quantity} × ${item.price.toFixed(2)}
-                              </p>
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item) => (
+                            <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                              <img
+                                src={item.product.imageUrl || '/api/placeholder/60/60'}
+                                alt={item.product.name}
+                                className="w-15 h-15 object-cover rounded-md"
+                              />
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900">{item.product.name}</h5>
+                                <p className="text-sm text-gray-600">
+                                  by {item.product.roaster.businessName}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Quantity: {item.quantity} × ${item.price.toFixed(2)}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-gray-900">
+                                  ${(item.quantity * item.price).toFixed(2)}
+                                </p>
+                                <Badge className={getStatusColor(item.status)} variant="outline">
+                                  {item.status}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-gray-900">
-                                ${(item.quantity * item.price).toFixed(2)}
-                              </p>
-                              <Badge className={getStatusColor(item.status)} variant="outline">
-                                {item.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">No items found for this order.</p>
+                        )}
                       </div>
                     </div>
 
@@ -246,7 +250,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Tracking Information */}
-                        {order.items.some(item => item.tracking) && (
+                        {order.items && order.items.some(item => item.tracking) && (
                           <div className="mt-4 pt-4 border-t">
                             <h5 className="font-medium text-gray-900 mb-2">Tracking Information</h5>
                             {order.items.map((item) => (

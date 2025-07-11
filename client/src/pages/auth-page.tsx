@@ -141,7 +141,14 @@ export default function AuthPage() {
             <Card className="w-full max-w-md">
               <CardHeader className="text-center">
                 <div className="flex justify-center mb-4">
-                  <Coffee className="h-12 w-12 text-primary" />
+                  <svg width="84" height="84" viewBox="-25 -50 50 50" xmlns="http://www.w3.org/2000/svg" className="h-21 w-21">
+                    <path 
+                      d="M -14 -13 A 50 32 0 0 1 -19 -41 C -16 -45 -14 -45 -10 -44 C -5 -42 0 -37 3 -34 C 6 -30 9 -26 11 -21 C 13 -16 13 -14 7 -11 C 3 -10 -2 -9 -8 -12 C -11 -15 -19 -21 -17 -31 C -14 -41 -7 -36 -7 -36 C -3 -34 3 -30 5 -24 C 6 -19 7 -14 3 -14 C -8 -13 -12 -20 -13 -22 C -15 -25 -16 -34 -9 -34 C -5 -35 1 -24 2 -21 C 4 -17 0 -14 -4 -17 C -13 -22 -14 -36 -7 -28 C -2 -24 -1 -20 -1 -18 C -1 -8 -10 -10 -14 -13" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="3"
+                    />
+                  </svg>
                 </div>
                 <CardTitle className="text-2xl font-bold">Welcome to Roastah</CardTitle>
                 <CardDescription>
@@ -320,7 +327,14 @@ export default function AuthPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/10 p-3 rounded-full">
-                    <Coffee className="h-6 w-6 text-primary" />
+                    <svg width="42" height="42" viewBox="-25 -50 50 50" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+                      <path 
+                        d="M -14 -13 A 50 32 0 0 1 -19 -41 C -16 -45 -14 -45 -10 -44 C -5 -42 0 -37 3 -34 C 6 -30 9 -26 11 -21 C 13 -16 13 -14 7 -11 C 3 -10 -2 -9 -8 -12 C -11 -15 -19 -21 -17 -31 C -14 -41 -7 -36 -7 -36 C -3 -34 3 -30 5 -24 C 6 -19 7 -14 3 -14 C -8 -13 -12 -20 -13 -22 C -15 -25 -16 -34 -9 -34 C -5 -35 1 -24 2 -21 C 4 -17 0 -14 -4 -17 C -13 -22 -14 -36 -7 -28 C -2 -24 -1 -20 -1 -18 C -1 -8 -10 -10 -14 -13" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="3"
+                      />
+                    </svg>
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Fresh Roasted</h3>

@@ -1893,6 +1893,86 @@ French Roast Dark,Bold and smoky,19.99,dark,Brazil,natural,100,smoky and bold`;
     }
   });
 
+  // Product favorites routes
+  app.post('/api/favorites/products/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const productId = parseInt(req.params.id);
+      
+      console.log(`Toggle favorite product - User: ${userId}, Product: ${productId}`);
+      
+      if (!productId || isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      // Check if product exists
+      const productExists = await storage.getProductById(productId);
+      if (!productExists) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Check if already favorited - if so, remove it (toggle)
+      const isAlreadyFavorite = await storage.isFavoriteProduct(userId, productId);
+      
+      if (isAlreadyFavorite) {
+        // Remove from favorites
+        await storage.removeFavoriteProduct(userId, productId);
+        console.log(`Favorite product removed successfully for product ${productId}`);
+        res.json({ action: 'removed', isFavorite: false });
+      } else {
+        // Add to favorites
+        const favorite = await storage.addFavoriteProduct(userId, productId);
+        console.log(`Favorite product added successfully:`, favorite);
+        res.json({ action: 'added', isFavorite: true, favorite });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite product:", error);
+      console.error("Error stack:", (error as Error).stack);
+      res.status(500).json({ message: "Failed to toggle favorite product", error: (error as Error).message });
+    }
+  });
+
+  app.get('/api/favorites/products/:id/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const productId = parseInt(req.params.id);
+      
+      if (!productId || isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const isFavorite = await storage.isFavoriteProduct(userId, productId);
+      res.json({ isFavorite });
+    } catch (error) {
+      console.error("Error checking favorite product:", error);
+      res.status(500).json({ message: "Failed to check favorite product" });
+    }
+  });
+
+  app.delete('/api/favorites/products/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const productId = parseInt(req.params.id);
+      
+      await storage.removeFavoriteProduct(userId, productId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing favorite product:", error);
+      res.status(500).json({ message: "Failed to remove favorite product" });
+    }
+  });
+
+  app.get('/api/favorites/products', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.user?.sub || req.user?.id;
+      const favorites = await storage.getFavoriteProductsByUser(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorite products:", error);
+      res.status(500).json({ message: "Failed to fetch favorite products" });
+    }
+  });
+
   // Real-time tracking routes
   app.get('/api/orders/:id/tracking', isAuthenticated, async (req: any, res) => {
     try {

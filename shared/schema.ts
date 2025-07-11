@@ -407,6 +407,14 @@ export const favoriteRoasters = pgTable("favorite_roasters", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Favorite products table
+export const favoriteProducts = pgTable("favorite_products", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  productId: integer("product_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Additional relations
 export const reviewRelations = relations(reviews, ({ one }) => ({
   user: one(users, {
@@ -470,6 +478,17 @@ export const favoriteRoasterRelations = relations(favoriteRoasters, ({ one }) =>
   }),
 }));
 
+export const favoriteProductRelations = relations(favoriteProducts, ({ one }) => ({
+  user: one(users, {
+    fields: [favoriteProducts.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [favoriteProducts.productId],
+    references: [products.id],
+  }),
+}));
+
 // Additional schemas and types
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
@@ -501,6 +520,11 @@ export const insertFavoriteRoasterSchema = createInsertSchema(favoriteRoasters).
   createdAt: true,
 });
 
+export const insertFavoriteProductSchema = createInsertSchema(favoriteProducts).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type WishlistItem = typeof wishlist.$inferSelect;
@@ -513,6 +537,8 @@ export type RealtimeConnection = typeof realtimeConnections.$inferSelect;
 export type InsertRealtimeConnection = z.infer<typeof insertRealtimeConnectionSchema>;
 export type FavoriteRoaster = typeof favoriteRoasters.$inferSelect;
 export type InsertFavoriteRoaster = z.infer<typeof insertFavoriteRoasterSchema>;
+export type FavoriteProduct = typeof favoriteProducts.$inferSelect;
+export type InsertFavoriteProduct = z.infer<typeof insertFavoriteProductSchema>;
 
 // Commission tracking table
 export const commissions = pgTable("commissions", {

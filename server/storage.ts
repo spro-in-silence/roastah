@@ -16,6 +16,7 @@ import {
   bulkUploads,
   disputes,
   favoriteRoasters,
+  favoriteProducts,
   giftCards,
   messageSubjects,
   sellerMessages,
@@ -190,6 +191,12 @@ export interface IStorage {
   removeFavoriteRoaster(userId: string, roasterId: number): Promise<void>;
   getFavoriteRoastersByUser(userId: string): Promise<any[]>;
   isFavoriteRoaster(userId: string, roasterId: number): Promise<boolean>;
+  
+  // Favorite products operations
+  addFavoriteProduct(userId: string, productId: number): Promise<any>;
+  removeFavoriteProduct(userId: string, productId: number): Promise<void>;
+  getFavoriteProductsByUser(userId: string): Promise<any[]>;
+  isFavoriteProduct(userId: string, productId: number): Promise<boolean>;
   
   // Gift card operations
   createGiftCard(giftCard: InsertGiftCard): Promise<GiftCard>;
@@ -1051,6 +1058,69 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(favoriteRoasters.userId, userId),
           eq(favoriteRoasters.roasterId, roasterId)
+        )
+      )
+      .limit(1);
+
+    return !!favorite;
+  }
+
+  // Favorite products operations
+  async addFavoriteProduct(userId: string, productId: number): Promise<any> {
+    const [favorite] = await getDb()
+      .insert(favoriteProducts)
+      .values({
+        userId,
+        productId,
+        createdAt: new Date(),
+      })
+      .returning();
+    return favorite;
+  }
+
+  async removeFavoriteProduct(userId: string, productId: number): Promise<void> {
+    await getDb()
+      .delete(favoriteProducts)
+      .where(
+        and(
+          eq(favoriteProducts.userId, userId),
+          eq(favoriteProducts.productId, productId)
+        )
+      );
+  }
+
+  async getFavoriteProductsByUser(userId: string): Promise<any[]> {
+    const favorites = await getDb()
+      .select({
+        id: favoriteProducts.id,
+        productId: favoriteProducts.productId,
+        createdAt: favoriteProducts.createdAt,
+        name: products.name,
+        description: products.description,
+        price: products.price,
+        images: products.images,
+        roaster: {
+          id: roasters.id,
+          businessName: roasters.businessName,
+        },
+      })
+      .from(favoriteProducts)
+      .leftJoin(products, eq(products.id, favoriteProducts.productId))
+      .leftJoin(roasters, eq(roasters.id, products.roasterId))
+      .where(eq(favoriteProducts.userId, userId))
+      .orderBy(desc(favoriteProducts.createdAt));
+
+    return favorites;
+  }
+
+  async isFavoriteProduct(userId: string, productId: number): Promise<boolean> {
+    const [favorite] = await getDb()
+      .select({ id: favoriteProducts.id })
+      .from(favoriteProducts)
+      .where(
+        and(
+          eq(favoriteProducts.userId, userId),
+          eq(favoriteProducts.productId, productId)
         )
       )
       .limit(1);

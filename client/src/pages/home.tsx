@@ -23,43 +23,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative h-96 lg:h-[500px] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080')"
-          }}
-        >
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-          <div className="text-white max-w-2xl">
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6">Discover Exceptional Coffee</h1>
-            <p className="text-xl lg:text-2xl mb-8 text-gray-200">
-              Connect directly with passionate micro-roasters and home roasters crafting the perfect cup
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/products">
-                <Button size="lg" className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold">
-                  Shop Coffee
-                </Button>
-              </Link>
-              {!isRoaster && (
-                <Link to="/become-roastah">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
-                  >
-                    Become a Roastah
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Featured Categories */}
       <section className="py-16 bg-white">

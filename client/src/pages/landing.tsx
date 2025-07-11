@@ -10,26 +10,27 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center">
-              <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
-                <Coffee className="h-5 w-5" />
+              <div className="coffee-gradient text-white rounded-lg p-1 mr-3">
+                <svg width="35" height="35" viewBox="-25 -50 50 50" xmlns="http://www.w3.org/2000/svg" className="h-9 w-9">
+                  <path 
+                    d="M -14 -13 A 50 32 0 0 1 -19 -41 C -16 -45 -14 -45 -10 -44 C -5 -42 0 -37 3 -34 C 6 -30 9 -26 11 -21 C 13 -16 13 -14 7 -11 C 3 -10 -2 -9 -8 -12 C -11 -15 -19 -21 -17 -31 C -14 -41 -7 -36 -7 -36 C -3 -34 3 -30 5 -24 C 6 -19 7 -14 3 -14 C -8 -13 -12 -20 -13 -22 C -15 -25 -16 -34 -9 -34 C -5 -35 1 -24 2 -21 C 4 -17 0 -14 -4 -17 C -13 -22 -14 -36 -7 -28 C -2 -24 -1 -20 -1 -18 C -1 -8 -10 -10 -14 -13" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="3"
+                  />
+                </svg>
               </div>
               <div className="flex flex-col">
                 <span className="text-3xl font-bold text-gray-900">
-                  <span className="text-yellow-400 italic">α</span>
+                  <span className="text-roastah-teal italic">α</span>
                   <span className="text-gray-500">-</span>
                   <span className="font-roastah">roastah</span>
                 </span>
-                <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Early Access</span>
+                <span className="text-xs text-roastah-teal font-medium -mt-1">Experimental Early Access</span>
               </div>
             </Link>
             
             <div className="flex items-center space-x-4">
-              <Link to="/products" className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                Browse Coffee
-              </Link>
-              <Link to="/leaderboard" className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                Top Roasters
-              </Link>
               <Button
                 onClick={() => window.location.href = '/auth'}
                 size="sm"
@@ -147,11 +148,18 @@ export default function Landing() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
-              <Coffee className="h-6 w-6" />
+            <div className="coffee-gradient text-white rounded-lg p-1 mr-3">
+              <svg width="42" height="42" viewBox="-25 -50 50 50" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+                <path 
+                  d="M -14 -13 A 50 32 0 0 1 -19 -41 C -16 -45 -14 -45 -10 -44 C -5 -42 0 -37 3 -34 C 6 -30 9 -26 11 -21 C 13 -16 13 -14 7 -11 C 3 -10 -2 -9 -8 -12 C -11 -15 -19 -21 -17 -31 C -14 -41 -7 -36 -7 -36 C -3 -34 3 -30 5 -24 C 6 -19 7 -14 3 -14 C -8 -13 -12 -20 -13 -22 C -15 -25 -16 -34 -9 -34 C -5 -35 1 -24 2 -21 C 4 -17 0 -14 -4 -17 C -13 -22 -14 -36 -7 -28 C -2 -24 -1 -20 -1 -18 C -1 -8 -10 -10 -14 -13" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="3"
+                />
+              </svg>
             </div>
             <span className="text-xl font-bold">
-              <span className="text-yellow-400 italic">α</span>
+              <span className="text-roastah-teal italic">α</span>
               <span className="text-gray-400">-</span>
               <span className="font-roastah">roastah</span>
             </span>

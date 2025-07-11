@@ -160,16 +160,23 @@ export default function Navbar() {
               )}
               
               <Link to="/" className="flex items-center">
-                <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
-                  <Coffee className="h-5 w-5" />
+                <div className="coffee-gradient text-white rounded-lg p-1 mr-3">
+                  <svg width="35" height="35" viewBox="-25 -50 50 50" xmlns="http://www.w3.org/2000/svg" className="h-9 w-9">
+                  <path 
+                    d="M -14 -13 A 50 32 0 0 1 -19 -41 C -16 -45 -14 -45 -10 -44 C -5 -42 0 -37 3 -34 C 6 -30 9 -26 11 -21 C 13 -16 13 -14 7 -11 C 3 -10 -2 -9 -8 -12 C -11 -15 -19 -21 -17 -31 C -14 -41 -7 -36 -7 -36 C -3 -34 3 -30 5 -24 C 6 -19 7 -14 3 -14 C -8 -13 -12 -20 -13 -22 C -15 -25 -16 -34 -9 -34 C -5 -35 1 -24 2 -21 C 4 -17 0 -14 -4 -17 C -13 -22 -14 -36 -7 -28 C -2 -24 -1 -20 -1 -18 C -1 -8 -10 -10 -14 -13" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="3"
+                  />
+                </svg>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-3xl font-bold text-gray-900">
-                    <span className="text-yellow-400 italic">α</span>
+                    <span className="text-roastah-teal italic">α</span>
                     <span className="text-gray-500">-</span>
                     <span className="font-roastah">roastah</span>
                   </span>
-                  <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Early Access</span>
+                  <span className="text-xs text-roastah-teal font-medium -mt-1">Experimental Early Access</span>
                 </div>
               </Link>
             </div>
@@ -510,11 +517,22 @@ export default function Navbar() {
                 <div className="space-y-4">
                   {(cartItems as CartItem[]).map((item) => (
                     <div key={item.id} className="group flex items-center space-x-3 p-3 border rounded-lg relative">
-                      <img 
-                        src={item.product?.images?.[0] || '/placeholder-coffee.jpg'} 
-                        alt={item.product?.name || 'Product'}
-                        className="w-16 h-16 object-cover rounded"
-                      />
+                      <div className="w-16 h-16 rounded bg-gray-200 flex items-center justify-center">
+                        {item.product?.images && item.product.images.length > 0 ? (
+                          <img 
+                            src={item.product.images[0]} 
+                            alt={item.product?.name || 'Product'}
+                            className="w-full h-full object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full flex items-center justify-center text-gray-500 text-xs ${item.product?.images && item.product.images.length > 0 ? 'hidden' : ''}`}>
+                          <Coffee className="h-6 w-6" />
+                        </div>
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-sm">{item.product?.name}</h3>
                         <p className="text-sm text-gray-500">${item.product?.price}</p>

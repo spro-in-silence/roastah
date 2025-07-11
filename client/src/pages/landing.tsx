@@ -47,10 +47,10 @@ export default function Landing() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div className="text-white max-w-2xl">
             <div className="flex items-center mb-6">
-              <div className="coffee-gradient text-white rounded-lg p-3 mr-4">
-                <Coffee className="h-8 w-8" />
+              <div className="coffee-gradient text-white rounded-lg p-4 mr-4">
+                <Coffee className="h-12 w-12" />
               </div>
-              <span className="text-3xl font-bold">
+              <span className="text-5xl font-bold">
                 <span className="text-yellow-400 italic">α</span>
                 <span className="text-gray-500">-</span>
                 <span className="font-roastah">roastah</span>

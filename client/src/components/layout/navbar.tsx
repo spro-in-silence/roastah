@@ -163,11 +163,14 @@ export default function Navbar() {
                 <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
                   <Coffee className="h-5 w-5" />
                 </div>
-                <span className="text-3xl font-bold text-gray-900">
-                  <span className="text-yellow-400 italic">α</span>
-                  <span className="text-gray-500">-</span>
-                  <span className="font-roastah">roastah</span>
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-yellow-400 italic">α</span>
+                    <span className="text-gray-500">-</span>
+                    <span className="font-roastah">roastah</span>
+                  </span>
+                  <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Early Access</span>
+                </div>
               </Link>
             </div>
 

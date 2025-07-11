@@ -240,6 +240,7 @@ Changelog:
 - July 11, 2025. Updated landing page header branding to match consistent α-roastah styling across all pages
 - July 11, 2025. Changed Learn More button color to match Sign In button using roastah-yellow for consistent branding
 - July 11, 2025. Removed redundant logo and branding from hero banner since it's now prominently displayed in the header
+- July 11, 2025. Added "Experimental Early Access" tagline underneath brand name in headers using matching yellow color
 ```
 
 ## User Preferences

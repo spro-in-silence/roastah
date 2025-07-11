@@ -164,7 +164,7 @@ export default function Navbar() {
                   <Coffee className="h-5 w-5" />
                 </div>
                 <span className="text-2xl font-bold text-gray-900">
-                  <span className="text-yellow-400 italic">alpha</span>
+                  <span className="text-yellow-400 italic">α</span>
                   <span className="text-gray-500">-</span>
                   <span className="font-roastah">roastah</span>
                 </span>

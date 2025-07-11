@@ -51,7 +51,7 @@ export default function Landing() {
                 <Coffee className="h-8 w-8" />
               </div>
               <span className="text-3xl font-bold">
-                <span className="text-yellow-400 italic">alpha</span>
+                <span className="text-yellow-400 italic">α</span>
                 <span className="text-gray-500">-</span>
                 <span className="font-roastah">roastah</span>
               </span>
@@ -154,7 +154,7 @@ export default function Landing() {
               <Coffee className="h-6 w-6" />
             </div>
             <span className="text-xl font-bold">
-              <span className="text-yellow-400 italic">alpha</span>
+              <span className="text-yellow-400 italic">α</span>
               <span className="text-gray-400">-</span>
               <span className="font-roastah">roastah</span>
             </span>

@@ -236,7 +236,7 @@ Changelog:
 - July 10, 2025. Renamed seller "Orders" menu to "Order Management" for better clarity and organization
 - July 10, 2025. Created dedicated Order Tracking page at /seller/tracking with comprehensive tracking interface, search functionality, status filtering, and detailed tracking information displays
 - July 11, 2025. Integrated KeepCalm-Medium.ttf font for brand consistency - applied selectively to "roastah" brand name only, maintaining lowercase styling
-- July 11, 2025. Implemented alpha-roastah branding with italicized bright yellow "alpha" prefix and hyphenation to indicate alpha version status
+- July 11, 2025. Implemented α-roastah branding with italicized bright yellow Greek alpha symbol (α) prefix and hyphenation to indicate alpha version status
 ```
 
 ## User Preferences

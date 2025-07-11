@@ -171,7 +171,7 @@ export default function Navbar() {
                     <span className="text-gray-500">-</span>
                     <span className="font-roastah">roastah</span>
                   </span>
-                  <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Early Access</span>
+                  <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Alpha Release</span>
                 </div>
               </Link>
             </div>

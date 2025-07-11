@@ -50,16 +50,7 @@ export default function Landing() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div className="text-white max-w-2xl">
-            <div className="flex items-center mb-6">
-              <div className="coffee-gradient text-white rounded-lg p-3 mr-4">
-                <Coffee className="h-8 w-8" />
-              </div>
-              <span className="text-5xl font-bold">
-                <span className="text-yellow-400 italic">α</span>
-                <span className="text-gray-500">-</span>
-                <span className="font-roastah">roastah</span>
-              </span>
-            </div>
+
             <h1 className="text-4xl lg:text-6xl font-bold mb-6">Discover Exceptional Coffee</h1>
             <p className="text-xl lg:text-2xl mb-8 text-gray-200">
               Connect directly with passionate micro-roasters and home roasters crafting the perfect cup

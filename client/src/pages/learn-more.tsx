@@ -13,7 +13,11 @@ export default function LearnMore() {
               <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
                 <Coffee className="h-5 w-5" />
               </div>
-              <span className="text-2xl font-bold text-gray-900 font-roastah">Roastah</span>
+              <span className="text-2xl font-bold text-gray-900">
+                <span className="text-yellow-400 italic">alpha</span>
+                <span className="text-gray-500">-</span>
+                <span className="font-roastah">roastah</span>
+              </span>
             </Link>
             
             <Link to="/">
@@ -34,12 +38,12 @@ export default function LearnMore() {
             <div className="coffee-gradient text-white rounded-lg p-3 mx-auto mb-4 w-fit">
               <Coffee className="h-8 w-8" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4 font-roastah">Learn More</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Learn More</h1>
           </div>
 
           {/* Content */}
           <div className="prose prose-lg max-w-none">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-roastah">A little backstory...</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">A little backstory...</h2>
             
             <p className="text-gray-700 mb-6 leading-relaxed">
               Roastah didn't start in a boardroom. It started in a basement—surrounded by bags of green coffee, half-written roast logs, and the smell of something <em>becoming</em>.
@@ -74,7 +78,7 @@ export default function LearnMore() {
 
             <hr className="my-8 border-gray-200" />
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-roastah">What Roastah is (and isn't)</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Roastah is (and isn't)</h2>
             
             <p className="text-gray-700 mb-6 leading-relaxed">
               Roastah is a living, breathing platform where roasters—from garages to cafés—can share, discover, and sell their work. It's a place to compare notes, track your journey, and support one another.
@@ -92,7 +96,7 @@ export default function LearnMore() {
 
             <hr className="my-8 border-gray-200" />
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-roastah">Behind the Logo</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Behind the Logo</h2>
             
             <p className="text-gray-700 mb-6 leading-relaxed">
               You might've noticed the scribble.

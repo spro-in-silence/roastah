@@ -50,9 +50,13 @@ export default function Landing() {
               <div className="coffee-gradient text-white rounded-lg p-3 mr-4">
                 <Coffee className="h-8 w-8" />
               </div>
-              <span className="text-3xl font-bold font-roastah">Roastah</span>
+              <span className="text-3xl font-bold">
+                <span className="text-yellow-400 italic">alpha</span>
+                <span className="text-gray-500">-</span>
+                <span className="font-roastah">roastah</span>
+              </span>
             </div>
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6 font-roastah">Discover Exceptional Coffee</h1>
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6">Discover Exceptional Coffee</h1>
             <p className="text-xl lg:text-2xl mb-8 text-gray-200">
               Connect directly with passionate micro-roasters and home roasters crafting the perfect cup
             </p>
@@ -73,7 +77,7 @@ export default function Landing() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4 font-roastah">Why Choose Roastah?</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Roastah?</h2>
             <p className="text-xl text-roastah-warm-gray max-w-2xl mx-auto">
               Join our community of coffee enthusiasts and discover amazing roasters from around the world
             </p>
@@ -126,7 +130,7 @@ export default function Landing() {
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <TrendingUp className="h-8 w-8 text-white" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 font-roastah">Are You a Coffee Roaster?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Are You a Coffee Roaster?</h2>
               <p className="text-xl md:text-2xl mb-8 text-white/95 max-w-2xl mx-auto leading-relaxed">
                 Join our marketplace and share your passion for coffee with enthusiasts worldwide
               </p>
@@ -149,7 +153,11 @@ export default function Landing() {
             <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
               <Coffee className="h-6 w-6" />
             </div>
-            <span className="text-xl font-bold font-roastah">Roastah</span>
+            <span className="text-xl font-bold">
+              <span className="text-yellow-400 italic">alpha</span>
+              <span className="text-gray-400">-</span>
+              <span className="font-roastah">roastah</span>
+            </span>
           </div>
           <p className="text-gray-400 mb-4">Connecting coffee lovers with passionate roasters worldwide.</p>
           <p className="text-gray-500">&copy; 2024 Roastah. All rights reserved.</p>

@@ -163,7 +163,11 @@ export default function Navbar() {
                 <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
                   <Coffee className="h-5 w-5" />
                 </div>
-                <span className="text-2xl font-bold text-gray-900">Roastah</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-yellow-400 italic">alpha</span>
+                  <span className="text-gray-500">-</span>
+                  <span className="font-roastah">roastah</span>
+                </span>
               </Link>
             </div>
 

@@ -11,7 +11,11 @@ import {
   Building,
   Menu,
   X,
-  Coffee
+  Coffee,
+  BarChart3,
+  DollarSign,
+  Truck,
+  FileText
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +32,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const menuItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'User Management' },
+    { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/admin/payments', icon: DollarSign, label: 'Payment Management' },
+    { path: '/admin/shipping', icon: Truck, label: 'Shipping Management' },
+    { path: '/admin/content', icon: FileText, label: 'Content Management' },
     { path: '/admin/system', icon: Monitor, label: 'System Status' },
     { path: '/pwa-settings', icon: Smartphone, label: 'PWA Settings' },
     { path: '/seller/medusa-admin', icon: Building, label: 'E-Commerce Admin' },

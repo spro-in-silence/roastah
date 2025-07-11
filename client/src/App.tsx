@@ -45,6 +45,10 @@ import PWASettings from "@/pages/pwa-settings";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminSystem from "@/pages/admin/system";
+import AdminAnalytics from "@/pages/admin/analytics";
+import AdminPayments from "@/pages/admin/payments";
+import AdminShipping from "@/pages/admin/shipping";
+import AdminContent from "@/pages/admin/content";
 import AdminLayout from "@/components/AdminLayout";
 
 // Create a temporary component for missing SellerProductsNew
@@ -83,6 +87,26 @@ function Router() {
         <Route path="/admin/users" element={
           <AdminLayout>
             <AdminUsers />
+          </AdminLayout>
+        } />
+        <Route path="/admin/analytics" element={
+          <AdminLayout>
+            <AdminAnalytics />
+          </AdminLayout>
+        } />
+        <Route path="/admin/payments" element={
+          <AdminLayout>
+            <AdminPayments />
+          </AdminLayout>
+        } />
+        <Route path="/admin/shipping" element={
+          <AdminLayout>
+            <AdminShipping />
+          </AdminLayout>
+        } />
+        <Route path="/admin/content" element={
+          <AdminLayout>
+            <AdminContent />
           </AdminLayout>
         } />
         <Route path="/admin/system" element={

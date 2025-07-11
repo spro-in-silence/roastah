@@ -42,6 +42,10 @@ import LoadingDemo from "@/pages/loading-demo";
 import LearnMore from "@/pages/learn-more";
 import OfflinePage from "@/pages/offline";
 import PWASettings from "@/pages/pwa-settings";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminSystem from "@/pages/admin/system";
+import AdminLayout from "@/components/AdminLayout";
 
 // Create a temporary component for missing SellerProductsNew
 const SellerProductsNew = () => {
@@ -69,6 +73,23 @@ function Router() {
         <Route path="/offline" element={<OfflinePage />} />
         <Route path="/pwa-settings" element={<PWASettings />} />
         <Route path="/dev-login" element={<DevLogin />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        } />
+        <Route path="/admin/users" element={
+          <AdminLayout>
+            <AdminUsers />
+          </AdminLayout>
+        } />
+        <Route path="/admin/system" element={
+          <AdminLayout>
+            <AdminSystem />
+          </AdminLayout>
+        } />
         
         {/* Authentication Required Routes */}
         <Route path="/products" element={

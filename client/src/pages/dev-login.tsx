@@ -309,6 +309,17 @@ export default function DevLogin() {
               Current user: {user?.id || 'None'}
             </p>
           </div>
+
+          {/* Admin Portal Access */}
+          <div className="mt-8 text-center">
+            <a 
+              href="/admin/dashboard" 
+              className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <Shield className="h-3 w-3" />
+              admin portal
+            </a>
+          </div>
         </div>
       </div>
     </div>

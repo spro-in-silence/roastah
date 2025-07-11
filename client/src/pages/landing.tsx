@@ -134,7 +134,7 @@ export default function Landing() {
               <Button
                 onClick={() => window.location.href = '/api/login'}
                 size="lg"
-                className="bg-white text-roastah-teal hover:bg-gray-100 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
+                className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
               >
                 Become a Roastah
               </Button>

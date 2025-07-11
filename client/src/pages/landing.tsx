@@ -13,7 +13,11 @@ export default function Landing() {
               <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
                 <Coffee className="h-5 w-5" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">Roastah</span>
+              <span className="text-3xl font-bold text-gray-900">
+                <span className="text-yellow-400 italic">α</span>
+                <span className="text-gray-500">-</span>
+                <span className="font-roastah">roastah</span>
+              </span>
             </Link>
             
             <div className="flex items-center space-x-4">
@@ -62,9 +66,8 @@ export default function Landing() {
             </p>
             <Link to="/learn-more">
               <Button
-                variant="outline"
                 size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold"
+                className="bg-roastah-yellow text-gray-900 hover:bg-yellow-500 font-semibold"
               >
                 Learn More
               </Button>

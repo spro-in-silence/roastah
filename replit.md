@@ -237,6 +237,8 @@ Changelog:
 - July 10, 2025. Created dedicated Order Tracking page at /seller/tracking with comprehensive tracking interface, search functionality, status filtering, and detailed tracking information displays
 - July 11, 2025. Integrated KeepCalm-Medium.ttf font for brand consistency - applied selectively to "roastah" brand name only, maintaining lowercase styling
 - July 11, 2025. Implemented α-roastah branding with italicized bright yellow Greek alpha symbol (α) prefix and hyphenation to indicate alpha version status
+- July 11, 2025. Updated landing page header branding to match consistent α-roastah styling across all pages
+- July 11, 2025. Changed Learn More button color to match Sign In button using roastah-yellow for consistent branding
 ```
 
 ## User Preferences

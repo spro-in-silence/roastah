@@ -160,8 +160,8 @@ export default function Navbar() {
               )}
               
               <Link to="/" className="flex items-center">
-                <div className="coffee-gradient text-white rounded-lg p-3 mr-3">
-                  <Coffee className="h-7 w-7" />
+                <div className="coffee-gradient text-white rounded-lg p-2 mr-3">
+                  <Coffee className="h-5 w-5" />
                 </div>
                 <span className="text-3xl font-bold text-gray-900">
                   <span className="text-yellow-400 italic">α</span>

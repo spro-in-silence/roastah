@@ -59,7 +59,7 @@ export function PWAInstallPrompt() {
               ) : (
                 <Monitor className="w-5 h-5 text-roastah-yellow" />
               )}
-              <CardTitle className="text-lg">Install α-roastah</CardTitle>
+              <CardTitle className="text-lg">Install <span className="text-yellow-400 italic">α</span>-roastah</CardTitle>
               <Badge variant="secondary" className="text-xs">PWA</Badge>
             </div>
             <Button

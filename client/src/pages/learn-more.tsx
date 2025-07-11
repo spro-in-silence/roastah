@@ -22,11 +22,11 @@ export default function LearnMore() {
               </div>
               <div className="flex flex-col">
                 <span className="text-3xl font-bold text-gray-900">
-                  <span className="text-roastah-teal italic">α</span>
+                  <span className="text-yellow-400 italic">α</span>
                   <span className="text-gray-500">-</span>
                   <span className="font-roastah">roastah</span>
                 </span>
-                <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Alpha Release</span>
+                <span className="text-xs text-roastah-teal font-medium -mt-1">Experimental Alpha Release</span>
               </div>
             </Link>
             

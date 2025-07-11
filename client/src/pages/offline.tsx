@@ -126,7 +126,7 @@ export default function OfflinePage() {
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 flex items-center justify-center">
               <Coffee className="w-3 h-3 mr-1" />
-              α-roastah • Coffee Marketplace
+              <span className="text-yellow-400 italic">α</span>-roastah • Coffee Marketplace
             </p>
           </div>
         </CardContent>

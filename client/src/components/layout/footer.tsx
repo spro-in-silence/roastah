@@ -18,7 +18,14 @@ export default function Footer() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-bold">Roastah</span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-white">
+                  <span className="text-yellow-400 italic">α</span>
+                  <span className="text-gray-400">-</span>
+                  <span className="font-roastah">roastah</span>
+                </span>
+                <span className="text-xs text-roastah-teal font-medium -mt-1">Experimental Alpha Release</span>
+              </div>
             </div>
             <p className="text-gray-400">Connecting coffee lovers with passionate roasters worldwide.</p>
           </div>

@@ -174,11 +174,11 @@ export default function Navbar() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-3xl font-bold text-gray-900">
-                    <span className="text-roastah-teal italic">α</span>
-                    <span className="text-gray-500">-</span>
-                    <span className="font-roastah">roastah</span>
-                  </span>
-                  <span className="text-xs text-yellow-400 font-medium -mt-1">Experimental Alpha Release</span>
+                                      <span className="text-yellow-400 italic">α</span>
+                  <span className="text-gray-500">-</span>
+                  <span className="font-roastah">roastah</span>
+                </span>
+                <span className="text-xs text-roastah-teal font-medium -mt-1">Experimental Alpha Release</span>
                 </div>
               </Link>
             </div>
@@ -421,14 +421,7 @@ export default function Navbar() {
                     </div>
                   </Link>
 
-                  <Link to="/medusa-admin" onClick={closeMenu}>
-                    <div className={`flex items-center space-x-3 px-3 py-3 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
-                      location.pathname === '/medusa-admin' ? 'bg-roastah-teal/10 text-roastah-teal' : 'text-gray-700'
-                    }`}>
-                      <Database className="h-5 w-5" />
-                      <span className="font-medium">E-commerce Admin</span>
-                    </div>
-                  </Link>
+
                 </>
               )}
 
